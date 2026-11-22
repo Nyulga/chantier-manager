@@ -9,7 +9,7 @@ import type { EtapeAValider } from './useEtapesAValider';
 /**
  * Valide l'étape reçue. C'est l'API qui décide si c'est permis (chef affecté, étape bien
  * « terminée »), et elle répond 409 si l'étape a déjà changé : le message est alors affiché
- * près du bouton. Les listes sont relues après chaque demande, réussie ou non, pour que l'écran
+ * dans la section, avec le titre de l'étape. Les listes sont relues après chaque demande, réussie ou non, pour que l'écran
  * reflète ce que l'autre utilisateur a fait.
  */
 export function useValiderEtape() {
