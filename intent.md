@@ -88,7 +88,7 @@ Chaque module est organisé en 4 parties :
 - **Erreurs métier typées** (`TransitionInterdite`, `AccesRefuse`, `NonTrouve`…), traduites en codes HTTP uniquement dans la partie `api`.
 - **Identifiants** : UUID v7, fournis au domaine par le port `GenerateurId`. Ils sont triables et ne révèlent pas le nombre d'enregistrements.
 - **Ports techniques** : `Horloge`, `GenerateurId`, `HacheurMotDePasse`, `StockageFichiers`, `ScanneurAntivirus`, `EnvoiEmail`, `UnitOfWork`, `JournalAudit` (disponible dès le noyau partagé, pour journaliser les actions sensibles dès leur création), plus un repository par agrégat.
-- **Avancement affiché sur les chantiers** : `chantiers` déclare un port `FournisseurAvancement`, que la composition root branche sur le calcul du module `etapes`. Aucun module n'importe donc l'autre dans les deux sens.
+- **Avancement affiché sur les chantiers** : `chantiers` déclare un port `FournisseurResumeEtapes` (avancement et compteurs d'étapes), que la composition root branche sur le calcul du module `etapes`. Aucun module n'importe donc l'autre dans les deux sens.
 - **Concurrence** : chaque étape porte un numéro de version (verrou optimiste). Deux actions simultanées sur la même étape ne s'écrasent jamais : la seconde est rejetée (409).
 
 ### 2.4 Persistance
