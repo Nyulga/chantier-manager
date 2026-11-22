@@ -9,18 +9,18 @@
 - **Des étapes par chantier**, qui suivent le cycle complet : `À faire` → `En cours` → `Terminée (à valider)` → `Validée`. Le refus, avec un commentaire obligatoire, renvoie l'étape en `En cours`. L'historique des changements est conservé.
 - **L'avancement en pourcentage**, calculé à partir des étapes validées, affiché sur la liste et sur le détail.
 - **Pas d'authentification dans l'application.** L'utilisateur choisit son **profil**, chef ou ouvrier, dans l'interface. Le métier reçoit cet `Acteur` en paramètre, comme prévu par la règle 02 : la vraie connexion de la phase 2 remplacera seulement la source de l'acteur, sans toucher aux règles métier.
-- **Mise en ligne** sur le serveur Ubuntu, derrière un **mot de passe d'accès au site** géré par Caddy (HTTPS automatique Let's Encrypt), sur `chantier-ultra.ddns.net`.
+- **Mise en ligne** sur le serveur Ubuntu, derrière le Caddy du serveur (HTTPS automatique Let's Encrypt), sur `chantier-ultra.ddns.net`. **Version de démonstration publique, sans mot de passe** (décision du propriétaire au moment de la mise en ligne).
 
 **Ce qui est reporté à la phase 2**
 - Les comptes, les invitations et le mot de passe oublié.
-- Le cloisonnement par utilisateur : dans le squelette, toute personne qui a le mot de passe du site voit tous les chantiers.
+- Le cloisonnement par utilisateur : dans le squelette, toute personne qui ouvre le site voit tous les chantiers.
 - Les notes, les photos et les documents, donc aussi ClamAV.
 - Le RGPD complet : export, suppression, purge.
 - Les tests de mutation, CodeQL, Trivy, ZAP et les audits.
 
 **Ce qui ne change pas** : les couches et import-linter ; ESLint (couches et design system Balise) ; le typage strict ; les limites contre le code spaghetti ; les commentaires en français ; le TDD avec 100 % de couverture sur le domaine et les services ; PostgreSQL et Alembic.
 
-**Risque accepté par le propriétaire du projet** : toute personne qui connaît le mot de passe du site peut agir en tant que chef. On n'y met donc aucune donnée sensible au-delà de ce qu'exige le suivi des chantiers.
+**Risque accepté par le propriétaire du projet** : le site de démonstration est public, et n'importe qui peut agir en tant que chef. On n'y saisit **aucune donnée réelle**. Le HTTPS, la CSP, la limite de taille des requêtes et la documentation masquée restent en place.
 
 ## Lots du squelette
 
@@ -28,7 +28,7 @@
 |---|---|---|---|
 | **S1 – Socle allégé** | Squelette backend et frontend, outils qualité essentiels (ruff, mypy, import-linter, ESLint, Vitest, Playwright), thème Balise, `/api/health`, `justfile`, Docker Compose de développement (PostgreSQL), pre-commit, CI simple (lint, typage, architecture, tests) | `dev-socle` (Sonnet, élevé) | — |
 | **S2 – Chantiers et étapes** | Domaine `Chantier`, `Etape` (table des transitions), `HistoriqueEtape`, `Avancement` ; cas d'usage ; noyau partagé minimal (UoW, horloge, identifiants, erreurs) ; repositories SQL et migrations ; API ; écrans liste, création, détail, étapes et validation, avec le sélecteur de profil ; e2e | `dev-metier` (Opus, élevé), `dev-donnees`, `dev-api`, `dev-frontend` | S1 |
-| **S3 – Mise en ligne** | Images de production, `docker-compose.prod.yml`, Caddy existant du serveur (HTTPS, mot de passe d’accès, en-têtes) ; pare-feu, fail2ban et sauvegarde chiffrée en phase 2 | `dev-socle` (Opus, élevé) | S2 |
+| **S3 – Mise en ligne** | Images de production, `docker-compose.prod.yml`, Caddy existant du serveur (HTTPS, en-têtes, limite de taille) ; pare-feu, fail2ban et sauvegarde chiffrée en phase 2 | `dev-socle` (Opus, élevé) | S2 |
 
 Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `conformite` et `securite`, puis PR proposée.
 
@@ -44,20 +44,20 @@ Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `
 - [x] Le budget n'est affiché qu'en profil chef.
 - [x] L'interface est en français, responsive (360 et 1280 px) et suit le design system Balise.
 - [x] Les contrats d'architecture, le typage strict, le lint et les tests passent en CI, avec 100 % de couverture sur le domaine et les services.
-- [ ] L'application est en ligne en HTTPS, et inaccessible sans le mot de passe du site.
+- [x] L'application est en ligne en HTTPS (`https://chantier-ultra.ddns.net`). Le mot de passe d'accès a été retiré : c'est une démonstration publique.
 
 ## Mise à jour du 2026-11-22 : un premier socle en 2 à 3 heures
 
 À la demande du propriétaire du projet, le squelette est encore resserré, pour obtenir un premier socle en 2 à 3 heures.
 
 - **Base de données : SQLite**, y compris en ligne pour ce premier socle. Le code passe par SQLAlchemy et Alembic : le passage à PostgreSQL se fera en phase 2, en changeant surtout la configuration.
-- **Mise en ligne maintenue ce soir** (décision corrigée le même jour) : deux conteneurs (`chantier-api` avec la base SQLite dans un volume, `chantier-web` pour les fichiers statiques), placés derrière le Caddy déjà présent sur le serveur, qui gère le HTTPS et le mot de passe d'accès. fail2ban, le pare-feu et la sauvegarde chiffrée sont reportés à la phase 2.
+- **Mise en ligne maintenue ce soir** (décision corrigée le même jour) : deux conteneurs (`chantier-api` avec la base SQLite dans un volume, `chantier-web` pour les fichiers statiques), placés derrière le Caddy déjà présent sur le serveur, qui gère le HTTPS. fail2ban, le pare-feu et la sauvegarde chiffrée sont reportés à la phase 2.
 - **Le lot S2 est resserré** :
   - **inclus** : créer un chantier, lister les chantiers avec leur avancement, consulter le détail d'un chantier, ajouter des étapes, les faire avancer, les valider ou les refuser avec un commentaire, et choisir son profil. L'historique est enregistré à chaque transition ;
   - **reporté** : la modification et l'archivage d'un chantier, la modification, la suppression et le réordonnancement des étapes, et l'affichage de l'historique.
 - **CI** : lint, typage, contrats d'architecture et tests uniquement.
 
-Critères du premier socle : ceux de la section ci-dessus, **sauf** la modification d'un chantier, la gestion avancée des étapes (modifier, réordonner, supprimer), et l'affichage de l'historique. La mise en ligne en HTTPS, protégée par le mot de passe du site, reste exigée.
+Critères du premier socle : ceux de la section ci-dessus, **sauf** la modification d'un chantier, la gestion avancée des étapes (modifier, réordonner, supprimer), et l'affichage de l'historique. La mise en ligne en HTTPS reste exigée ; le mot de passe d'accès a finalement été écarté pour la démonstration.
 
 ## Estimation
 
