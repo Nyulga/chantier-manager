@@ -6,7 +6,7 @@ import pytest
 
 from app.chantiers.application.consulter_chantier import ConsulterChantier
 from app.chantiers.application.lister_chantiers import ListerChantiers
-from app.chantiers.application.ports import ResumeEtapes
+from app.chantiers.application.ports import ResumeEtapesChantier
 from app.chantiers.infrastructure.memoire.resume_etapes_fixe import ResumeEtapesFixe
 from app.chantiers.infrastructure.memoire.unit_of_work import MemoireUnitOfWorkChantiers
 from app.shared.domain.acteur import Acteur, Role
@@ -23,8 +23,8 @@ from tests.unitaires.chantiers.fabriques import (
 CHEF = Acteur(Role.CHEF)
 OUVRIER = Acteur(Role.OUVRIER)
 RESUMES = {
-    UUID(int=1): ResumeEtapes(avancement=25, validees=1, total=4, a_valider=2),
-    UUID(int=2): ResumeEtapes(avancement=100, validees=3, total=3, a_valider=0),
+    UUID(int=1): ResumeEtapesChantier(avancement=25, validees=1, total=4, a_valider=2),
+    UUID(int=2): ResumeEtapesChantier(avancement=100, validees=3, total=3, a_valider=0),
 }
 # Trois jours après l'échéance du 31 mars 2027, tard le soir à Paris (21 h 30 UTC, 23 h 30
 # à Paris) : la date du jour reste le 3 avril.

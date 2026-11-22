@@ -4,6 +4,7 @@ import pytest
 
 from app.etapes.application.vues import EtapeAValiderVue
 from app.etapes.domain.cycle import StatutEtape
+from app.etapes.domain.etape import LIMITE_A_VALIDER
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import AccesRefuseError
 from tests.unitaires.etapes.contexte import Contexte
@@ -31,6 +32,19 @@ def un_contexte_avec_des_etapes_de_chaque_statut() -> Contexte:
     contexte.uow.etapes.ajouter(
         une_etape_signalee(heures_apres(2), ordre=1, chantier_id=AUTRE_CHANTIER)
     )
+    return contexte
+
+
+def un_contexte_avec_une_etape_de_trop_a_valider() -> Contexte:
+    """Une étape à valider de plus que le plafond, signalées dans l'ordre inverse de leur création.
+
+    L'étape d'ordre `n` est signalée `n` heures avant `INSTANT` : l'étape d'ordre 1
+    est donc la plus récemment signalée. C'est elle qui doit rester hors de la
+    liste, bien qu'elle ait le plus petit identifiant.
+    """
+    contexte = Contexte()
+    for ordre in range(1, LIMITE_A_VALIDER + 2):
+        contexte.uow.etapes.ajouter(une_etape_signalee(heures_apres(-ordre), ordre=ordre))
     return contexte
 
 
@@ -85,3 +99,13 @@ def test_la_consultation_ne_valide_aucune_transaction() -> None:
     contexte.lister_etapes_a_valider().executer(CHEF)
 
     assert contexte.uow.validations == 0
+
+
+def test_la_liste_a_valider_est_plafonnee_aux_etapes_signalees_depuis_le_plus_longtemps() -> None:
+    contexte = un_contexte_avec_une_etape_de_trop_a_valider()
+
+    vues = contexte.lister_etapes_a_valider().executer(CHEF)
+
+    assert [vue.id for vue in vues] == [
+        id_etape(ordre) for ordre in range(LIMITE_A_VALIDER + 1, 1, -1)
+    ]

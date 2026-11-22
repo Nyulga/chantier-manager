@@ -39,7 +39,7 @@ class UnitOfWorkChantiers(UnitOfWork, Protocol):
 
 
 @dataclass(frozen=True)
-class ResumeEtapes:
+class ResumeEtapesChantier:
     """Résumé des étapes d'un chantier, tel que le module étapes le calcule.
 
     `avancement` est un pourcentage entier de 0 à 100. `validees` compte les étapes
@@ -55,7 +55,7 @@ class ResumeEtapes:
 
 
 # Résumé d'un chantier qui n'a encore aucune étape : 0 % et aucun compteur.
-RESUME_SANS_ETAPE: Final = ResumeEtapes(avancement=0, validees=0, total=0, a_valider=0)
+RESUME_SANS_ETAPE: Final = ResumeEtapesChantier(avancement=0, validees=0, total=0, a_valider=0)
 
 
 class FournisseurResumeEtapes(Protocol):
@@ -63,10 +63,10 @@ class FournisseurResumeEtapes(Protocol):
 
     chantiers ne connaît pas le module étapes : la composition root branche ce
     port sur le cas d'usage public `CalculerResumesEtapes` d'étapes, au travers d'un
-    petit adaptateur qui traduit sa vue en `ResumeEtapes`. La dépendance est ainsi
+    petit adaptateur qui traduit sa vue en `ResumeEtapesChantier`. La dépendance est ainsi
     inversée, et il n'y a pas d'import circulaire (intent.md, §2.3).
     """
 
-    def executer(self, chantier_ids: Sequence[UUID]) -> Mapping[UUID, ResumeEtapes]:
+    def executer(self, chantier_ids: Sequence[UUID]) -> Mapping[UUID, ResumeEtapesChantier]:
         """Renvoie le résumé de chaque chantier demandé ; un chantier sans étape a un résumé nul."""
         ...

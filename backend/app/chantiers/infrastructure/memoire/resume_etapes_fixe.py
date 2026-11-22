@@ -7,7 +7,7 @@ Il remplace le calcul du module étapes dans les tests de chantiers, qui n'ont p
 from collections.abc import Mapping, Sequence
 from uuid import UUID
 
-from app.chantiers.application.ports import RESUME_SANS_ETAPE, ResumeEtapes
+from app.chantiers.application.ports import RESUME_SANS_ETAPE, ResumeEtapesChantier
 
 
 class ResumeEtapesFixe:
@@ -16,10 +16,10 @@ class ResumeEtapesFixe:
     Un chantier absent des valeurs fixées a le résumé d'un chantier sans étape.
     """
 
-    def __init__(self, resumes: Mapping[UUID, ResumeEtapes]) -> None:
+    def __init__(self, resumes: Mapping[UUID, ResumeEtapesChantier]) -> None:
         self._resumes = resumes
 
-    def executer(self, chantier_ids: Sequence[UUID]) -> Mapping[UUID, ResumeEtapes]:
+    def executer(self, chantier_ids: Sequence[UUID]) -> Mapping[UUID, ResumeEtapesChantier]:
         """Renvoie le résumé fixé de chaque chantier demandé."""
         return {
             chantier_id: self._resumes.get(chantier_id, RESUME_SANS_ETAPE)

@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from typing import Protocol
 from uuid import UUID
 
-from app.etapes.domain.cycle import StatutEtape
 from app.etapes.domain.etape import Etape, HistoriqueEtape
 from app.shared.application.ports import UnitOfWork
 from app.shared.domain.acteur import Acteur
@@ -33,10 +32,14 @@ class EtapeRepository(Protocol):
         """Renvoie les étapes de ces chantiers, triées par ordre, en une seule lecture."""
         ...
 
-    def lister_par_statut(self, statut: StatutEtape) -> list[Etape]:
-        """Renvoie toutes les étapes à ce statut, tous chantiers confondus, historique compris.
+    def lister_a_valider(self, limite: int) -> list[Etape]:
+        """Renvoie au plus `limite` étapes « Terminée (à valider) », historique compris.
 
-        L'ordre n'est pas garanti : le tri utile au cas d'usage est une règle du domaine.
+        Ce sont celles que `trier_par_signalement` placerait en tête, tous chantiers
+        confondus : d'abord celles sans signalement connu, puis les plus anciennement
+        signalées, puis le plus petit identifiant à date égale. La sélection doit
+        donc suivre la règle du domaine ; l'ordre de la liste, lui, n'est pas
+        garanti, et le cas d'usage applique le tri du domaine.
         """
         ...
 

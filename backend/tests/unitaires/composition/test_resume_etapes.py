@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from app.chantiers.application.ports import ResumeEtapes
+from app.chantiers.application.ports import ResumeEtapesChantier
 from app.composition.resume_etapes import ResumeEtapesDepuisEtapes
 from app.etapes.application import CalculerResumesEtapes
 from app.etapes.domain.cycle import StatutEtape
@@ -19,6 +19,6 @@ def test_l_adaptateur_traduit_le_resume_d_etapes_dans_le_type_de_chantiers() -> 
     resumes = adaptateur.executer([ID_CHANTIER, CHANTIER_SANS_ETAPE])
 
     assert resumes == {
-        ID_CHANTIER: ResumeEtapes(avancement=50, validees=1, total=2, a_valider=1),
-        CHANTIER_SANS_ETAPE: ResumeEtapes(avancement=0, validees=0, total=0, a_valider=0),
+        ID_CHANTIER: ResumeEtapesChantier(avancement=50, validees=1, total=2, a_valider=1),
+        CHANTIER_SANS_ETAPE: ResumeEtapesChantier(avancement=0, validees=0, total=0, a_valider=0),
     }

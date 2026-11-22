@@ -10,7 +10,7 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from app.chantiers.application.ports import ResumeEtapes
+from app.chantiers.application.ports import ResumeEtapesChantier
 from app.chantiers.domain.chantier import Chantier
 from app.chantiers.domain.delai import calculer_delai
 from app.chantiers.domain.politiques import peut_ajouter_etape, peut_voir_budget
@@ -33,7 +33,7 @@ class ChantierVue:
     `budget` est en euros, et vaut `None` quand l'acteur n'a pas le droit de le voir :
     l'information n'est pas masquée par l'interface, elle n'est jamais envoyée.
     `avancement` est un pourcentage entier de 0 à 100 ; les trois compteurs
-    `etapes_*` viennent du module étapes (`ResumeEtapes`).
+    `etapes_*` viennent du module étapes (`ResumeEtapesChantier`).
     `jours_restants` est toujours positif ou nul : c'est le nombre de jours avant
     l'échéance, ou, quand `en_retard` est vrai, le nombre de jours de retard
     (voir `Delai`). Les deux sont calculés à la date du jour, jamais stockés.
@@ -56,7 +56,7 @@ class ChantierVue:
 
 
 def vue_chantier(
-    chantier: Chantier, acteur: Acteur, resume: ResumeEtapes, aujourd_hui: date
+    chantier: Chantier, acteur: Acteur, resume: ResumeEtapesChantier, aujourd_hui: date
 ) -> ChantierVue:
     """Construit la vue d'un chantier pour un acteur, d'après les règles du domaine.
 

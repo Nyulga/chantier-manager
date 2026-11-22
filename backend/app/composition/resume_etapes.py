@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from app.chantiers.application.ports import ResumeEtapes
+from app.chantiers.application.ports import ResumeEtapesChantier
 from app.etapes.application import CalculerResumesEtapes
 
 
@@ -18,10 +18,10 @@ class ResumeEtapesDepuisEtapes:
     def __init__(self, calcul: CalculerResumesEtapes) -> None:
         self._calcul = calcul
 
-    def executer(self, chantier_ids: Sequence[UUID]) -> dict[UUID, ResumeEtapes]:
+    def executer(self, chantier_ids: Sequence[UUID]) -> dict[UUID, ResumeEtapesChantier]:
         """Renvoie le résumé de chaque chantier demandé, dans le type de chantiers."""
         return {
-            chantier_id: ResumeEtapes(
+            chantier_id: ResumeEtapesChantier(
                 avancement=resume.avancement,
                 validees=resume.validees,
                 total=resume.total,

@@ -16,6 +16,11 @@ from app.shared.domain.erreurs import ValeurInvalideError
 
 PREMIER_ORDRE = 1
 VERSION_INITIALE = 1
+# Plafond du bloc « À valider » du tableau de bord. La démonstration est publique
+# et ouverte en écriture : sans plafond, n'importe qui pourrait faire grossir sans
+# limite la lecture et la réponse. Le chef traite d'abord les plus anciennes, ce
+# sont donc elles qui sont gardées (`trier_par_signalement`).
+LIMITE_A_VALIDER = 50
 
 
 @dataclass

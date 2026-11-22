@@ -10,9 +10,9 @@ from app.chantiers.domain.adresse import Adresse
 from app.chantiers.domain.chantier import Chantier, FicheChantier
 from app.chantiers.domain.montant import Montant
 from app.chantiers.domain.politiques import peut_creer_chantier
+from app.shared.application.acces import exiger_acces
 from app.shared.application.ports import GenerateurId, Horloge
 from app.shared.domain.acteur import Acteur
-from app.shared.domain.erreurs import AccesRefuseError
 
 
 @dataclass(frozen=True)
@@ -52,8 +52,9 @@ class CreerChantier:
     def executer(self, commande: NouveauChantier, acteur: Acteur) -> ChantierVue:
         """Crée le chantier et renvoie sa vue pour l'acteur."""
         # AccesRefuseError, et non NonTrouveError : il n'y a ici aucun chantier existant à cacher.
-        if not peut_creer_chantier(acteur):
-            raise AccesRefuseError("Seul un chef peut créer un chantier.")
+        exiger_acces(
+            autorise=peut_creer_chantier(acteur), message="Seul un chef peut créer un chantier."
+        )
         fiche = FicheChantier(
             nom=commande.nom,
             adresse=Adresse(commande.voie, commande.code_postal, commande.ville),

@@ -4,8 +4,8 @@ from uuid import UUID
 
 from app.chantiers.application.ports import UnitOfWorkChantiers
 from app.chantiers.domain.politiques import peut_ajouter_etape
+from app.shared.application.acces import exiger_acces
 from app.shared.domain.acteur import Acteur
-from app.shared.domain.erreurs import AccesRefuseError
 
 
 class AutoriserAjoutEtape:
@@ -28,5 +28,7 @@ class AutoriserAjoutEtape:
         """Ne renvoie rien si l'ajout est permis ; lève une erreur métier sinon."""
         with self._uow:
             self._uow.chantiers.obtenir(chantier_id)
-        if not peut_ajouter_etape(acteur):
-            raise AccesRefuseError("Seul un chef peut ajouter une étape à un chantier.")
+        exiger_acces(
+            autorise=peut_ajouter_etape(acteur),
+            message="Seul un chef peut ajouter une étape à un chantier.",
+        )

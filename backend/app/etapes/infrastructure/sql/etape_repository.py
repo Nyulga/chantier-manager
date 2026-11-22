@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.etapes.domain.cycle import StatutEtape
@@ -49,13 +49,32 @@ class SqlEtapeRepository:
         )
         return list(self._session.scalars(requete))
 
-    def lister_par_statut(self, statut: StatutEtape) -> list[Etape]:
-        """Renvoie les étapes à ce statut, tous chantiers confondus, historique compris.
+    def lister_a_valider(self, limite: int) -> list[Etape]:
+        """Renvoie au plus `limite` étapes à valider, celles qui attendent depuis le plus longtemps.
 
-        Le tri par identifiant rend la lecture déterministe ; l'ordre utile à
-        l'affichage est une règle du domaine, appliquée par le cas d'usage.
+        La limite est appliquée par la base (`LIMIT`) : il faut donc que la base trie
+        comme `trier_par_signalement`, sans quoi elle garderait d'autres étapes que
+        celles que le domaine placerait en tête. La date de signalement est calculée
+        comme `Etape.signalee_le` : la plus récente entrée d'historique vers
+        « Terminée (à valider) », par une sous-requête groupée. Une étape sans
+        signalement connu passe en tête (`NULLS FIRST`, explicite car PostgreSQL met
+        les valeurs nulles en dernier), puis l'identifiant départage. L'historique
+        complet est ensuite chargé par la requête groupée de `lazy="selectin"`.
         """
-        requete = select(Etape).where(TABLE_ETAPES.c.statut == statut).order_by(TABLE_ETAPES.c.id)
+        historique = TABLE_HISTORIQUE_ETAPES.c
+        signalements = (
+            select(historique.etape_id, func.max(historique.date).label("signalee_le"))
+            .where(historique.nouveau_statut == StatutEtape.TERMINEE_A_VALIDER)
+            .group_by(historique.etape_id)
+            .subquery()
+        )
+        requete = (
+            select(Etape)
+            .outerjoin(signalements, signalements.c.etape_id == TABLE_ETAPES.c.id)
+            .where(TABLE_ETAPES.c.statut == StatutEtape.TERMINEE_A_VALIDER)
+            .order_by(signalements.c.signalee_le.asc().nulls_first(), TABLE_ETAPES.c.id)
+            .limit(limite)
+        )
         return list(self._session.scalars(requete))
 
     def lister_dernieres_transitions(self, limite: int) -> list[tuple[Etape, HistoriqueEtape]]:

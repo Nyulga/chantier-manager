@@ -12,12 +12,15 @@ from tests.unitaires.etapes.fabriques import (
     ID_CHANTIER,
     INSTANT,
     heures_apres,
+    id_etape,
     une_etape,
     une_etape_signalee,
 )
 
 OUVRIER = Acteur(Role.OUVRIER)
 VERSION_APRES_UNE_TRANSITION = 2
+# Assez large pour ne rien couper : les tests de la limite en passent une plus petite.
+LIMITE = 10
 
 
 def enregistrer(uow: UnitOfWorkEtapes, *etapes: Etape) -> None:
@@ -121,7 +124,7 @@ def test_aucun_chantier_demande_donne_une_liste_vide(uow_etapes: UnitOfWorkEtape
     assert etapes == []
 
 
-def test_les_etapes_sont_listees_par_statut_tous_chantiers_confondus(
+def test_les_etapes_a_valider_sont_listees_tous_chantiers_confondus(
     uow_etapes: UnitOfWorkEtapes,
 ) -> None:
     signalee = une_etape_signalee(heures_apres(1), ordre=1)
@@ -135,28 +138,88 @@ def test_les_etapes_sont_listees_par_statut_tous_chantiers_confondus(
     )
 
     with uow_etapes:
-        etapes = uow_etapes.etapes.lister_par_statut(StatutEtape.TERMINEE_A_VALIDER)
+        etapes = uow_etapes.etapes.lister_a_valider(LIMITE)
 
     assert {etape.id for etape in etapes} == {signalee.id, signalee_ailleurs.id}
 
 
-def test_une_etape_listee_par_statut_garde_son_historique(uow_etapes: UnitOfWorkEtapes) -> None:
+def test_une_etape_a_valider_garde_son_historique(uow_etapes: UnitOfWorkEtapes) -> None:
     signalee = une_etape_signalee(heures_apres(1))
     enregistrer(uow_etapes, signalee)
 
     with uow_etapes:
-        [relue] = uow_etapes.etapes.lister_par_statut(StatutEtape.TERMINEE_A_VALIDER)
+        [relue] = uow_etapes.etapes.lister_a_valider(LIMITE)
 
     assert relue.signalee_le() == heures_apres(1)
 
 
-def test_aucune_etape_a_ce_statut_donne_une_liste_vide(uow_etapes: UnitOfWorkEtapes) -> None:
-    enregistrer(uow_etapes, une_etape())
+def test_aucune_etape_a_valider_donne_une_liste_vide(uow_etapes: UnitOfWorkEtapes) -> None:
+    enregistrer(uow_etapes, une_etape(), une_etape(StatutEtape.VALIDEE, ordre=2))
 
     with uow_etapes:
-        etapes = uow_etapes.etapes.lister_par_statut(StatutEtape.VALIDEE)
+        etapes = uow_etapes.etapes.lister_a_valider(LIMITE)
 
     assert etapes == []
+
+
+def test_la_limite_garde_les_etapes_signalees_depuis_le_plus_longtemps(
+    uow_etapes: UnitOfWorkEtapes,
+) -> None:
+    enregistrer(
+        uow_etapes,
+        une_etape_signalee(heures_apres(9), ordre=1),
+        une_etape_signalee(heures_apres(3), ordre=2),
+        une_etape_signalee(heures_apres(6), ordre=1, chantier_id=AUTRE_CHANTIER),
+    )
+
+    with uow_etapes:
+        etapes = uow_etapes.etapes.lister_a_valider(2)
+
+    assert {etape.id for etape in etapes} == {id_etape(2), id_etape(1, AUTRE_CHANTIER)}
+
+
+def test_la_limite_compte_le_dernier_signalement_d_une_etape_refusee(
+    uow_etapes: UnitOfWorkEtapes,
+) -> None:
+    resignalee = une_etape_signalee(heures_apres(1), ordre=1)
+    resignalee.appliquer(ActionEtape.REFUSER, Acteur(Role.CHEF), heures_apres(2), "À reprendre")
+    resignalee.appliquer(ActionEtape.SIGNALER_TERMINEE, OUVRIER, heures_apres(8))
+    enregistrer(uow_etapes, resignalee, une_etape_signalee(heures_apres(5), ordre=2))
+
+    with uow_etapes:
+        etapes = uow_etapes.etapes.lister_a_valider(1)
+
+    assert [etape.id for etape in etapes] == [id_etape(2)]
+
+
+def test_a_signalement_egal_la_limite_garde_le_plus_petit_identifiant(
+    uow_etapes: UnitOfWorkEtapes,
+) -> None:
+    enregistrer(
+        uow_etapes,
+        une_etape_signalee(heures_apres(4), ordre=2),
+        une_etape_signalee(heures_apres(4), ordre=1),
+    )
+
+    with uow_etapes:
+        etapes = uow_etapes.etapes.lister_a_valider(1)
+
+    assert [etape.id for etape in etapes] == [id_etape(1)]
+
+
+def test_la_limite_garde_d_abord_une_etape_a_valider_sans_signalement_connu(
+    uow_etapes: UnitOfWorkEtapes,
+) -> None:
+    enregistrer(
+        uow_etapes,
+        une_etape_signalee(heures_apres(1), ordre=1),
+        une_etape(StatutEtape.TERMINEE_A_VALIDER, ordre=2),
+    )
+
+    with uow_etapes:
+        etapes = uow_etapes.etapes.lister_a_valider(1)
+
+    assert [etape.id for etape in etapes] == [id_etape(2)]
 
 
 def test_sans_historique_il_n_y_a_aucune_transition(uow_etapes: UnitOfWorkEtapes) -> None:

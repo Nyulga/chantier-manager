@@ -1,5 +1,6 @@
 """Routes du tableau de bord : étapes à valider, activité récente, compteurs et délai."""
 
+from collections.abc import Callable
 from http import HTTPStatus
 from typing import Any
 
@@ -15,6 +16,8 @@ from tests.integration.etapes.scenario import (
 )
 
 LIMITE_PAR_DEFAUT = 10
+# Le plafond de la liste « À valider » fixé par le domaine (`LIMITE_A_VALIDER`).
+LIMITE_A_VALIDER = 50
 VERSION_APRES_SIGNALEMENT = 3
 ETAPES_POUR_DEPASSER_LA_LIMITE = 6
 ECHEANCE_LOINTAINE = {**CHANTIER_A_CREER, "echeance": "2999-12-31"}
@@ -33,6 +36,15 @@ def activite(client: TestClient, parametres: dict[str, int] | None = None) -> li
     assert reponse.status_code == HTTPStatus.OK
     liste: list[dict[str, Any]] = reponse.json()
     return liste
+
+
+def etapes_signalees_dans_l_ordre(client: TestClient, nombre: int) -> list[str]:
+    """Crée `nombre` étapes sur un chantier, et les signale terminées dans l'ordre de création."""
+    chantier_id = creer_chantier(client)
+    etapes = [ajouter_etape(client, chantier_id) for _ in range(nombre)]
+    for etape_id in etapes:
+        signaler_terminee(client, etape_id)
+    return etapes
 
 
 def test_sans_etape_signalee_la_liste_a_valider_est_vide(client: TestClient) -> None:
@@ -78,6 +90,16 @@ def test_les_etapes_a_valider_vont_de_la_plus_anciennement_signalee_a_la_plus_re
     titres = [etape["titre"] for etape in a_valider(client)]
 
     assert titres == ["Seconde", "Première"]
+
+
+def test_la_liste_a_valider_est_plafonnee_et_garde_les_plus_anciennes(
+    client: TestClient,
+) -> None:
+    etapes = etapes_signalees_dans_l_ordre(client, LIMITE_A_VALIDER + 1)
+
+    identifiants = [etape["id"] for etape in a_valider(client)]
+
+    assert identifiants == etapes[:LIMITE_A_VALIDER]
 
 
 def test_un_ouvrier_ne_peut_pas_lister_les_etapes_a_valider(client: TestClient) -> None:
@@ -146,8 +168,17 @@ def test_une_limite_hors_bornes_donne_un_422(client: TestClient, limite: str) ->
     assert reponse.headers["content-type"] == "application/problem+json"
 
 
+def chantier_de_la_liste(client: TestClient, _chantier_id: str) -> Any:
+    return client.get("/api/chantiers", headers=OUVRIER).json()[0]
+
+
+def chantier_du_detail(client: TestClient, chantier_id: str) -> Any:
+    return client.get(f"/api/chantiers/{chantier_id}", headers=CHEF).json()
+
+
+@pytest.mark.parametrize("lire_chantier", [chantier_de_la_liste, chantier_du_detail])
 def test_les_compteurs_d_etapes_sont_dans_la_liste_et_le_detail_des_chantiers(
-    client: TestClient,
+    client: TestClient, lire_chantier: Callable[[TestClient, str], Any]
 ) -> None:
     chantier_id = creer_chantier(client)
     validee, signalee, _ = (ajouter_etape(client, chantier_id) for _ in range(3))
@@ -155,12 +186,10 @@ def test_les_compteurs_d_etapes_sont_dans_la_liste_et_le_detail_des_chantiers(
     transitionner(client, validee, "valider", CHEF)
     signaler_terminee(client, signalee)
 
-    liste = client.get("/api/chantiers", headers=OUVRIER).json()[0]
-    detail = client.get(f"/api/chantiers/{chantier_id}", headers=CHEF).json()
+    chantier = lire_chantier(client, chantier_id)
 
-    for chantier in (liste, detail):
-        assert (chantier["etapes_validees"], chantier["etapes_total"]) == (1, 3)
-        assert chantier["etapes_a_valider"] == 1
+    assert (chantier["etapes_validees"], chantier["etapes_total"]) == (1, 3)
+    assert chantier["etapes_a_valider"] == 1
 
 
 def test_un_chantier_sans_etape_a_des_compteurs_nuls(client: TestClient) -> None:

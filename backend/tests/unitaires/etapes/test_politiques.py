@@ -2,7 +2,7 @@ from collections.abc import Callable
 
 import pytest
 
-from app.etapes.domain.politiques import peut_lister_etapes_a_valider
+from app.etapes.domain.politiques import peut_consulter_activite, peut_lister_etapes_a_valider
 from app.shared.domain.acteur import Acteur, Role
 
 Politique = Callable[[Acteur], bool]
@@ -12,6 +12,8 @@ Politique = Callable[[Acteur], bool]
 MATRICE: list[tuple[Politique, Role, bool]] = [
     (peut_lister_etapes_a_valider, Role.CHEF, True),
     (peut_lister_etapes_a_valider, Role.OUVRIER, False),
+    (peut_consulter_activite, Role.CHEF, True),
+    (peut_consulter_activite, Role.OUVRIER, True),
 ]
 
 

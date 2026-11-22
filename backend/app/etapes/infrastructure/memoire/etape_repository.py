@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from app.etapes.domain.cycle import StatutEtape
-from app.etapes.domain.etape import Etape, HistoriqueEtape
+from app.etapes.domain.etape import Etape, HistoriqueEtape, trier_par_signalement
 from app.shared.domain.erreurs import NonTrouveError
 from app.shared.infrastructure.memoire.unit_of_work import MemoireEntrepot
 
@@ -33,10 +33,14 @@ class MemoireEtapeRepository(MemoireEntrepot[Etape]):
         etapes = [etape for etape in self.elements.values() if etape.chantier_id in demandes]
         return sorted(etapes, key=lambda etape: etape.ordre)
 
-    def lister_par_statut(self, statut: StatutEtape) -> list[Etape]:
-        """Renvoie les étapes à ce statut, dans l'ordre de leur identifiant."""
-        etapes = [etape for etape in self.elements.values() if etape.statut is statut]
-        return sorted(etapes, key=lambda etape: etape.id)
+    def lister_a_valider(self, limite: int) -> list[Etape]:
+        """Renvoie les `limite` premières étapes à valider, selon le tri du domaine."""
+        etapes = [
+            etape
+            for etape in self.elements.values()
+            if etape.statut is StatutEtape.TERMINEE_A_VALIDER
+        ]
+        return trier_par_signalement(etapes)[:limite]
 
     def lister_dernieres_transitions(self, limite: int) -> list[tuple[Etape, HistoriqueEtape]]:
         """Renvoie les `limite` entrées d'historique les plus récentes, avec leur étape.
