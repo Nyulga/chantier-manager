@@ -1,13 +1,14 @@
 // Formulaire de création d'un chantier : les champs de saisie et le bouton d'envoi.
 import { useState } from 'react';
 
-import { Bouton, Champ, Formulaire } from '@/ui';
+import { Alerte, Bouton, Champ, Formulaire } from '@/ui';
 
 import type { SaisieChantier } from '../services/useCreerChantier';
 
 type FormulaireChantierProps = {
   readonly onSoumettre: (saisie: SaisieChantier) => void;
   readonly enCours: boolean;
+  readonly erreur?: string | undefined;
 };
 
 type DescriptionChamp = {
@@ -41,9 +42,10 @@ const SAISIE_VIDE: SaisieChantier = {
 
 /**
  * Formulaire contrôlé. Il ne vérifie rien : la saisie part telle quelle, et c'est l'API qui
- * répond 422 si elle est invalide (le message s'affiche dans la page).
+ * répond 422 si elle est invalide. Le message s'affiche juste au-dessus du bouton d'envoi : sur
+ * mobile, le formulaire est long et une alerte en haut de page resterait hors de l'écran.
  */
-export function FormulaireChantier({ onSoumettre, enCours }: FormulaireChantierProps) {
+export function FormulaireChantier({ onSoumettre, enCours, erreur }: FormulaireChantierProps) {
   const [saisie, setSaisie] = useState<SaisieChantier>(SAISIE_VIDE);
 
   return (
@@ -64,6 +66,7 @@ export function FormulaireChantier({ onSoumettre, enCours }: FormulaireChantierP
           }}
         />
       ))}
+      {erreur !== undefined && <Alerte variante="erreur">{erreur}</Alerte>}
       <Bouton type="submit" disabled={enCours}>
         Créer le chantier
       </Bouton>

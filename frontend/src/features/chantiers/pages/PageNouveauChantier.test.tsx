@@ -70,10 +70,12 @@ it('affiche l’erreur de l’API et reste sur le formulaire', async () => {
 
   remplirEtEnvoyer();
 
-  expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Les données envoyées sont invalides.',
-  );
-  expect(screen.getByRole('button', { name: 'Créer le chantier' })).toBeEnabled();
+  const alerte = await screen.findByRole('alert');
+  const bouton = screen.getByRole('button', { name: 'Créer le chantier' });
+  expect(alerte).toHaveTextContent('Les données envoyées sont invalides.');
+  // Collée au bouton d'envoi : sur mobile, elle est visible au moment où l'on appuie dessus.
+  expect(bouton.previousElementSibling).toBe(alerte);
+  expect(bouton).toBeEnabled();
 });
 
 it('n’a aucun défaut d’accessibilité détectable par axe', async () => {

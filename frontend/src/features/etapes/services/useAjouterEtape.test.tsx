@@ -34,7 +34,7 @@ it('envoie le titre à l’API et renvoie l’étape créée', async () => {
   expect(corps).toEqual({ titre: 'Fondations' });
 });
 
-it('invalide la liste, le chantier (avancement) et ses étapes', async () => {
+it('invalide la liste et le chantier (avancement), dont les étapes dépendent par leur clé', async () => {
   serveur.use(
     http.post(`/api/chantiers/${CHANTIER}/etapes`, () =>
       HttpResponse.json(etapeDeTest(), { status: 201 }),
@@ -51,11 +51,10 @@ it('invalide la liste, le chantier (avancement) et ses étapes', async () => {
   });
 
   await waitFor(() => {
-    expect(invalider).toHaveBeenCalledTimes(3);
+    expect(invalider).toHaveBeenCalledTimes(2);
   });
   expect(invalider).toHaveBeenCalledWith({ queryKey: ['chantiers', 'liste'] });
-  expect(invalider).toHaveBeenCalledWith({ queryKey: ['chantiers', CHANTIER] });
-  expect(invalider).toHaveBeenCalledWith({ queryKey: ['chantiers', CHANTIER, 'etapes'] });
+  expect(invalider).toHaveBeenCalledWith({ queryKey: ['chantiers', 'detail', CHANTIER] });
 });
 
 it('expose le message de l’API quand l’ajout est refusé', async () => {

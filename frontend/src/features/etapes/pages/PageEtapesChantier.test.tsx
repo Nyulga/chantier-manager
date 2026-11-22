@@ -128,9 +128,35 @@ it('affiche l’erreur 422 de l’API quand le commentaire du refus manque', asy
   fireEvent.click(await screen.findByRole('button', { name: 'Refuser : Fondations' }));
   fireEvent.click(screen.getByRole('button', { name: 'Confirmer le refus' }));
 
-  expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Le commentaire du refus est obligatoire.',
+  // L'erreur est sous le champ du motif (visible sur mobile), pas dans une alerte en haut de page.
+  await waitFor(() => {
+    expect(screen.getByLabelText('Motif du refus')).toHaveAccessibleDescription(
+      'Le commentaire du refus est obligatoire.',
+    );
+  });
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+it('affiche l’erreur d’une autre action (409) dans la carte de l’étape concernée', async () => {
+  serveur.use(
+    http.post('/api/etapes/:id/transitions', () =>
+      HttpResponse.json(
+        { status: 409, detail: 'Cette étape a déjà changé de statut.' },
+        { status: 409, ...PROBLEME },
+      ),
+    ),
   );
+  afficherPage([
+    etapeDeTest({ id: 'e1', titre: 'Fondations' }),
+    etapeDeTest({ id: 'e2', titre: 'Gros œuvre', actions_permises: [] }),
+  ]);
+
+  fireEvent.click(await screen.findByRole('button', { name: 'Démarrer : Fondations' }));
+
+  const alerte = await screen.findByRole('alert');
+  expect(alerte).toHaveTextContent('Cette étape a déjà changé de statut.');
+  expect(screen.getAllByRole('alert')).toHaveLength(1);
+  expect(alerte.parentElement).toHaveTextContent('Fondations');
 });
 
 it('permet d’annuler le refus', async () => {

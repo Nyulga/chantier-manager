@@ -11,7 +11,7 @@ type ZoneTexteProps = {
   readonly libelle: string;
   readonly valeur: string;
   readonly onChange: (valeur: string) => void;
-  readonly erreur?: string;
+  readonly erreur?: string | undefined;
   readonly requis?: boolean;
 };
 

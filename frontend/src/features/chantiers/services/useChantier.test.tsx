@@ -42,3 +42,18 @@ it('expose le message de l’API quand le chantier n’existe pas', async () => 
     expect(result.current.error?.message).toBe('Chantier introuvable.');
   });
 });
+
+it('ne confond pas le chantier « liste » avec la liste des chantiers en cache', async () => {
+  const client = creerClientRequetes();
+  client.setQueryData(['chantiers', 'liste'], []);
+  const chantier = chantierDeTest({ id: 'liste' });
+  serveur.use(http.get('/api/chantiers/liste', () => HttpResponse.json(chantier)));
+
+  const { result } = renderHook(() => useChantier('liste'), { wrapper: creerEnveloppe(client) });
+
+  // Avant la réponse de l'API, rien ne doit être pris pour le chantier (surtout pas le tableau).
+  expect(result.current.data).toBeUndefined();
+  await waitFor(() => {
+    expect(result.current.data).toEqual(chantier);
+  });
+});

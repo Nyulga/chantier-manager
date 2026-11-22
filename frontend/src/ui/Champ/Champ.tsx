@@ -14,7 +14,7 @@ type ChampProps = {
   readonly valeur: string;
   readonly onChange: (valeur: string) => void;
   readonly type?: TypeChamp;
-  readonly erreur?: string;
+  readonly erreur?: string | undefined;
   readonly requis?: boolean;
 };
 

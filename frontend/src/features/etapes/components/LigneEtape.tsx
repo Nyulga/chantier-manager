@@ -1,7 +1,7 @@
 // Ligne d'une étape : titre, statut et un bouton par action que l'API permet.
 import { useState } from 'react';
 
-import { BadgeStatut, Bouton, Carte, Titre } from '@/ui';
+import { Alerte, BadgeStatut, Bouton, Carte, Titre } from '@/ui';
 
 import type { ActionEtape, Etape } from '../services/useEtapes';
 import type { DemandeTransition } from '../services/useTransitionEtape';
@@ -10,8 +10,13 @@ import { FormulaireRefus } from './FormulaireRefus';
 type LigneEtapeProps = {
   readonly etape: Etape;
   readonly enCours: boolean;
+  /** Erreur de l'API pour cette étape, montrée dans sa carte (visible sans défiler sur mobile). */
+  readonly erreur?: string | undefined;
   /** `apresSucces` est appelé quand l'API a accepté la demande. */
-  readonly onAction: (demande: Omit<DemandeTransition, 'etapeId'>, apresSucces: () => void) => void;
+  readonly onAction: (
+    demande: Omit<DemandeTransition, 'etapeId' | 'chantierId'>,
+    apresSucces: () => void,
+  ) => void;
 };
 
 const LIBELLES: Record<ActionEtape, string> = {
@@ -25,8 +30,11 @@ const LIBELLES: Record<ActionEtape, string> = {
  * Seules les `actions_permises` de l'API ont un bouton : le frontend ne déduit aucun droit du
  * statut ni du profil. « Refuser » ouvre d'abord la saisie du commentaire.
  */
-export function LigneEtape({ etape, enCours, onAction }: LigneEtapeProps) {
+export function LigneEtape({ etape, enCours, erreur, onAction }: LigneEtapeProps) {
   const [refusOuvert, setRefusOuvert] = useState(false);
+  // Le formulaire ne reste ouvert que tant que l'API permet de refuser : si l'étape a changé
+  // entre-temps (autre utilisateur, 409), il disparaît au lieu d'offrir une action devenue interdite.
+  const formulaireRefusVisible = refusOuvert && etape.actions_permises.includes('refuser');
 
   function choisir(action: ActionEtape): void {
     if (action === 'refuser') {
@@ -53,9 +61,10 @@ export function LigneEtape({ etape, enCours, onAction }: LigneEtapeProps) {
           {LIBELLES[action]}
         </Bouton>
       ))}
-      {refusOuvert && (
+      {formulaireRefusVisible && (
         <FormulaireRefus
           enCours={enCours}
+          erreur={erreur}
           onAnnuler={() => {
             setRefusOuvert(false);
           }}
@@ -65,6 +74,9 @@ export function LigneEtape({ etape, enCours, onAction }: LigneEtapeProps) {
             });
           }}
         />
+      )}
+      {erreur !== undefined && !formulaireRefusVisible && (
+        <Alerte variante="erreur">{erreur}</Alerte>
       )}
     </Carte>
   );

@@ -5,7 +5,8 @@ import { clesRequetes } from '@/api/clesRequetes';
 
 /**
  * Invalide ce qu'une modification d'étape peut avoir changé : la liste des chantiers et le
- * chantier concerné (leur avancement est calculé par l'API), et la liste de ses étapes.
+ * chantier concerné (leur avancement est calculé par l'API). Les étapes du chantier sont relues
+ * avec lui : leur clé commence par celle du chantier, l'invalidation par préfixe les couvre.
  */
 export async function rafraichirChantier(
   clientRequetes: QueryClient,
@@ -14,6 +15,5 @@ export async function rafraichirChantier(
   await Promise.all([
     clientRequetes.invalidateQueries({ queryKey: clesRequetes.listeChantiers() }),
     clientRequetes.invalidateQueries({ queryKey: clesRequetes.chantier(chantierId) }),
-    clientRequetes.invalidateQueries({ queryKey: clesRequetes.etapes(chantierId) }),
   ]);
 }

@@ -43,9 +43,13 @@ test('le chef et l’ouvrier font avancer un chantier jusqu’à 50 %', async ({
   await page.getByRole('button', { name: 'Signaler terminée : Fondations' }).click();
   await expect(page.getByText('Terminée (à valider)')).toBeVisible();
   await expect(page.getByRole('button', { name: /^Valider/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Refuser/ })).toHaveCount(0);
 
   await choisirProfil(page, 'Chef');
   await page.getByRole('button', { name: 'Refuser : Fondations' }).click();
+  // Sans commentaire, l'API refuse : son message apparaît sous le champ du motif.
+  await page.getByRole('button', { name: 'Confirmer le refus' }).click();
+  await expect(page.getByLabel('Motif du refus')).toHaveAccessibleDescription(/\S/);
   await page.getByLabel('Motif du refus').fill('Le coffrage est à reprendre.');
   await page.getByRole('button', { name: 'Confirmer le refus' }).click();
   await expect(page.getByText('En cours')).toBeVisible();
@@ -61,6 +65,13 @@ test('le chef et l’ouvrier font avancer un chantier jusqu’à 50 %', async ({
     '50',
   );
   await expect(page.getByText('50 %')).toBeVisible();
+
+  // La liste relit l'avancement : la carte du chantier affiche aussi 50 %.
+  await page.getByRole('link', { name: 'Retour aux chantiers' }).click();
+  await expect(page.getByRole('progressbar', { name: `Avancement de ${nom}` })).toHaveAttribute(
+    'aria-valuenow',
+    '50',
+  );
 });
 
 test('la page 404 propose de revenir à la liste', async ({ page }) => {

@@ -10,14 +10,17 @@ import type { ActionEtape } from './useEtapes';
 /** Demande de transition : le commentaire n'est utile qu'au refus, où l'API l'exige (422 sinon). */
 export type DemandeTransition = {
   readonly etapeId: string;
+  /** Chantier de l'étape : il sert à relire ses données même quand l'API répond par une erreur. */
+  readonly chantierId: string;
   readonly action: ActionEtape;
   readonly commentaire?: string;
 };
 
 /**
  * Fait changer une étape de statut. C'est l'API qui décide si la transition est permise : le hook
- * transmet la demande sans rien vérifier. L'étape renvoyée donne le chantier à rafraîchir
- * (validation et refus changent son avancement).
+ * transmet la demande sans rien vérifier. Le chantier et ses étapes sont relus après chaque
+ * demande, réussie ou non : après un conflit (409), parce qu'un autre utilisateur a agi,
+ * l'écran ne doit pas rester périmé.
  */
 export function useTransitionEtape() {
   const clientRequetes = useQueryClient();
@@ -33,6 +36,6 @@ export function useTransitionEtape() {
       }
       return data;
     },
-    onSuccess: (etape) => rafraichirChantier(clientRequetes, etape.chantier_id),
+    onSettled: (_etape, _erreur, demande) => rafraichirChantier(clientRequetes, demande.chantierId),
   });
 }

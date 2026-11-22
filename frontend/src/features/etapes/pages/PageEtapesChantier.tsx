@@ -30,17 +30,21 @@ export function PageEtapesChantier() {
   const ajout = useAjouterEtape(chantierId);
   const transition = useTransitionEtape();
 
+  const erreurTransition = transition.isError
+    ? { etapeId: transition.variables.etapeId, message: transition.error.message }
+    : undefined;
+
   return (
     <Pile>
       <BarreAvancement libelle="Avancement du chantier" pourcentage={avancement} />
       <Titre niveau={2}>Étapes</Titre>
       {etapes.isPending && <Texte variante="secondaire">Chargement des étapes…</Texte>}
       {etapes.isError && <Alerte variante="erreur">{etapes.error.message}</Alerte>}
-      {transition.isError && <Alerte variante="erreur">{transition.error.message}</Alerte>}
       {etapes.data !== undefined && (
         <ListeEtapes
           etapes={etapes.data}
           enCours={transition.isPending}
+          erreur={erreurTransition}
           onAction={(demande, apresSucces) => {
             transition.mutate(demande, { onSuccess: apresSucces });
           }}
