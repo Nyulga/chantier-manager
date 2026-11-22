@@ -29,6 +29,7 @@
 | **S1 – Socle allégé** | Squelette backend et frontend, outils qualité essentiels (ruff, mypy, import-linter, ESLint, Vitest, Playwright), thème Balise, `/api/health`, `justfile`, Docker Compose de développement (PostgreSQL), pre-commit, CI simple (lint, typage, architecture, tests) | `dev-socle` (Sonnet, élevé) | — |
 | **S2 – Chantiers et étapes** | Domaine `Chantier`, `Etape` (table des transitions), `HistoriqueEtape`, `Avancement` ; cas d'usage ; noyau partagé minimal (UoW, horloge, identifiants, erreurs) ; repositories SQL et migrations ; API ; écrans liste, création, détail, étapes et validation, avec le sélecteur de profil ; e2e | `dev-metier` (Opus, élevé), `dev-donnees`, `dev-api`, `dev-frontend` | S1 |
 | **S3 – Mise en ligne** | Images de production, `docker-compose.prod.yml`, Caddy existant du serveur (HTTPS, en-têtes, limite de taille) ; pare-feu, fail2ban et sauvegarde chiffrée en phase 2 | `dev-socle` (Opus, élevé) | S2 |
+| **S4 – Tableau de bord** | Page d'accueil de la maquette Balise : « À valider », cartes de chantier avec compteurs et délai, activité récente ; Équipe, Invitation et Recherche affichées « Bientôt » (issue #28, journal `journal/lot-S4.md`) | `dev-metier`, `dev-donnees`, `dev-frontend` | S2 |
 
 Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `conformite` et `securite`, puis PR proposée.
 

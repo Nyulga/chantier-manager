@@ -28,7 +28,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## État du projet
 
-**Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S3). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
+**Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S4). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
 
 
 Les lots S1 (socle) et S2 (chantiers et étapes) sont livrés ; la base est **SQLite** pour l'instant. Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
