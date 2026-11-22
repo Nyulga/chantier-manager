@@ -1,3 +1,5 @@
+"""Cas d'usage public `CalculerResumesEtapes` : un résumé par chantier demandé."""
+
 from uuid import UUID
 
 from app.etapes.application.vues import ResumeEtapesVue

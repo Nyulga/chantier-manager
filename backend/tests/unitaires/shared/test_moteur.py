@@ -1,3 +1,5 @@
+"""Moteur SQLAlchemy : le réglage propre à SQLite n'est pas appliqué aux autres bases."""
+
 from sqlalchemy import event
 
 from app.shared.infrastructure.sql.moteur import _activer_cles_etrangeres, creer_moteur

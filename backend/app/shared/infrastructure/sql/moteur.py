@@ -11,8 +11,9 @@ def _activer_cles_etrangeres(
 ) -> None:
     """Active les clés étrangères de SQLite, qu'il ignore par défaut.
 
-    Sans cela, une étape pourrait référencer un chantier inexistant en SQLite alors
-    que PostgreSQL le refuserait : les deux bases doivent se comporter pareil.
+    Sans cela, une ligne pourrait référencer une ligne inexistante d'une autre table
+    en SQLite, alors que PostgreSQL le refuserait : les deux bases doivent se
+    comporter pareil.
     """
     curseur = connexion.cursor()
     curseur.execute("PRAGMA foreign_keys=ON")
@@ -35,8 +36,8 @@ def creer_usine_sessions(moteur: Engine) -> sessionmaker[Session]:
     """Crée l'usine de sessions des Unit of Work.
 
     `expire_on_commit=False` : après la validation, les objets restent lisibles.
-    Plusieurs cas d'usage, comme `CreerChantier`, construisent en effet leur vue
-    après être sortis de la transaction, une fois la session fermée. Sans cette
+    Plusieurs cas d'usage construisent en effet leur vue après être sortis de la
+    transaction, une fois la session fermée. Sans cette
     option, la validation expirerait les attributs des objets, et les relire sur
     une session fermée lèverait une erreur.
     """

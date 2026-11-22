@@ -1,3 +1,5 @@
+"""Cas d'usage `ListerActiviteRecente` : fil d'activité borné, du plus récent au plus ancien."""
+
 from uuid import UUID
 
 import pytest

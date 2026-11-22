@@ -16,7 +16,7 @@ from tests.integration.etapes.scenario import (
 )
 
 LIMITE_PAR_DEFAUT = 10
-# Le plafond de la liste « À valider » fixé par le domaine (`LIMITE_A_VALIDER`).
+# Le plafond de la liste « À valider » fixé par la couche application (`LIMITE_A_VALIDER`).
 LIMITE_A_VALIDER = 50
 VERSION_APRES_SIGNALEMENT = 3
 ETAPES_POUR_DEPASSER_LA_LIMITE = 6

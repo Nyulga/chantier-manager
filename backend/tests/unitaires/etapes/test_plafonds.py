@@ -1,8 +1,8 @@
-"""Limite du fil d'activité : un nombre d'entrées borné."""
+"""Plafonds de volume du tableau de bord : la limite du fil d'activité est bornée."""
 
 import pytest
 
-from app.etapes.domain.activite import (
+from app.etapes.application.plafonds import (
     LIMITE_ACTIVITE_MAX,
     LIMITE_ACTIVITE_MIN,
     LIMITE_ACTIVITE_PAR_DEFAUT,

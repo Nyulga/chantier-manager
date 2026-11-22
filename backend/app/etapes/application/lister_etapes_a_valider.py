@@ -1,8 +1,9 @@
 """Cas d'usage : lister les étapes qui attendent la décision d'un chef."""
 
+from app.etapes.application.plafonds import LIMITE_A_VALIDER
 from app.etapes.application.ports import UnitOfWorkEtapes
 from app.etapes.application.vues import EtapeAValiderVue, vue_etape_a_valider
-from app.etapes.domain.etape import LIMITE_A_VALIDER, trier_par_signalement
+from app.etapes.domain.etape import trier_par_signalement
 from app.etapes.domain.politiques import peut_lister_etapes_a_valider
 from app.shared.application.acces import exiger_acces
 from app.shared.domain.acteur import Acteur
@@ -14,8 +15,10 @@ class ListerEtapesAValider:
     C'est le bloc « À valider » du tableau de bord : les étapes y sont triées de la
     plus anciennement signalée à la plus récente, selon la règle du domaine. La
     liste est plafonnée à `LIMITE_A_VALIDER` étapes, les plus anciennes : ce sont
-    celles que le chef doit traiter d'abord. Dans le squelette, elle couvre tous
-    les chantiers ; en phase 2, seulement ceux du chef.
+    celles que le chef doit traiter d'abord. Ce plafond est un choix technique,
+    qui borne le coût de la lecture, et non une règle métier (`plafonds.py`).
+    Dans le squelette, elle couvre tous les chantiers ; en phase 2, seulement ceux
+    du chef.
     Le droit est vérifié avant toute lecture : un ouvrier n'apprend rien des étapes.
 
     Lève :

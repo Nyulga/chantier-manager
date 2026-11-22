@@ -1,3 +1,5 @@
+"""Hiérarchie des erreurs métier communes."""
+
 import pytest
 
 from app.shared.domain.erreurs import (

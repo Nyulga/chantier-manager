@@ -1,3 +1,5 @@
+"""Types de colonnes communs et Unit of Work SQL utilisée hors de son bloc."""
+
 from datetime import UTC, datetime, timedelta, timezone
 
 import pytest

@@ -1,8 +1,12 @@
+"""Table des transitions du cycle d'une étape : exhaustive, immuable et lue par rôle."""
+
+from collections.abc import MutableMapping
 from itertools import product
 
 import pytest
 
 from app.etapes.domain.cycle import (
+    TRANSITIONS,
     ActionEtape,
     StatutEtape,
     actions_permises,
@@ -32,6 +36,12 @@ INTERDITES = [cas for cas in product(StatutEtape, ActionEtape, Role) if cas not 
 
 def test_la_table_couvre_les_32_combinaisons() -> None:
     assert len(AUTORISEES) + len(INTERDITES) == len(StatutEtape) * len(ActionEtape) * len(Role)
+
+
+def test_la_table_des_transitions_ne_peut_pas_etre_modifiee() -> None:
+    table: object = TRANSITIONS
+
+    assert not isinstance(table, MutableMapping)
 
 
 @pytest.mark.parametrize(("depart", "action", "role"), list(AUTORISEES))

@@ -11,6 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.shared.domain.acteur import Role
 from app.shared.domain.erreurs import (
     AccesRefuseError,
     ConflitVersionError,
@@ -22,7 +23,10 @@ from app.shared.domain.erreurs import (
 TYPE_PROBLEME = "application/problem+json"
 MESSAGE_ERREUR_INTERNE = "Une erreur interne est survenue."
 MESSAGE_REQUETE_INVALIDE = "Les données envoyées sont invalides."
-MESSAGE_PROFIL_INVALIDE = "L'en-tête X-Profil doit valoir « chef » ou « ouvrier »."
+# Les profils acceptés sont tirés de `Role` : ajouter un rôle met à jour le message
+# et la documentation de l'en-tête, sans liste à recopier à la main.
+PROFILS_ACCEPTES = " ou ".join(f"« {role.value} »" for role in Role)
+MESSAGE_PROFIL_INVALIDE = f"L'en-tête X-Profil doit valoir {PROFILS_ACCEPTES}."
 
 
 class ProfilInvalideError(Exception):

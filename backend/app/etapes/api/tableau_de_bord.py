@@ -17,8 +17,8 @@ from app.etapes.application.lister_activite_recente import (
 from app.etapes.application.lister_etapes_a_valider import ListerEtapesAValider
 from app.shared.api.acteur import ActeurCourant
 
-# La valeur par défaut est celle du domaine, lue sur la commande : une seule source.
-# Les bornes sont vérifiées par le domaine, qui répond 422 (`ValeurInvalideError`).
+# La valeur par défaut est celle du cas d'usage, lue sur la commande : une seule source.
+# Les bornes sont vérifiées par le cas d'usage, qui répond 422 (`ValeurInvalideError`).
 LIMITE_PAR_DEFAUT = DemandeActiviteRecente.limite
 DESCRIPTION_LIMITE = (
     "Nombre d'entrées voulues, de la plus récente à la plus ancienne. "

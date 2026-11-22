@@ -15,12 +15,16 @@ class ChangementStatut:
     """Commande de changement de statut.
 
     `action` est le nom d'une action du cycle (`"demarrer"`, `"signaler_terminee"`,
-    `"valider"`, `"refuser"`) ; `commentaire` est obligatoire pour un refus.
+    `"valider"`, `"refuser"`). `commentaire` est facultatif sur toute action, et
+    obligatoire pour un refus. `version_attendue` est la version de l'étape que
+    l'acteur avait sous les yeux : si elle est donnée et que l'étape a changé
+    depuis, l'action est rejetée. Sans elle, seul le verrou de la transaction joue.
     """
 
     etape_id: UUID
     action: str
     commentaire: str | None = None
+    version_attendue: int | None = None
 
 
 class ChangerStatutEtape:
@@ -32,9 +36,16 @@ class ChangerStatutEtape:
     changement de statut et son entrée d'historique sont enregistrés dans la même
     transaction : on ne voit jamais l'un sans l'autre.
 
+    La version attendue est vérifiée avant la transition : une action décidée sur
+    un état périmé est un conflit (409), même si elle serait aussi interdite dans
+    l'état actuel. C'est ce que l'acteur doit apprendre en premier : recharger.
+
     Lève :
-        ValeurInvalideError : l'action est inconnue, ou un commentaire obligatoire manque.
+        ValeurInvalideError : l'action est inconnue, ou le commentaire est absent alors
+            qu'il est obligatoire, ou trop long.
         NonTrouveError : l'étape n'existe pas.
+        ConflitVersionError : l'étape a changé depuis la version attendue, ou une autre
+            transaction l'a modifiée en même temps.
         TransitionInterditeError : l'action n'est pas permise à ce rôle dans l'état actuel.
     """
 
@@ -47,6 +58,7 @@ class ChangerStatutEtape:
         action = lire_action(commande.action)
         with self._uow:
             etape = self._uow.etapes.obtenir(commande.etape_id)
+            etape.verifier_version(commande.version_attendue)
             etape.appliquer(action, acteur, self._horloge.maintenant(), commande.commentaire)
             vue = vue_etape(etape, acteur)
             self._uow.valider()

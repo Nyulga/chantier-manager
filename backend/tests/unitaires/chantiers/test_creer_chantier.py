@@ -1,3 +1,5 @@
+"""Cas d'usage `CreerChantier` : droit du chef, invariants, vue et annulation."""
+
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID

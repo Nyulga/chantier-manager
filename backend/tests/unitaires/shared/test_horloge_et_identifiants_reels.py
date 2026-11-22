@@ -1,3 +1,5 @@
+"""Horloge système et générateur d'UUID v7 : comportements propres à la production."""
+
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 

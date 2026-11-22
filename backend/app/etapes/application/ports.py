@@ -49,7 +49,7 @@ class EtapeRepository(Protocol):
         Elles vont de la plus récente à la plus ancienne, chacune avec l'étape qui
         la porte. À date égale, l'entrée la plus récemment ajoutée à une même étape
         vient en premier ; entre deux étapes différentes, l'ordre n'est pas garanti.
-        La limite est déjà validée par le domaine (`LimiteActivite`).
+        La limite est déjà validée par le cas d'usage (`LimiteActivite`).
         """
         ...
 
@@ -72,6 +72,18 @@ class VerificationChantier(Protocol):
 
     def executer(self, chantier_id: UUID) -> None:
         """Lève `NonTrouveError` si le chantier n'existe pas."""
+        ...
+
+
+class DroitCreationChantier(Protocol):
+    """Dit si un acteur peut créer un chantier ; branché sur `EvaluerCreationChantier`.
+
+    Ce droit porte sur les chantiers, donc chantiers le décide : étapes ne fait que
+    l'annoncer parmi les capacités de l'acteur (`ConsulterCapacites`).
+    """
+
+    def executer(self, acteur: Acteur) -> bool:
+        """Renvoie vrai si l'acteur a le droit de créer un chantier."""
         ...
 
 

@@ -69,6 +69,20 @@ class ActiviteVue:
 
 
 @dataclass(frozen=True)
+class CapacitesVue:
+    """Ce que l'acteur peut faire, indépendamment d'un chantier ou d'une étape précis.
+
+    `role` est le profil de l'acteur (`"chef"` ou `"ouvrier"`), pour l'affichage.
+    Les deux booléens sont calculés par les politiques du domaine : le frontend
+    n'affiche le lien de création et le bloc « À valider » que s'ils sont vrais.
+    """
+
+    role: str
+    peut_creer_chantier: bool
+    peut_lister_etapes_a_valider: bool
+
+
+@dataclass(frozen=True)
 class ResumeEtapesVue:
     """Résumé des étapes d'un chantier, publié pour le module chantiers.
 

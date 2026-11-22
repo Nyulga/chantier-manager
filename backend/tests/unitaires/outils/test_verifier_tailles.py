@@ -1,3 +1,5 @@
+"""Outil de mesure des tailles : fichiers et fonctions au-delà des limites de la règle 00."""
+
 import runpy
 import sys
 from pathlib import Path

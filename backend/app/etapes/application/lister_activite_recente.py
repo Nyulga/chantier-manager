@@ -2,9 +2,9 @@
 
 from dataclasses import dataclass
 
+from app.etapes.application.plafonds import LIMITE_ACTIVITE_PAR_DEFAUT, LimiteActivite
 from app.etapes.application.ports import UnitOfWorkEtapes
 from app.etapes.application.vues import ActiviteVue, vue_activite
-from app.etapes.domain.activite import LIMITE_ACTIVITE_PAR_DEFAUT, LimiteActivite
 from app.etapes.domain.politiques import peut_consulter_activite
 from app.shared.application.acces import exiger_acces
 from app.shared.domain.acteur import Acteur
@@ -25,7 +25,8 @@ class ListerActiviteRecente:
     `peut_consulter_activite` : dans le squelette, elle l'ouvre aux deux profils,
     car chef et ouvrier voient tous les chantiers (docs/plan/squelette.md) ; en
     phase 2, c'est elle qui portera le cloisonnement par chantier. La limite est
-    ensuite validée par le domaine, avant toute lecture.
+    ensuite validée (`LimiteActivite`), avant toute lecture : c'est un plafond de
+    volume, choisi pour borner le coût de la lecture, et non une règle métier.
 
     Lève :
         AccesRefuseError : la politique refuse le fil à l'acteur, ce qui n'arrive

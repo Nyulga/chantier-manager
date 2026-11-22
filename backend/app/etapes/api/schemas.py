@@ -29,7 +29,7 @@ class AjouterEtapeRequete(BaseModel):
 
 
 class TransitionRequete(BaseModel):
-    """Corps d'un changement de statut ; le commentaire est obligatoire pour `refuser`."""
+    """Corps d'un changement de statut ; le commentaire est facultatif, sauf pour `refuser`."""
 
     model_config = CONFIG_ENTREE
 
@@ -76,7 +76,8 @@ class EtapeAValiderReponse(BaseModel):
 class ActiviteReponse(BaseModel):
     """Une entrée du fil d'activité : un changement de statut d'une étape.
 
-    `role` est le profil qui a agi. `commentaire` n'est renseigné que pour un refus.
+    `role` est le profil qui a agi. `commentaire` est facultatif sur toute
+    transition, et toujours renseigné pour un refus, où il est obligatoire.
     """
 
     model_config = CONFIG_SORTIE

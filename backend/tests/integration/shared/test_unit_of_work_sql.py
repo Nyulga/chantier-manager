@@ -16,6 +16,7 @@ from tests.unitaires.etapes.fabriques import ID_CHANTIER, une_etape
 
 OUVRIER = Acteur(Role.OUVRIER)
 INSTANT = datetime(2026, 11, 22, 9, 0, tzinfo=UTC)
+VERSION_APRES_UNE_TRANSITION = 2
 
 
 def preparer_une_etape(usine: sessionmaker[Session]) -> SqlUnitOfWorkEtapes:
@@ -32,7 +33,7 @@ def preparer_une_etape(usine: sessionmaker[Session]) -> SqlUnitOfWorkEtapes:
 def test_deux_modifications_simultanees_d_une_etape_donnent_un_conflit_de_version(
     usine_sessions: sessionmaker[Session],
 ) -> None:
-    preparer_une_etape(usine_sessions)
+    uow = preparer_une_etape(usine_sessions)
     premiere, seconde = SqlUnitOfWorkEtapes(usine_sessions), SqlUnitOfWorkEtapes(usine_sessions)
     identifiant = une_etape().id
 
@@ -42,6 +43,11 @@ def test_deux_modifications_simultanees_d_une_etape_donnent_un_conflit_de_versio
         premiere.valider()
         with pytest.raises(ConflitVersionError):
             seconde.valider()
+    with uow:
+        relue = uow.etapes.obtenir(identifiant)
+
+    # La transition perdante n'a rien laissé : ni version en plus, ni entrée d'historique.
+    assert (relue.version, len(relue.historique)) == (VERSION_APRES_UNE_TRANSITION, 1)
 
 
 def test_la_base_refuse_une_etape_dont_le_chantier_n_existe_pas(

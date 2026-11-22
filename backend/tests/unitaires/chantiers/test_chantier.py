@@ -1,3 +1,5 @@
+"""Agrégat `Chantier` et sa fiche : création et invariants (champs obligatoires, bornes, dates)."""
+
 from datetime import date
 from uuid import UUID
 
@@ -36,6 +38,22 @@ def test_une_fiche_sans_nom_est_refusee(nom: str) -> None:
 def test_une_fiche_sans_client_est_refusee(client: str) -> None:
     with pytest.raises(ValeurInvalideError):
         une_fiche(client=client)
+
+
+def test_un_nom_et_un_client_de_200_caracteres_sont_acceptes() -> None:
+    fiche = une_fiche(nom="n" * 200, client="c" * 200)
+
+    assert (len(fiche.nom), len(fiche.client)) == (200, 200)
+
+
+@pytest.mark.parametrize(
+    ("nom", "client"),
+    [("n" * 201, "Mairie fictive"), ("Rénovation", "c" * 201)],
+    ids=["nom", "client"],
+)
+def test_un_nom_ou_un_client_de_plus_de_200_caracteres_est_refuse(nom: str, client: str) -> None:
+    with pytest.raises(ValeurInvalideError):
+        une_fiche(nom=nom, client=client)
 
 
 def test_une_echeance_anterieure_au_debut_est_refusee() -> None:

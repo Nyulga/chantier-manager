@@ -1,3 +1,5 @@
+"""Route de santé `/api/health` : réponse, méthodes acceptées et description OpenAPI."""
+
 from http import HTTPStatus
 
 from fastapi.testclient import TestClient

@@ -1,3 +1,5 @@
+"""Cas d'usage de lecture des chantiers : liste et détail, budget masqué, délai."""
+
 from datetime import UTC, datetime
 from decimal import Decimal
 from uuid import UUID

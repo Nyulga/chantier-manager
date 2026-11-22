@@ -7,11 +7,13 @@ mémoire : les tests vérifient ainsi l'intégration réelle entre les deux modu
 from dataclasses import dataclass, field
 
 from app.chantiers.application.autoriser_ajout_etape import AutoriserAjoutEtape
+from app.chantiers.application.evaluer_creation_chantier import EvaluerCreationChantier
 from app.chantiers.application.verifier_chantier_existe import VerifierChantierExiste
 from app.chantiers.infrastructure.memoire.unit_of_work import MemoireUnitOfWorkChantiers
 from app.etapes.application.ajouter_etape import AjouterEtape
 from app.etapes.application.calculer_resumes_etapes import CalculerResumesEtapes
 from app.etapes.application.changer_statut_etape import ChangerStatutEtape
+from app.etapes.application.consulter_capacites import ConsulterCapacites
 from app.etapes.application.lister_activite_recente import ListerActiviteRecente
 from app.etapes.application.lister_etapes import ListerEtapes
 from app.etapes.application.lister_etapes_a_valider import ListerEtapesAValider
@@ -50,3 +52,6 @@ class Contexte:
 
     def lister_activite_recente(self) -> ListerActiviteRecente:
         return ListerActiviteRecente(self.uow)
+
+    def consulter_capacites(self) -> ConsulterCapacites:
+        return ConsulterCapacites(EvaluerCreationChantier())

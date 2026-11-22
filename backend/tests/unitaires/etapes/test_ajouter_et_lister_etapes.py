@@ -1,3 +1,5 @@
+"""Cas d'usage `AjouterEtape` et `ListerEtapes` : ordre, droits et chantier inconnu."""
+
 from uuid import UUID
 
 import pytest

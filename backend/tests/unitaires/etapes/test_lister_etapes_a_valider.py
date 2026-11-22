@@ -1,10 +1,12 @@
+"""Cas d'usage `ListerEtapesAValider` : réservé au chef, trié et plafonné."""
+
 from uuid import UUID
 
 import pytest
 
+from app.etapes.application.plafonds import LIMITE_A_VALIDER
 from app.etapes.application.vues import EtapeAValiderVue
 from app.etapes.domain.cycle import StatutEtape
-from app.etapes.domain.etape import LIMITE_A_VALIDER
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import AccesRefuseError
 from tests.unitaires.etapes.contexte import Contexte
