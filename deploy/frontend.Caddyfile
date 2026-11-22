@@ -1,0 +1,14 @@
+# Configuration de Caddy dans le conteneur du frontend : fichiers statiques et repli SPA.
+# Le HTTPS et les en-têtes de sécurité sont gérés par le Caddy du serveur, devant ce conteneur.
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	root * /srv
+	# Application d'une seule page : une adresse qui n'est pas un fichier (par exemple
+	# /chantiers/12) renvoie index.html, et c'est le routeur de React qui l'affiche.
+	try_files {path} /index.html
+	file_server
+}

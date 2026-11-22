@@ -75,6 +75,7 @@ convention = "google"
 [tool.ruff.lint.per-file-ignores]
 # Les assertions sont l'outil des tests ; les docstrings y sont facultatives.
 "tests/**" = ["S101", "D"]
+"tools/tests/**" = ["S101", "D"]
 
 # ---------------------------------------------------------------------------
 # mypy : typage strict, sans exception.
@@ -91,7 +92,8 @@ plugins = ["pydantic.mypy"]
 # la recette « test-back » : `coverage report` avec ses propres options.
 # ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+# `tools/tests` : tests des outils, à rapprocher de tests/unitaires/outils.
+testpaths = ["tests", "tools/tests"]
 pythonpath = ["."]
 addopts = [
     "--strict-markers",
@@ -113,7 +115,7 @@ skip_empty = true
 # bandit : analyse de sécurité du code applicatif (les tests sont exclus).
 # ---------------------------------------------------------------------------
 [tool.bandit]
-exclude_dirs = ["tests", ".venv"]
+exclude_dirs = ["tests", "tools/tests", ".venv"]
 
 # ---------------------------------------------------------------------------
 # import-linter : les règles de dépendance de l'architecture (ADR 0001 et 0005).

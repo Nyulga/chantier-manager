@@ -1,0 +1,74 @@
+# Intégration continue : rejoue sur GitHub les vérifications du poste (`just verifier`).
+# Squelette : lint, typage, architecture, tailles, sécurité du code, tests et couverture, plus les
+# tests de bout en bout. Les tests de mutation, CodeQL et Trivy sont reportés à la phase 2.
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [dev, main]
+
+# Une nouvelle exécution sur la même branche annule la précédente, encore en cours.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Droits minimaux : la CI lit le dépôt, elle n'écrit rien.
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: extractions/setup-just@v4
+        with:
+          just-version: 1.59.0
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Installer les dépendances (versions verrouillées)
+        working-directory: backend
+        run: uv sync --locked
+      - name: Vérifier le backend
+        run: just verifier-back
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: extractions/setup-just@v4
+        with:
+          just-version: 1.59.0
+      # La version de pnpm est lue dans le champ `packageManager` de frontend/package.json.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Installer les dépendances (versions verrouillées)
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      - name: Vérifier le frontend
+        run: just verifier-front
+      - name: Installer Chromium pour Playwright
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Tests de bout en bout
+        run: just e2e
+      - name: Conserver le rapport Playwright en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rapport-playwright
+          path: frontend/playwright-report
+          retention-days: 7

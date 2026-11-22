@@ -27,6 +27,8 @@ export function creerConfig({ racine }) {
         'test-results/**',
         // Violations volontaires qui servent de preuve aux garde-fous : jamais linté normalement.
         'tests/garde-fous/fixtures/**',
+        // Types générés par openapi-typescript (recette « client ») : jamais relus à la main.
+        'src/api/schema.d.ts',
       ],
     },
     {

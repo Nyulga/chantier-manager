@@ -1,0 +1,28 @@
+# Bloc à AJOUTER au Caddyfile du serveur (le Caddy existant n'est pas géré par ce dépôt).
+# Remplace <EMPREINTE_BCRYPT> par l'empreinte du mot de passe d'accès, obtenue avec :
+#   docker exec -it <conteneur-caddy> caddy hash-password
+# Ne commite jamais l'empreinte réelle ni le mot de passe.
+chantier-ultra.ddns.net {
+	encode zstd gzip
+
+	# Mot de passe d'accès au site (le squelette n'a pas de comptes utilisateurs).
+	basic_auth {
+		chantier <EMPREINTE_BCRYPT>
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy chantier-api:8000
+	}
+
+	handle {
+		reverse_proxy chantier-web:80
+	}
+}

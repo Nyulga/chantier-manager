@@ -1,0 +1,6 @@
+# Contexte de construction de l'API : on n'envoie à Docker que ce que l'image utilise.
+*
+!backend/pyproject.toml
+!backend/uv.lock
+!backend/app
+**/__pycache__
