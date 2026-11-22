@@ -15,6 +15,7 @@ from app.shared.infrastructure.memoire.horloge_fixe import HorlogeFixe
 from tests.unitaires.chantiers.fabriques import (
     BUDGET,
     JOURS_AVANT_ECHEANCE,
+    LENDEMAIN_A_PARIS,
     MAINTENANT,
     un_chantier,
 )
@@ -25,8 +26,9 @@ RESUMES = {
     UUID(int=1): ResumeEtapes(avancement=25, validees=1, total=4, a_valider=2),
     UUID(int=2): ResumeEtapes(avancement=100, validees=3, total=3, a_valider=0),
 }
-# Trois jours après l'échéance du 31 mars 2027, tard le soir en UTC.
-TROIS_JOURS_APRES_ECHEANCE = datetime(2027, 4, 3, 23, 30, tzinfo=UTC)
+# Trois jours après l'échéance du 31 mars 2027, tard le soir à Paris (21 h 30 UTC, 23 h 30
+# à Paris) : la date du jour reste le 3 avril.
+TROIS_JOURS_APRES_ECHEANCE = datetime(2027, 4, 3, 21, 30, tzinfo=UTC)
 JOURS_DE_RETARD = 3
 
 
@@ -87,8 +89,9 @@ def test_sans_chantier_la_liste_est_vide() -> None:
     [
         (MAINTENANT, JOURS_AVANT_ECHEANCE, False),
         (TROIS_JOURS_APRES_ECHEANCE, JOURS_DE_RETARD, True),
+        (LENDEMAIN_A_PARIS, 1, True),
     ],
-    ids=["avant-echeance", "en-retard"],
+    ids=["avant-echeance", "en-retard", "lendemain-a-paris"],
 )
 def test_la_liste_porte_le_delai_de_chaque_chantier_a_la_date_de_l_horloge(
     maintenant: datetime, jours_restants: int, en_retard: bool
@@ -143,3 +146,9 @@ def test_consulter_un_chantier_renvoie_son_resume_et_son_delai() -> None:
 def test_consulter_un_chantier_inconnu_leve_non_trouve(acteur: Acteur) -> None:
     with pytest.raises(NonTrouveError):
         une_consultation().executer(UUID(int=99), acteur)
+
+
+def test_consulter_un_chantier_compte_le_delai_a_la_date_de_paris() -> None:
+    vue = une_consultation(LENDEMAIN_A_PARIS).executer(UUID(int=1), CHEF)
+
+    assert (vue.jours_restants, vue.en_retard) == (1, True)

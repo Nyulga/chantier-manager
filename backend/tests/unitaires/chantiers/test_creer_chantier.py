@@ -16,6 +16,7 @@ from tests.unitaires.chantiers.fabriques import (
     DEBUT,
     ECHEANCE,
     JOURS_AVANT_ECHEANCE,
+    LENDEMAIN_A_PARIS,
     MAINTENANT,
     une_commande,
 )
@@ -57,8 +58,11 @@ def test_un_chef_cree_un_chantier_et_recoit_sa_vue_complete() -> None:
     )
 
 
-def test_un_chantier_cree_apres_son_echeance_est_aussitot_en_retard() -> None:
-    service, _ = un_service(LENDEMAIN_ECHEANCE)
+@pytest.mark.parametrize(
+    "maintenant", [LENDEMAIN_ECHEANCE, LENDEMAIN_A_PARIS], ids=["lendemain", "lendemain-a-paris"]
+)
+def test_un_chantier_cree_apres_son_echeance_est_aussitot_en_retard(maintenant: datetime) -> None:
+    service, _ = un_service(maintenant)
 
     vue = service.executer(une_commande(), CHEF)
 

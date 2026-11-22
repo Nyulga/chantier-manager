@@ -1,8 +1,10 @@
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from app.shared.infrastructure.generateur_uuid7 import GenerateurUuid7
 from app.shared.infrastructure.horloge_systeme import HorlogeSysteme
 
+PARIS = ZoneInfo("Europe/Paris")
 UUID_VERSION_7 = 7
 VARIANTE_RFC = 0b10
 HORODATAGE_MS = 1_700_000_000_123
@@ -16,6 +18,15 @@ def test_l_horloge_systeme_renvoie_un_instant_en_utc() -> None:
 
     assert instant.utcoffset() == timedelta(0)
     assert avant <= instant <= datetime.now(UTC)
+
+
+def test_la_date_du_jour_de_l_horloge_systeme_est_celle_de_paris() -> None:
+    # Encadrer l'appel par deux lectures rend le test sûr même s'il passe minuit.
+    avant = datetime.now(PARIS).date()
+
+    aujourd_hui = HorlogeSysteme().aujourd_hui()
+
+    assert avant <= aujourd_hui <= datetime.now(PARIS).date()
 
 
 def test_un_identifiant_est_un_uuid_version_7_de_variante_rfc() -> None:

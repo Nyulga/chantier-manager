@@ -66,5 +66,5 @@ class CreerChantier:
             chantier = Chantier.creer(self._generateur_id.nouveau(), fiche)
             self._uow.chantiers.ajouter(chantier)
             self._uow.valider()
-        aujourd_hui = self._horloge.maintenant().date()
+        aujourd_hui = self._horloge.aujourd_hui()
         return vue_chantier(chantier, acteur, RESUME_SANS_ETAPE, aujourd_hui)

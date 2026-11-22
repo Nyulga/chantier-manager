@@ -34,5 +34,5 @@ class ConsulterChantier:
         with self._uow:
             chantier = self._uow.chantiers.obtenir(chantier_id)
         resumes = self._resumes.executer([chantier.id])
-        aujourd_hui = self._horloge.maintenant().date()
+        aujourd_hui = self._horloge.aujourd_hui()
         return vue_chantier(chantier, acteur, resumes[chantier.id], aujourd_hui)

@@ -34,7 +34,7 @@ class ListerChantiers:
         with self._uow:
             chantiers = self._uow.chantiers.lister()
         resumes = self._resumes.executer([chantier.id for chantier in chantiers])
-        aujourd_hui = self._horloge.maintenant().date()
+        aujourd_hui = self._horloge.aujourd_hui()
         return tuple(
             vue_chantier(chantier, acteur, resumes[chantier.id], aujourd_hui)
             for chantier in chantiers

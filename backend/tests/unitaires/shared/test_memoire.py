@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID
 
 import pytest
@@ -21,6 +21,28 @@ def test_l_horloge_fixe_renvoie_toujours_le_meme_instant() -> None:
     horloge = HorlogeFixe(INSTANT)
 
     assert [horloge.maintenant(), horloge.maintenant()] == [INSTANT, INSTANT]
+
+
+@pytest.mark.parametrize(
+    ("instant", "date_a_paris"),
+    [
+        # Hiver (UTC+1) : 23 h 30 en UTC est déjà 0 h 30 le lendemain à Paris.
+        (datetime(2026, 11, 22, 23, 30, tzinfo=UTC), date(2026, 11, 23)),
+        # Été (UTC+2) : 22 h 30 en UTC est déjà 0 h 30 le lendemain à Paris.
+        (datetime(2026, 6, 22, 22, 30, tzinfo=UTC), date(2026, 6, 23)),
+        # Juste avant minuit à Paris, en hiver : on est encore le même jour.
+        (datetime(2026, 11, 22, 22, 59, tzinfo=UTC), date(2026, 11, 22)),
+        # Juste avant minuit à Paris, en été : on est encore le même jour.
+        (datetime(2026, 6, 22, 21, 59, tzinfo=UTC), date(2026, 6, 22)),
+    ],
+    ids=["hiver-lendemain", "ete-lendemain", "hiver-meme-jour", "ete-meme-jour"],
+)
+def test_la_date_du_jour_de_l_horloge_fixe_est_celle_de_paris(
+    instant: datetime, date_a_paris: date
+) -> None:
+    horloge = HorlogeFixe(instant)
+
+    assert horloge.aujourd_hui() == date_a_paris
 
 
 def test_le_generateur_previsible_renvoie_des_identifiants_croissants() -> None:

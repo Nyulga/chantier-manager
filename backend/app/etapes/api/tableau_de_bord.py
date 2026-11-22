@@ -42,8 +42,9 @@ def creer_routeur_tableau_de_bord(fournisseurs: FournisseursTableauDeBord) -> AP
     """Crée le routeur du tableau de bord.
 
     Il est inclus dans le routeur des étapes, qui lui apporte les erreurs documentées
-    et le tag OpenAPI. La route `/etapes/a-valider` est un chemin fixe : aucune route
-    `/etapes/{id}` ne peut la capturer, et un test le vérifie.
+    et le tag OpenAPI. Il y est inclus avant les routes `/etapes/{etape_id}`, pour
+    que le chemin fixe `/etapes/a-valider` ne puisse jamais être pris pour un
+    identifiant d'étape : `tests/integration/etapes/test_ordre_des_routes.py` le vérifie.
     """
     routeur = APIRouter()
 

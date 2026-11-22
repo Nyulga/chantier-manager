@@ -54,6 +54,9 @@ class FournisseursEtapes(FournisseursTableauDeBord, Protocol):
 def creer_routeur(fournisseurs: FournisseursEtapes) -> APIRouter:
     """Crée le routeur des étapes, branché sur les cas d'usage fournis."""
     routeur = APIRouter(tags=["étapes"], responses=ERREURS)
+    # En premier : les routes sont essayées dans l'ordre, et `/etapes/a-valider` ne doit
+    # jamais être lu comme un `/etapes/{etape_id}` (voir test_ordre_des_routes.py).
+    routeur.include_router(creer_routeur_tableau_de_bord(fournisseurs))
 
     @routeur.get("/chantiers/{chantier_id}/etapes", summary="Liste les étapes d'un chantier")
     def lister(
@@ -87,5 +90,4 @@ def creer_routeur(fournisseurs: FournisseursEtapes) -> APIRouter:
         commande = commande_statut_depuis(etape_id, requete)
         return reponse_depuis(cas_usage.executer(commande, acteur))
 
-    routeur.include_router(creer_routeur_tableau_de_bord(fournisseurs))
     return routeur

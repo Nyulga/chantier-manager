@@ -16,6 +16,10 @@ BUDGET = Decimal("125000.50")
 # Instant des horloges fixes : neuf jours avant l'échéance, à 10 h en UTC.
 MAINTENANT = datetime(2027, 3, 22, 10, 0, tzinfo=UTC)
 JOURS_AVANT_ECHEANCE = 9
+# Le soir de l'échéance, 22 h 30 en UTC : il est déjà 0 h 30 le lendemain à Paris (heure
+# d'été, UTC+2). Le chantier y est donc en retard d'un jour, alors qu'en UTC ce serait
+# encore le jour même.
+LENDEMAIN_A_PARIS = datetime(2027, 3, 31, 22, 30, tzinfo=UTC)
 
 
 CLIENT = "Mairie fictive"
