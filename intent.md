@@ -1,6 +1,6 @@
 # Intent
 
-> Documents liés : [décisions d'architecture (ADR)](docs/adr/) · [plan de développement par lots](docs/plan/README.md)
+> Documents liés : [décisions d'architecture (ADR)](docs/adr/) · [plan de développement par lots](docs/plan/README.md) · [règles par couche](.claude/rules/)
 
 ## 1. Produit
 
@@ -83,7 +83,7 @@ Chaque module est organisé en 4 parties :
 - **Avancement** : toujours **calculé** (étapes validées / total, et 0 % si aucune étape), jamais stocké.
 - **Politiques d'accès** : fonctions pures du domaine (`peut_voir`, `peut_modifier`, `peut_valider`…), appelées par **chaque** service.
 - **Erreurs métier typées** (`TransitionInterdite`, `AccesRefuse`, `NonTrouve`…), traduites en codes HTTP uniquement dans la partie `api`.
-- **Identifiants** : UUID v7, générés côté domaine. Ils sont triables et ne révèlent pas le nombre d'enregistrements.
+- **Identifiants** : UUID v7, fournis au domaine par le port `GenerateurId`. Ils sont triables et ne révèlent pas le nombre d'enregistrements.
 - **Ports techniques** : `Horloge`, `GenerateurId`, `HacheurMotDePasse`, `StockageFichiers`, `ScanneurAntivirus`, `EnvoiEmail`, `UnitOfWork`, plus un repository par agrégat.
 
 ### 2.4 Persistance
@@ -126,7 +126,17 @@ Les fichiers ne sont servis que par l'API, après vérification des droits. Les 
 | Outils | uv (Python), pnpm (frontend), just (lanceur de commandes, Windows et Linux), Docker Compose |
 | Tâches planifiées | Commandes CLI (purge RGPD, sauvegardes) lancées par un timer systemd ou cron ; pas de file de tâches |
 
-### 2.9 Déploiement
+### 2.9 Design patterns et principes
+- Les principes **SOLID** sont obligatoires, avec une traduction vérifiable pour chacun (voir [`.claude/rules/00-principes.md`](.claude/rules/00-principes.md)).
+- Chaque couche a sa **règle**, avec ses patterns obligatoires et ses interdits, dans [`.claude/rules/`](.claude/rules/). Ces règles s'appliquent à **chaque lot**. Justification : [ADR 0005](docs/adr/0005-design-patterns-et-garde-fous.md).
+- Chaque couche a un rôle unique :
+  - la présentation (`api` et frontend) n'appelle que la couche service ;
+  - la couche service (`application`), s'appuyant sur le `domain`, porte les règles métier, et ses tests sont écrits avant le code ;
+  - seule l'`infrastructure` parle à la base de données et aux services externes.
+- Le frontend suit le sens d'appel `pages` → `services` → `api`, et n'affiche **que** des composants du design system (`src/ui`).
+- Anti-patterns interdits : Singleton, Service Locator, Active Record, modèle anémique, god object, pattern sans besoin réel.
+
+### 2.10 Déploiement
 - **Serveur Ubuntu personnel**, hébergé à domicile en France.
 - **Docker Compose** :
   - en production : `api`, `web`, `db` (PostgreSQL), `clamav`, plus des volumes pour les données et les fichiers ;
@@ -144,8 +154,16 @@ Les fichiers ne sont servis que par l'API, après vérification des droits. Les 
 - Frontend : **TypeScript `strict: true`**, avec `noUncheckedIndexedAccess` et `exactOptionalPropertyTypes` ; `any` interdit par lint.
 - Les types du frontend sont **générés automatiquement depuis le schéma OpenAPI** de l'API, pour qu'aucun décalage ne soit possible entre le front et le back.
 
-**Architecture**
-- Les contrats **import-linter** (couches et indépendance des modules) passent en CI.
+**Architecture et lisibilité (aucun code spaghetti, aucun fichier fourre-tout)**
+- Les contrats **import-linter** (couches, indépendance des modules, accès à la base réservé à l'`infrastructure`) passent en CI. Côté frontend, ESLint impose le sens des dépendances et l'usage exclusif du design system.
+- Limites vérifiées automatiquement :
+  - au plus 300 lignes par fichier Python et 250 par fichier TypeScript ;
+  - au plus 40 lignes par fonction Python et 60 par fonction TypeScript ;
+  - complexité cyclomatique d'au plus 8 ;
+  - au plus 3 niveaux d'imbrication ;
+  - au plus 2 % de code dupliqué ;
+  - aucun import circulaire.
+- La désactivation d'une règle de lint, de typage ou de couverture est interdite sans l'accord du propriétaire du projet.
 
 **Lint et formatage**
 - Backend : **ruff** (lint et formatage), **bandit** pour l'analyse de sécurité.
@@ -280,6 +298,7 @@ La V1 est acceptée quand **tous** les critères ci-dessous sont remplis. Le lot
 ### 5.2 Qualité [tous les lots, outillage au lot 01]
 - [ ] mypy `--strict`, ruff, ESLint et `tsc` passent sans aucune erreur ni exception non justifiée.
 - [ ] Les contrats import-linter (couches et indépendance des modules) passent.
+- [ ] Les règles ESLint de sens des dépendances et d'usage du design system passent, et les limites de taille, de complexité et de duplication sont respectées.
 - [ ] Couverture du domaine et des services : 100 %. Backend global : ≥ 95 %, lignes et branches. Frontend : ≥ 90 %.
 - [ ] Score des tests de mutation sur le domaine et les services ≥ 90 %.
 - [ ] Les tests Playwright couvrent les parcours complets du chef de chantier et de l'ouvrier, et passent.

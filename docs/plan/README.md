@@ -27,10 +27,17 @@ Référence : [`intent.md`](../../intent.md) · Décisions : [`docs/adr/`](../ad
                       └─► 06 ─┴─► 07 ─► 08 ─► 09
 ```
 
+## Avant de démarrer un lot
+
+1. Relire `intent.md`, puis le fichier du lot.
+2. Relire [`.claude/rules/00-principes.md`](../../.claude/rules/00-principes.md) et la règle de chaque couche touchée par le lot.
+3. Travailler en TDD, dans l'ordre de construction défini par la règle 00 (§7).
+
 ## Définition de « terminé » (commune à tous les lots)
 
 Un lot est terminé quand :
-- [ ] la CI est entièrement verte : lint, typage, contrats import-linter, tests, couverture, mutation et audits de sécurité ;
+- [ ] la CI est entièrement verte : lint, typage, contrats d'architecture (import-linter et ESLint), limites de taille et de complexité, duplication, tests, couverture, mutation et audits de sécurité ;
+- [ ] le code a été relu contre chaque règle de `.claude/rules/` qui concerne les couches touchées ;
 - [ ] les seuils sont atteints : 100 % sur le domaine et les services, ≥ 95 % sur le backend, ≥ 90 % sur le frontend, ≥ 90 % de score de mutation ;
 - [ ] les critères d'`intent.md` §5 rattachés au lot sont cochés ;
 - [ ] les pages livrées sont responsives (360, 768 et 1280 px), accessibles et en français ;

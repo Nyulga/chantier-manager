@@ -8,3 +8,4 @@ Chaque décision structurante est consignée ici : son contexte, la décision pr
 | [0002](0002-persistance-sqlalchemy-imperatif-uow.md) | Persistance : SQLAlchemy synchrone, mapping impératif, Unit of Work | Accepté |
 | [0003](0003-authentification.md) | Authentification, sessions et invitations | Accepté |
 | [0004](0004-traitement-des-fichiers.md) | Envoi, contrôle et stockage des fichiers | Accepté |
+| [0005](0005-design-patterns-et-garde-fous.md) | Design patterns, SOLID et garde-fous contre le code spaghetti | Accepté |
