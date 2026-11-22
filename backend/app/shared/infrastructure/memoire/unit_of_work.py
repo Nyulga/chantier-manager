@@ -49,17 +49,20 @@ class MemoireUnitOfWork:
     Sortir du bloc `with` sans avoir appelé `valider()`, en particulier à cause
     d'une exception, restaure les stockages dans leur état d'entrée. Le compteur
     `validations` permet aux tests de vérifier qu'un cas d'usage valide une seule
-    fois, ou pas du tout en cas d'échec.
+    fois, ou pas du tout en cas d'échec. L'indicateur `ouverte` leur permet de
+    vérifier qu'un appel à un autre module a lieu hors de la transaction.
     """
 
     def __init__(self, *entrepots: Annulable) -> None:
         self._entrepots = entrepots
         self._validee = False
         self.validations = 0
+        self.ouverte = False
 
     def __enter__(self) -> Self:
         """Ouvre la transaction : chaque stockage mémorise son état."""
         self._validee = False
+        self.ouverte = True
         for entrepot in self._entrepots:
             entrepot.capturer()
         return self
@@ -74,6 +77,7 @@ class MemoireUnitOfWork:
 
         L'exception éventuelle n'est pas absorbée : elle remonte à l'appelant.
         """
+        self.ouverte = False
         if self._validee:
             return
         for entrepot in self._entrepots:

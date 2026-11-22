@@ -32,7 +32,7 @@ class FournisseursChantiers:
 
     def creer_chantier(self) -> CreerChantier:
         """Fournit le cas d'usage de création."""
-        return CreerChantier(self._uow(), self._generateur_id, self._avancement())
+        return CreerChantier(self._uow(), self._generateur_id)
 
     def lister_chantiers(self) -> ListerChantiers:
         """Fournit le cas d'usage de liste."""

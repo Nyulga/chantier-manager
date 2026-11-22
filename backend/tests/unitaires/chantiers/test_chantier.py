@@ -32,6 +32,12 @@ def test_une_fiche_sans_nom_est_refusee(nom: str) -> None:
         une_fiche(nom=nom)
 
 
+@pytest.mark.parametrize("client", ["", "   ", "\t\n"])
+def test_une_fiche_sans_client_est_refusee(client: str) -> None:
+    with pytest.raises(ValeurInvalideError):
+        une_fiche(client=client)
+
+
 def test_une_echeance_anterieure_au_debut_est_refusee() -> None:
     with pytest.raises(ValeurInvalideError):
         une_fiche(date_debut=date(2026, 12, 2), echeance=date(2026, 12, 1))

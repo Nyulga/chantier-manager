@@ -34,10 +34,14 @@ class FicheChantier:
         """Refuse une fiche qui viole un invariant du chantier.
 
         Lève :
-            ValeurInvalideError : le nom est vide, ou l'échéance précède la date de début.
+            ValeurInvalideError : le nom ou le client est vide, ou l'échéance précède
+                la date de début.
         """
         if not self.nom.strip():
             raise ValeurInvalideError("Le nom du chantier est obligatoire.")
+        # Un chantier se fait toujours pour un client : sans lui, la fiche est inexploitable.
+        if not self.client.strip():
+            raise ValeurInvalideError("Le client du chantier est obligatoire.")
         # Une échéance le jour même du début reste possible : c'est le cas d'un
         # chantier d'une seule journée.
         if self.echeance < self.date_debut:

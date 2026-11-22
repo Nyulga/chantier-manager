@@ -6,7 +6,6 @@ import pytest
 
 from app.chantiers.application.creer_chantier import CreerChantier, NouveauChantier
 from app.chantiers.application.vues import AdresseVue, ChantierVue
-from app.chantiers.infrastructure.memoire.avancement_fixe import AvancementFixe
 from app.chantiers.infrastructure.memoire.unit_of_work import MemoireUnitOfWorkChantiers
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import AccesRefuseError, ValeurInvalideError
@@ -20,7 +19,7 @@ AVANCEMENT = 0
 
 def un_service() -> tuple[CreerChantier, MemoireUnitOfWorkChantiers]:
     uow = MemoireUnitOfWorkChantiers()
-    service = CreerChantier(uow, GenerateurIdPrevisible(), AvancementFixe({}))
+    service = CreerChantier(uow, GenerateurIdPrevisible())
     return service, uow
 
 

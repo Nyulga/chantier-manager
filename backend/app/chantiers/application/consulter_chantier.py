@@ -22,8 +22,12 @@ class ConsulterChantier:
         self._avancement = avancement
 
     def executer(self, chantier_id: UUID, acteur: Acteur) -> ChantierVue:
-        """Renvoie la vue du chantier pour l'acteur."""
+        """Renvoie la vue du chantier pour l'acteur.
+
+        L'avancement est demandé après la fermeture de la transaction des chantiers,
+        car son calcul ouvre la sienne : la requête ne tient qu'une connexion à la fois.
+        """
         with self._uow:
             chantier = self._uow.chantiers.obtenir(chantier_id)
-            avancements = self._avancement.executer([chantier.id])
-            return vue_chantier(chantier, acteur, avancements[chantier.id])
+        avancements = self._avancement.executer([chantier.id])
+        return vue_chantier(chantier, acteur, avancements[chantier.id])

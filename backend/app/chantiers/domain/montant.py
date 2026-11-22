@@ -22,6 +22,8 @@ class Montant:
     La précision est bornée au centime parce que la base stocke les montants en
     `NUMERIC(12,2)` (ADR 0002) : une valeur plus précise serait arrondie sans bruit
     à l'enregistrement, et le montant relu ne serait plus celui qui a été saisi.
+    La valeur est stockée au format du centime (`1E3` devient `1000.00`) : la vue
+    renvoyée juste après la création est alors identique à celle relue en base.
     """
 
     valeur: Decimal
@@ -43,5 +45,8 @@ class Montant:
         # technique de `decimal` sur une valeur trop grande.
         if self.valeur > MONTANT_MAX:
             raise ValeurInvalideError("Le montant dépasse la valeur maximale enregistrable.")
-        if self.valeur != self.valeur.quantize(CENTIME):
+        au_centime = self.valeur.quantize(CENTIME)
+        if self.valeur != au_centime:
             raise ValeurInvalideError("Le montant ne peut pas être plus précis que le centime.")
+        # L'objet est figé : seule cette écriture, à la construction, normalise la valeur.
+        object.__setattr__(self, "valeur", au_centime)

@@ -22,11 +22,13 @@ class ListerChantiers:
         """Renvoie la vue de chaque chantier pour l'acteur.
 
         Les avancements sont demandés en une seule fois, pour tous les chantiers,
-        afin d'éviter une lecture par chantier.
+        afin d'éviter une lecture par chantier. Ils le sont après la fermeture de la
+        transaction des chantiers, car leur calcul ouvre la sienne : une requête ne
+        tient ainsi jamais deux connexions à la fois.
         """
         with self._uow:
             chantiers = self._uow.chantiers.lister()
-            avancements = self._avancement.executer([chantier.id for chantier in chantiers])
-            return tuple(
-                vue_chantier(chantier, acteur, avancements[chantier.id]) for chantier in chantiers
-            )
+        avancements = self._avancement.executer([chantier.id for chantier in chantiers])
+        return tuple(
+            vue_chantier(chantier, acteur, avancements[chantier.id]) for chantier in chantiers
+        )

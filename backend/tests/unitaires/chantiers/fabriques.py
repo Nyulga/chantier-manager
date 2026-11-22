@@ -15,11 +15,16 @@ ECHEANCE = date(2027, 3, 31)
 BUDGET = Decimal("125000.50")
 
 
-def une_fiche(nom: str = NOM, date_debut: date = DEBUT, echeance: date = ECHEANCE) -> FicheChantier:
+CLIENT = "Mairie fictive"
+
+
+def une_fiche(
+    nom: str = NOM, date_debut: date = DEBUT, echeance: date = ECHEANCE, client: str = CLIENT
+) -> FicheChantier:
     return FicheChantier(
         nom=nom,
         adresse=Adresse(voie="12 rue des Lilas", code_postal="69001", ville="Lyon"),
-        client="Mairie fictive",
+        client=client,
         date_debut=date_debut,
         echeance=echeance,
         budget=Montant(BUDGET),
