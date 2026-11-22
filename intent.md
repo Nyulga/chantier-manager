@@ -32,7 +32,7 @@ Application simple de gestion de chantiers qui permet de suivre l'état d'avance
    - Connexion et déconnexion ; chaque utilisateur ne voit que les chantiers qui le concernent.
 
 ### Phase 1 : squelette livré en premier
-Avant la V1 complète, on livre un **squelette** utilisable rapidement : créer et suivre des chantiers, avec leurs étapes, leur validation et leur pourcentage d'avancement. Il n'y a pas d'authentification dans l'application : on choisit son profil (chef ou ouvrier) dans l'interface. Le site en ligne est protégé par un mot de passe d'accès. Le périmètre exact, ce qui est reporté et les critères sont dans [`docs/plan/squelette.md`](docs/plan/squelette.md). Toutes les règles de `.claude/rules/` s'y appliquent. Les autres sections de ce document décrivent la V1 complète (phase 2).
+Avant la V1 complète, on livre un **squelette** utilisable rapidement : créer et suivre des chantiers, avec leurs étapes, leur validation et leur pourcentage d'avancement. Il n'y a pas d'authentification dans l'application : on choisit son profil (chef ou ouvrier) dans l'interface. Le site en ligne est une démonstration publique, sans mot de passe : on n'y saisit aucune donnée réelle. Le périmètre exact, ce qui est reporté et les critères sont dans [`docs/plan/squelette.md`](docs/plan/squelette.md). Toutes les règles de `.claude/rules/` s'y appliquent. Les autres sections de ce document décrivent la V1 complète (phase 2).
 
 ### Périmètre de la V1
 Le produit aura à terme deux parties : une **application web** et une **application mobile**.
