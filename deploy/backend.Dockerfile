@@ -21,6 +21,9 @@ COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 
 COPY backend/app ./app
+# Les migrations sont appliquées au démarrage de l'API : Alembic les cherche à côté de `app/`.
+COPY backend/alembic.ini ./alembic.ini
+COPY backend/migrations ./migrations
 
 # --- Étape 2 : image finale, minimale ------------------------------------------------------
 FROM python:3.13-slim
@@ -33,8 +36,8 @@ RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin chan
 WORKDIR /app
 COPY --from=construction --chown=chantier /app /app
 
-# La base SQLite vivra dans le volume /donnees : CHANTIER_URL_BASE en donne l'emplacement,
-# que l'application lira dès qu'elle aura une persistance (lot S2).
+# La base SQLite vit dans le volume /donnees ; l'application lit CHANTIER_URL_BASE au
+# démarrage (Parametres) et y applique les migrations.
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \

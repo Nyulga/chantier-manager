@@ -1,3 +1,6 @@
 # Caches des outils du backend
 .import_linter_cache/
 .hypothesis/
+
+# Base SQLite de développement
+*.db

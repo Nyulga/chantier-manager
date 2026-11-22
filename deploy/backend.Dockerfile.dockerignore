@@ -3,4 +3,6 @@
 !backend/pyproject.toml
 !backend/uv.lock
 !backend/app
+!backend/alembic.ini
+!backend/migrations
 **/__pycache__

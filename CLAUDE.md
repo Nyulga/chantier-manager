@@ -31,7 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S3). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
 
 
-Le lot S1 (socle) est livré ; le lot S2 (chantiers et étapes) suit, avec une base **SQLite** pour l'instant. Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
+Les lots S1 (socle) et S2 (chantiers et étapes) sont livrés ; la base est **SQLite** pour l'instant. Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
 
 ## Commandes
 
@@ -44,7 +44,7 @@ Toutes passent par le `justfile` de la racine (Windows et Linux) :
 | `just verifier` | tous les contrôles de la CI : ruff, format, mypy, import-linter, limites de taille, bandit, pytest et couverture (100 % sur domain et application) ; ESLint, tsc, Prettier, Vitest et build |
 | `just test-back <chemin ou -k nom>` | un test backend précis, sans couverture (par exemple `just test-back tests/unitaires/etapes/test_cycle.py`) |
 | `just test-front <motif>` | un test frontend précis (`vitest run <motif>`) |
-| `just e2e` | Playwright à 360 et 1280 px |
+| `just e2e` | Playwright à 360 et 1280 px, contre l'API réelle sur une base SQLite temporaire |
 | `just client` | régénère `frontend/src/api/schema.d.ts` depuis le schéma OpenAPI de l'API |
 
 Sous Windows, uv et just viennent de winget : si le shell ne les trouve pas, rafraîchis le `PATH`.

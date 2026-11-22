@@ -4,6 +4,76 @@
  */
 
 export interface paths {
+    "/api/chantiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liste les chantiers, avec leur avancement */
+        get: operations["lister_api_chantiers_get"];
+        put?: never;
+        /** Crée un chantier */
+        post: operations["creer_api_chantiers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chantiers/{chantier_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consulte un chantier */
+        get: operations["consulter_api_chantiers__chantier_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chantiers/{chantier_id}/etapes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liste les étapes d'un chantier */
+        get: operations["lister_api_chantiers__chantier_id__etapes_get"];
+        put?: never;
+        /** Ajoute une étape en fin de liste */
+        post: operations["ajouter_api_chantiers__chantier_id__etapes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/etapes/{etape_id}/transitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fait avancer, valide ou refuse */
+        post: operations["changer_statut_api_etapes__etape_id__transitions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -32,6 +102,128 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AdresseReponse
+         * @description Adresse postale d'un chantier.
+         */
+        AdresseReponse: {
+            /** Code Postal */
+            code_postal: string;
+            /** Ville */
+            ville: string;
+            /** Voie */
+            voie: string;
+        };
+        /**
+         * AdresseRequete
+         * @description Adresse postale saisie pour un chantier.
+         */
+        AdresseRequete: {
+            /** Code Postal */
+            code_postal: string;
+            /** Ville */
+            ville: string;
+            /** Voie */
+            voie: string;
+        };
+        /**
+         * AjouterEtapeRequete
+         * @description Corps de l'ajout d'une étape en fin de liste.
+         */
+        AjouterEtapeRequete: {
+            /** Titre */
+            titre: string;
+        };
+        /**
+         * ChantierReponse
+         * @description Chantier tel que le voit l'acteur.
+         *
+         *     `budget` est une chaîne décimale en euros (`"125000.50"`), ou `null` pour un
+         *     ouvrier. `avancement` est un pourcentage entier de 0 à 100.
+         */
+        ChantierReponse: {
+            adresse: components["schemas"]["AdresseReponse"];
+            /** Avancement */
+            avancement: number;
+            /** Budget */
+            budget: string | null;
+            /** Client */
+            client: string;
+            /**
+             * Date Debut
+             * Format: date
+             */
+            date_debut: string;
+            /**
+             * Echeance
+             * Format: date
+             */
+            echeance: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nom */
+            nom: string;
+            /** Peut Ajouter Etape */
+            peut_ajouter_etape: boolean;
+        };
+        /**
+         * CreerChantierRequete
+         * @description Corps de la création d'un chantier ; le budget est en euros, au centime près.
+         */
+        CreerChantierRequete: {
+            adresse: components["schemas"]["AdresseRequete"];
+            /** Budget */
+            budget: number | string;
+            /** Client */
+            client: string;
+            /**
+             * Date Debut
+             * Format: date
+             */
+            date_debut: string;
+            /**
+             * Echeance
+             * Format: date
+             */
+            echeance: string;
+            /** Nom */
+            nom: string;
+        };
+        /**
+         * EtapeReponse
+         * @description Étape telle que la voit l'acteur, avec les actions qu'il peut faire maintenant.
+         *
+         *     Le frontend n'affiche que les boutons de `actions_permises`. `version` augmente
+         *     à chaque transition.
+         */
+        EtapeReponse: {
+            /** Actions Permises */
+            actions_permises: ("demarrer" | "signaler_terminee" | "valider" | "refuser")[];
+            /**
+             * Chantier Id
+             * Format: uuid
+             */
+            chantier_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Ordre */
+            ordre: number;
+            /**
+             * Statut
+             * @enum {string}
+             */
+            statut: "a_faire" | "en_cours" | "terminee_a_valider" | "validee";
+            /** Titre */
+            titre: string;
+            /** Version */
+            version: number;
+        };
+        /**
          * ReponseSante
          * @description Réponse de la route de santé : indique que l'API répond.
          *
@@ -46,6 +238,19 @@ export interface components {
              */
             statut: "ok";
         };
+        /**
+         * TransitionRequete
+         * @description Corps d'un changement de statut ; le commentaire est obligatoire pour `refuser`.
+         */
+        TransitionRequete: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "demarrer" | "signaler_terminee" | "valider" | "refuser";
+            /** Commentaire */
+            commentaire?: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -55,6 +260,353 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    lister_api_chantiers_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                "x-profil"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChantierReponse"][];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Action réservée à un chef. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Chantier introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    creer_api_chantiers_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                "x-profil"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreerChantierRequete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChantierReponse"];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Action réservée à un chef. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Chantier introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    consulter_api_chantiers__chantier_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                "x-profil"?: string | null;
+            };
+            path: {
+                chantier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChantierReponse"];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Action réservée à un chef. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Chantier introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    lister_api_chantiers__chantier_id__etapes_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                "x-profil"?: string | null;
+            };
+            path: {
+                chantier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtapeReponse"][];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Action réservée à un chef. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Chantier ou étape introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Transition impossible depuis l'état actuel. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ajouter_api_chantiers__chantier_id__etapes_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                "x-profil"?: string | null;
+            };
+            path: {
+                chantier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AjouterEtapeRequete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtapeReponse"];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Action réservée à un chef. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Chantier ou étape introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Transition impossible depuis l'état actuel. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    changer_statut_api_etapes__etape_id__transitions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                "x-profil"?: string | null;
+            };
+            path: {
+                etape_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransitionRequete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtapeReponse"];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Action réservée à un chef. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Chantier ou étape introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Transition impossible depuis l'état actuel. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     lire_sante_api_health_get: {
         parameters: {
             query?: never;

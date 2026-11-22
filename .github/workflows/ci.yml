@@ -60,6 +60,16 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Vérifier le frontend
         run: just verifier-front
+      # Les tests de bout en bout jouent le parcours contre l'API réelle : Playwright la lance
+      # depuis ../backend avec uv, sur une base SQLite temporaire.
+      - uses: astral-sh/setup-uv@v10.4.0
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Installer les dépendances de l'API (versions verrouillées)
+        working-directory: backend
+        run: uv sync --locked --no-dev
       - name: Installer Chromium pour Playwright
         working-directory: frontend
         run: pnpm exec playwright install --with-deps chromium

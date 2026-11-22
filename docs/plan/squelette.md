@@ -34,16 +34,16 @@ Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `
 
 ## Critères d'acceptation du squelette
 
-- [ ] Je crée un chantier, puis je le modifie ; il apparaît dans la liste avec son échéance et son avancement.
-- [ ] J'ajoute, je modifie, je réordonne et je supprime des étapes sur un chantier.
-- [ ] En profil ouvrier, je fais passer une étape de `À faire` à `En cours`, puis à `Terminée (à valider)`. Je ne peux ni valider ni refuser.
-- [ ] En profil chef, je valide une étape, ou je la refuse avec un commentaire obligatoire, ce qui la renvoie en `En cours`.
-- [ ] Toute transition non autorisée est refusée par l'API (409).
-- [ ] L'avancement est égal au nombre d'étapes validées divisé par le nombre total, et vaut 0 % s'il n'y a aucune étape.
-- [ ] L'historique de chaque étape indique qui (le profil), quoi et quand.
-- [ ] Le budget n'est affiché qu'en profil chef.
-- [ ] L'interface est en français, responsive (360 et 1280 px) et suit le design system Balise.
-- [ ] Les contrats d'architecture, le typage strict, le lint et les tests passent en CI, avec 100 % de couverture sur le domaine et les services.
+- [~] Je crée un chantier (✅ ; la modification est reportée), puis je le modifie ; il apparaît dans la liste avec son échéance et son avancement.
+- [~] J'ajoute (✅), je modifie, je réordonne et je supprime (reportés) des étapes sur un chantier.
+- [x] En profil ouvrier, je fais passer une étape de `À faire` à `En cours`, puis à `Terminée (à valider)`. Je ne peux ni valider ni refuser.
+- [x] En profil chef, je valide une étape, ou je la refuse avec un commentaire obligatoire, ce qui la renvoie en `En cours`.
+- [x] Toute transition non autorisée est refusée par l'API (409).
+- [x] L'avancement est égal au nombre d'étapes validées divisé par le nombre total, et vaut 0 % s'il n'y a aucune étape.
+- [~] L'historique de chaque étape indique qui (le profil), quoi et quand (✅ enregistré ; l'affichage est reporté).
+- [x] Le budget n'est affiché qu'en profil chef.
+- [x] L'interface est en français, responsive (360 et 1280 px) et suit le design system Balise.
+- [x] Les contrats d'architecture, le typage strict, le lint et les tests passent en CI, avec 100 % de couverture sur le domaine et les services.
 - [ ] L'application est en ligne en HTTPS, et inaccessible sans le mot de passe du site.
 
 ## Mise à jour du 2026-11-22 : un premier socle en 2 à 3 heures
