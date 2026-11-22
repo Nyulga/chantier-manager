@@ -5,7 +5,7 @@
 	auto_https off
 }
 
-:80 {
+:8080 {
 	root * /srv
 	# Application d'une seule page : une adresse qui n'est pas un fichier (par exemple
 	# /chantiers/12) renvoie index.html, et c'est le routeur de React qui l'affiche.

@@ -14,7 +14,7 @@ Certaines opérations doivent être atomiques :
 
 ## Décision
 
-- **PostgreSQL 16+**, avec **SQLAlchemy 2 en mode synchrone** et le pilote **psycopg 3**.
+- **PostgreSQL 16+** (pendant le squelette, SQLite : voir l'ADR 0007), avec **SQLAlchemy 2 en mode synchrone** et le pilote **psycopg 3**.
 - **Mapping impératif** :
   - les entités du domaine sont des dataclasses ;
   - le mapping vers les tables est déclaré dans la partie `infrastructure` de chaque module ;

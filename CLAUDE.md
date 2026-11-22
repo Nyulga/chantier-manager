@@ -23,15 +23,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`intent.md`** est la source de vérité : produit, architecture, contraintes, hors périmètre (section 4, à ne jamais réaliser) et critères d'acceptation (section 5).
 - **`.claude/rules/`** : les règles **strictes** par couche. `00-principes.md` s'applique toujours (SOLID, limites chiffrées, commentaires en français, TDD) ; les règles `01` à `07` couvrent les couches `domain`, `application`, `infrastructure` et `api`, le frontend, la composition root avec `shared`, ainsi que les tests et migrations. **Avant de coder dans une couche, relis sa règle**, à chaque lot. Si une demande contredit une règle, signale-le au lieu de la contourner.
 - **`docs/adr/`** : les décisions d'architecture et leurs justifications. Toute décision structurante nouvelle ou modifiée donne lieu à un nouvel ADR.
-- **`docs/design-system.md`** : le design system « Balise », validé. Toute interface l'applique, et ses tokens ne passent que par le thème Tailwind ; aucune couleur ni taille en dur. Le jaune haute visibilité et les rayures sont réservés aux étapes à valider.
+- **`docs/design-system.md`** : le design system « Balise », validé. Toute interface l'applique, et ses tokens ne passent que par le thème Tailwind ; aucune couleur ni taille en dur. Le jaune haute visibilité et les rayures sont réservés aux étapes à valider (le jaune aussi au bouton principal sur mobile et à l'élément actif de la navigation).
 - **`docs/plan/`** : le plan de développement en 9 lots verticaux (`README.md`, puis un fichier `lot-XX-*.md` par lot). Avant de travailler sur un lot, lis son fichier et respecte sa « définition de terminé ».
 
 ## État du projet
 
-**Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S3). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
+**Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S4). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
 
 
-Les lots S1 (socle) et S2 (chantiers et étapes) sont livrés ; la base est **SQLite** pour l'instant. Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
+Les lots S1 (socle), S2 (chantiers et étapes), S3 (mise en ligne) et S4 (tableau de bord) sont livrés ; la base est **SQLite** pour l'instant (ADR 0007). Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
 
 ## Commandes
 
@@ -69,7 +69,7 @@ Sous Windows, uv et just viennent de winget : si le shell ne les trouve pas, raf
   - chaque cas d'usage passe par l'interface `UnitOfWork`, qui a une implémentation SQL et une implémentation mémoire (pour les tests) ;
   - le schéma ne change jamais sans migration Alembic ;
   - identifiants en UUID v7 ; montants en `Decimal`, jamais en `float`.
-- Les tests des services utilisent les implémentations mémoire (repositories, UoW, horloge, stockage). Les tests d'intégration utilisent un vrai PostgreSQL via testcontainers.
+- Les tests des services utilisent les implémentations mémoire (repositories, UoW, horloge, stockage). Les tests d'intégration utilisent un vrai PostgreSQL via testcontainers (SQLite pendant le squelette : ADR 0007).
 - Les types TypeScript du frontend sont **générés depuis le schéma OpenAPI**. Ne les écris jamais à la main.
 
 ## Règles métier qui traversent plusieurs couches

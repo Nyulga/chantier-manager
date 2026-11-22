@@ -58,5 +58,5 @@ class SqlUnitOfWork:
             self.session.commit()
         except StaleDataError:
             raise ConflitVersionError(
-                "Cet élément vient d'être modifié par quelqu'un d'autre : rechargez la page."
+                "Cet élément vient d'être modifié par quelqu'un d'autre : recharge la page."
             ) from None

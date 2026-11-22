@@ -22,6 +22,11 @@ const CHANTIER = {
   budget: '18450.00',
   avancement: 0,
   peut_ajouter_etape: true,
+  etapes_validees: 0,
+  etapes_total: 0,
+  etapes_a_valider: 0,
+  jours_restants: 54,
+  en_retard: false,
 };
 
 function afficher(adresse: string) {
@@ -36,19 +41,33 @@ function afficher(adresse: string) {
   );
 }
 
-it('affiche la liste des chantiers à l’adresse racine, sous l’en-tête commun', async () => {
-  serveur.use(http.get('/api/chantiers', () => HttpResponse.json([CHANTIER])));
+it('affiche le tableau de bord à l’adresse racine, avec la barre latérale', async () => {
+  serveur.use(
+    http.get('/api/chantiers', () => HttpResponse.json([CHANTIER])),
+    http.get('/api/etapes/a-valider', () => HttpResponse.json([])),
+    http.get('/api/activite', () => HttpResponse.json([])),
+  );
 
   afficher('/');
 
-  expect(screen.getByRole('heading', { level: 1, name: 'Chantier Manager' })).toBeVisible();
+  expect(screen.getByRole('navigation', { name: 'Navigation principale' })).toBeVisible();
+  expect(screen.getByRole('heading', { level: 1, name: 'Tableau de bord' })).toBeVisible();
   expect(await screen.findByRole('heading', { level: 3, name: CHANTIER.nom })).toBeVisible();
+});
+
+it('affiche la liste complète des chantiers à /chantiers', async () => {
+  serveur.use(http.get('/api/chantiers', () => HttpResponse.json([CHANTIER])));
+
+  afficher('/chantiers');
+
+  expect(screen.getByRole('heading', { level: 1, name: 'Chantiers' })).toBeVisible();
+  expect(await screen.findByRole('heading', { level: 2, name: CHANTIER.nom })).toBeVisible();
 });
 
 it('affiche le formulaire de création à /chantiers/nouveau', () => {
   afficher('/chantiers/nouveau');
 
-  expect(screen.getByRole('heading', { level: 2, name: 'Nouveau chantier' })).toBeVisible();
+  expect(screen.getByRole('heading', { level: 1, name: 'Nouveau chantier' })).toBeVisible();
 });
 
 it('affiche le détail du chantier avec ses étapes à /chantiers/:id', async () => {
@@ -59,12 +78,12 @@ it('affiche le détail du chantier avec ses étapes à /chantiers/:id', async ()
 
   afficher(`/chantiers/${ID}`);
 
-  expect(await screen.findByRole('heading', { level: 2, name: CHANTIER.nom })).toBeVisible();
+  expect(await screen.findByRole('heading', { level: 1, name: CHANTIER.nom })).toBeVisible();
   expect(await screen.findByText('Aucune étape pour le moment.')).toBeVisible();
 });
 
 it('affiche la page 404 pour une adresse inconnue', () => {
   afficher('/n-importe-quoi');
 
-  expect(screen.getByRole('heading', { level: 2, name: 'Page introuvable' })).toBeVisible();
+  expect(screen.getByRole('heading', { level: 1, name: 'Page introuvable' })).toBeVisible();
 });

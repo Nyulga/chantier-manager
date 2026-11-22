@@ -3,10 +3,17 @@ from uuid import UUID
 import pytest
 
 from app.etapes.domain.cycle import ActionEtape, StatutEtape
-from app.etapes.domain.etape import Etape, HistoriqueEtape, ordre_suivant
+from app.etapes.domain.etape import Etape, HistoriqueEtape, ordre_suivant, trier_par_signalement
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import TransitionInterditeError, ValeurInvalideError
-from tests.unitaires.etapes.fabriques import ID_CHANTIER, INSTANT, une_etape
+from tests.unitaires.etapes.fabriques import (
+    ID_CHANTIER,
+    INSTANT,
+    heures_apres,
+    id_etape,
+    une_etape,
+    une_etape_signalee,
+)
 
 CHEF = Acteur(Role.CHEF)
 OUVRIER = Acteur(Role.OUVRIER)
@@ -96,3 +103,54 @@ def test_une_nouvelle_etape_se_place_apres_la_derniere() -> None:
     etapes = [une_etape(ordre=2), une_etape(ordre=5), une_etape(ordre=3)]
 
     assert ordre_suivant(etapes) == ORDRE_APRES_LE_PLUS_GRAND
+
+
+def test_une_etape_jamais_signalee_n_a_pas_de_date_de_signalement() -> None:
+    etape = une_etape()
+    etape.appliquer(ActionEtape.DEMARRER, OUVRIER, INSTANT)
+
+    assert etape.signalee_le() is None
+
+
+def test_la_date_de_signalement_est_celle_de_la_transition_vers_a_valider() -> None:
+    etape = une_etape_signalee(heures_apres(3))
+
+    assert etape.signalee_le() == heures_apres(3)
+
+
+def test_apres_un_refus_seul_le_dernier_signalement_compte() -> None:
+    etape = une_etape_signalee(heures_apres(1))
+    etape.appliquer(ActionEtape.REFUSER, CHEF, heures_apres(2), "Joints à reprendre.")
+    etape.appliquer(ActionEtape.SIGNALER_TERMINEE, OUVRIER, heures_apres(5))
+    etape.appliquer(ActionEtape.VALIDER, CHEF, heures_apres(6))
+
+    assert etape.signalee_le() == heures_apres(5)
+
+
+def test_les_etapes_sont_triees_de_la_plus_anciennement_signalee_a_la_plus_recente() -> None:
+    recente = une_etape_signalee(heures_apres(9), ordre=1)
+    ancienne = une_etape_signalee(heures_apres(2), ordre=2)
+    moyenne = une_etape_signalee(heures_apres(5), ordre=3)
+
+    triees = trier_par_signalement([recente, ancienne, moyenne])
+
+    assert [etape.id for etape in triees] == [ancienne.id, moyenne.id, recente.id]
+
+
+def test_a_date_egale_l_ordre_de_creation_departage_les_etapes() -> None:
+    seconde = une_etape_signalee(heures_apres(4), ordre=2)
+    premiere = une_etape_signalee(heures_apres(4), ordre=1)
+
+    triees = trier_par_signalement([seconde, premiere])
+
+    assert [etape.id for etape in triees] == [id_etape(1), id_etape(2)]
+
+
+def test_une_etape_sans_signalement_connu_passe_en_tete_du_tri() -> None:
+    signalee = une_etape_signalee(heures_apres(1), ordre=1)
+    sans_trace = une_etape(StatutEtape.TERMINEE_A_VALIDER, ordre=2)
+    autre_sans_trace = une_etape(StatutEtape.TERMINEE_A_VALIDER, ordre=3)
+
+    triees = trier_par_signalement([signalee, autre_sans_trace, sans_trace])
+
+    assert [etape.id for etape in triees] == [sans_trace.id, autre_sans_trace.id, signalee.id]

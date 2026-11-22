@@ -1,26 +1,26 @@
-# Surcharge pour tester sur un poste de développement, où le réseau du serveur n'existe pas.
-# Elle crée ce réseau et ajoute un petit Caddy qui joue le rôle de celui du serveur
-# (sans HTTPS ni mot de passe) et publie le site sur http://localhost:8080.
+# Surcharge pour tester sur un poste de développement, où le Caddy du serveur n'existe pas.
+# Elle ajoute un petit Caddy qui joue son rôle (sans HTTPS ni mot de passe), branché sur le
+# réseau `chantier-interne` comme le sera celui du serveur, et publie le site sur
+# http://localhost:8080.
 #
 # Commande : docker compose -f compose.prod.yaml -f compose.local.yaml up -d --build
 
 services:
   proxy-local:
-    image: caddy:2-alpine
+    # caddy:2-alpine
+    image: caddy@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+    # `chantier-interne` est fermé vers Internet et n'accepte aucun port publié : le réseau par
+    # défaut sert à publier le port 8080 sur le poste, comme le réseau propre du Caddy du serveur.
     networks:
-      - vtt-network
+      - chantier-interne
+      - default
     depends_on:
       chantier-api:
         condition: service_healthy
       chantier-web:
         condition: service_healthy
-
-networks:
-  vtt-network:
-    # `!reset` retire le `external: true` de compose.prod.yaml : ici, Docker crée le réseau.
-    external: !reset null

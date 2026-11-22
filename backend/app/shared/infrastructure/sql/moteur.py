@@ -34,7 +34,10 @@ def creer_moteur(url_base: str) -> Engine:
 def creer_usine_sessions(moteur: Engine) -> sessionmaker[Session]:
     """Crée l'usine de sessions des Unit of Work.
 
-    `expire_on_commit=False` : après la validation, les objets restent lisibles,
-    car les cas d'usage construisent leur vue avant de sortir de la transaction.
+    `expire_on_commit=False` : après la validation, les objets restent lisibles.
+    Plusieurs cas d'usage, comme `CreerChantier`, construisent en effet leur vue
+    après être sortis de la transaction, une fois la session fermée. Sans cette
+    option, la validation expirerait les attributs des objets, et les relire sur
+    une session fermée lèverait une erreur.
     """
     return sessionmaker(bind=moteur, expire_on_commit=False)

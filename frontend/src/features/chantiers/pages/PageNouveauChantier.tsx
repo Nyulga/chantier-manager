@@ -13,8 +13,8 @@ export function PageNouveauChantier() {
 
   return (
     <Pile>
-      <Lien vers="/">Retour aux chantiers</Lien>
-      <Titre niveau={2}>Nouveau chantier</Titre>
+      <Lien vers="/chantiers">Retour aux chantiers</Lien>
+      <Titre niveau={1}>Nouveau chantier</Titre>
       <FormulaireChantier
         enCours={creation.isPending}
         erreur={creation.isError ? creation.error.message : undefined}

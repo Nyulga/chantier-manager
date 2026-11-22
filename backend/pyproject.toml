@@ -9,6 +9,7 @@ dependencies = [
     "psycopg[binary]>=3.3.9",
     "pydantic-settings>=2.16.3",
     "sqlalchemy>=2",
+    "tzdata>=2026.6",
     "uvicorn>=0.54.0",
 ]
 
@@ -199,9 +200,9 @@ type = "forbidden"
 source_modules = ["app.shared"]
 forbidden_modules = ["app.chantiers", "app.etapes"]
 
-# chantiers ne connaît pas etapes : l'avancement lui arrive par un port
-# (FournisseurAvancement) branché dans la composition root. Cela évite aussi
-# tout import circulaire entre les deux modules.
+# chantiers ne connaît pas etapes : le résumé de ses étapes lui arrive par un
+# port (FournisseurResumeEtapes) branché dans la composition root. Cela évite
+# aussi tout import circulaire entre les deux modules.
 [[tool.importlinter.contracts]]
 id = "chantiers-sans-etapes"
 name = "chantiers n'importe pas etapes"

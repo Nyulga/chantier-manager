@@ -9,6 +9,6 @@
 		reverse_proxy chantier-api:8000
 	}
 	handle {
-		reverse_proxy chantier-web:80
+		reverse_proxy chantier-web:8080
 	}
 }

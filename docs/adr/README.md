@@ -9,3 +9,5 @@ Chaque décision structurante est consignée ici : son contexte, la décision pr
 | [0003](0003-authentification.md) | Authentification, sessions et invitations | Accepté |
 | [0004](0004-traitement-des-fichiers.md) | Envoi, contrôle et stockage des fichiers | Accepté |
 | [0005](0005-design-patterns-et-garde-fous.md) | Design patterns, SOLID et garde-fous contre le code spaghetti | Accepté |
+| [0006](0006-code-partage-entre-fonctionnalites-frontend.md) | Code partagé entre fonctionnalités du frontend : `src/api` | Accepté |
+| [0007](0007-sqlite-pendant-le-squelette.md) | SQLite pendant le squelette | Accepté |

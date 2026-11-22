@@ -1,12 +1,13 @@
 // Test de bout en bout de la page d'accueil, à 360 px et à 1280 px (voir playwright.config.ts).
 import { expect, test } from '@playwright/test';
 
-test("la page d'accueil affiche le titre de l'application et le choix du profil", async ({
+test("la page d'accueil affiche le tableau de bord, le logo et le choix du profil", async ({
   page,
 }) => {
   await page.goto('/');
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Chantier Manager' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Tableau de bord' })).toBeVisible();
+  await expect(page.getByText('Chantier Manager')).toBeVisible();
   await expect(page.getByRole('radiogroup', { name: 'Profil' })).toBeVisible();
 });
 
@@ -33,7 +34,7 @@ test('les polices sont servies par le site lui-même, sans appel à un tiers', a
 test('le titre est écrit en Archivo condensé, en majuscules', async ({ page }) => {
   await page.goto('/');
 
-  const titre = page.getByRole('heading', { level: 1 });
+  const titre = page.getByRole('heading', { level: 1, name: 'Tableau de bord' });
 
   await expect(titre).toHaveCSS('text-transform', 'uppercase');
   await expect(titre).toHaveCSS('font-stretch', '72%');

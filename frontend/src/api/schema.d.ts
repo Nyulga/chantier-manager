@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/activite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liste les derniers changements de statut des étapes */
+        get: operations["lister_activite_api_activite_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/chantiers": {
         parameters: {
             query?: never;
@@ -57,6 +74,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/etapes/a-valider": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Liste les étapes qui attendent la décision d'un chef */
+        get: operations["lister_a_valider_api_etapes_a_valider_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/etapes/{etape_id}/transitions": {
         parameters: {
             query?: never;
@@ -102,6 +136,48 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * ActiviteReponse
+         * @description Une entrée du fil d'activité : un changement de statut d'une étape.
+         *
+         *     `role` est le profil qui a agi. `commentaire` n'est renseigné que pour un refus.
+         */
+        ActiviteReponse: {
+            /**
+             * Ancien Statut
+             * @enum {string}
+             */
+            ancien_statut: "a_faire" | "en_cours" | "terminee_a_valider" | "validee";
+            /**
+             * Chantier Id
+             * Format: uuid
+             */
+            chantier_id: string;
+            /** Commentaire */
+            commentaire: string | null;
+            /**
+             * Date
+             * Format: date-time
+             */
+            date: string;
+            /**
+             * Etape Id
+             * Format: uuid
+             */
+            etape_id: string;
+            /**
+             * Nouveau Statut
+             * @enum {string}
+             */
+            nouveau_statut: "a_faire" | "en_cours" | "terminee_a_valider" | "validee";
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "chef" | "ouvrier";
+            /** Titre Etape */
+            titre_etape: string;
+        };
+        /**
          * AdresseReponse
          * @description Adresse postale d'un chantier.
          */
@@ -138,7 +214,8 @@ export interface components {
          * @description Chantier tel que le voit l'acteur.
          *
          *     `budget` est une chaîne décimale en euros (`"125000.50"`), ou `null` pour un
-         *     ouvrier. `avancement` est un pourcentage entier de 0 à 100.
+         *     ouvrier. `avancement` est un pourcentage entier de 0 à 100. Lui comme les
+         *     compteurs d'étapes sont calculés à chaque lecture, jamais stockés.
          */
         ChantierReponse: {
             adresse: components["schemas"]["AdresseReponse"];
@@ -159,10 +236,35 @@ export interface components {
              */
             echeance: string;
             /**
+             * En Retard
+             * @description Vrai quand l'échéance est dépassée d'au moins un jour entier.
+             */
+            en_retard: boolean;
+            /**
+             * Etapes A Valider
+             * @description Nombre d'étapes signalées terminées, qui attendent la décision d'un chef.
+             */
+            etapes_a_valider: number;
+            /**
+             * Etapes Total
+             * @description Nombre total d'étapes du chantier.
+             */
+            etapes_total: number;
+            /**
+             * Etapes Validees
+             * @description Nombre d'étapes validées du chantier.
+             */
+            etapes_validees: number;
+            /**
              * Id
              * Format: uuid
              */
             id: string;
+            /**
+             * Jours Restants
+             * @description Nombre de jours entiers, toujours positif ou nul. Si `en_retard` est faux, c'est le temps qui reste avant l'échéance (0 le jour même). Si `en_retard` est vrai, c'est le nombre de jours de retard depuis l'échéance, au moins 1.
+             */
+            jours_restants: number;
             /** Nom */
             nom: string;
             /** Peut Ajouter Etape */
@@ -190,6 +292,34 @@ export interface components {
             echeance: string;
             /** Nom */
             nom: string;
+        };
+        /**
+         * EtapeAValiderReponse
+         * @description Étape qui attend la décision d'un chef, telle qu'elle figure dans « À valider ».
+         *
+         *     La liste va de l'étape signalée depuis le plus longtemps à la plus récente.
+         *     `signalee_le` est la date du dernier signalement « terminée » (après un refus,
+         *     c'est le nouveau qui compte) ; elle n'est `null` que sur une donnée incohérente.
+         */
+        EtapeAValiderReponse: {
+            /** Actions Permises */
+            actions_permises: ("demarrer" | "signaler_terminee" | "valider" | "refuser")[];
+            /**
+             * Chantier Id
+             * Format: uuid
+             */
+            chantier_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Signalee Le */
+            signalee_le: string | null;
+            /** Titre */
+            titre: string;
+            /** Version */
+            version: number;
         };
         /**
          * EtapeReponse
@@ -260,6 +390,67 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    lister_activite_api_activite_get: {
+        parameters: {
+            query?: {
+                /** @description Nombre d'entrées voulues, de la plus récente à la plus ancienne. Une valeur hors des bornes du fil d'activité est refusée (422). */
+                limite?: number;
+            };
+            header?: {
+                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                "x-profil"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiviteReponse"][];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Action réservée à un chef. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Chantier ou étape introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Transition impossible depuis l'état actuel. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     lister_api_chantiers_get: {
         parameters: {
             query?: never;
@@ -504,6 +695,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EtapeReponse"];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Action réservée à un chef. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Chantier ou étape introuvable. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Transition impossible depuis l'état actuel. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Données invalides. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    lister_a_valider_api_etapes_a_valider_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                "x-profil"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EtapeAValiderReponse"][];
                 };
             };
             /** @description Profil `X-Profil` absent ou inconnu. */

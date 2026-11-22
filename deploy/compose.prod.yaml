@@ -1,23 +1,47 @@
 # Déploiement de chantier-manager : l'API et le site statique, derrière le Caddy du serveur.
 # Aucun port n'est publié sur l'hôte : le Caddy du serveur joint les conteneurs par leur nom,
-# sur le réseau Docker qu'il partage déjà avec eux.
+# sur le réseau dédié `chantier-interne`, que ce fichier crée et que seul ce Caddy rejoint
+# en plus des deux conteneurs. Les autres projets du serveur ne peuvent donc pas
+# atteindre l'API sans passer par le Caddy et son éventuel mot de passe.
 #
 # Commande : docker compose -f compose.prod.yaml up -d --build   (depuis le dossier deploy/)
 
 name: chantier
 
+# Durcissement commun aux deux conteneurs (voir le ticket n°14) :
+# - système de fichiers en lecture seule, avec /tmp en mémoire pour les fichiers temporaires ;
+# - aucune capacité Linux, et aucune élévation de privilèges possible (setuid, etc.) ;
+# - journaux tournants : sans limite, le pilote json-file remplit le disque du serveur.
+x-durcissement: &durcissement
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   chantier-api:
+    <<: *durcissement
     build:
       context: ..
       dockerfile: deploy/backend.Dockerfile
-    restart: unless-stopped
     environment:
       CHANTIER_URL_BASE: sqlite:////donnees/chantier.db
+    # Seul /donnees est inscriptible (migrations et base SQLite) : le code de /app est en lecture seule.
     volumes:
       - chantier-donnees:/donnees
+    mem_limit: 512m
+    pids_limit: 100
     networks:
-      - vtt-network
+      - chantier-interne
     healthcheck:
       test:
         - CMD
@@ -30,14 +54,16 @@ services:
       start_period: 10s
 
   chantier-web:
+    <<: *durcissement
     build:
       context: ..
       dockerfile: deploy/frontend.Dockerfile
-    restart: unless-stopped
+    mem_limit: 128m
+    pids_limit: 50
     networks:
-      - vtt-network
+      - chantier-interne
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:80/"]
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -49,7 +75,12 @@ volumes:
     name: chantier-donnees
 
 networks:
-  # Réseau du Caddy du serveur : il existe déjà, on s'y rattache sans le créer.
-  vtt-network:
-    name: vtt-prod_vtt-network
-    external: true
+  # Réseau dédié, créé par ce fichier, avec un nom fixe : le compose du projet qui héberge le
+  # Caddy du serveur le déclare `external` pour y rattacher son seul proxy.
+  # `internal: true` coupe l'accès à Internet : ni l'API ni le site n'ont besoin de sortir, et
+  # un conteneur compromis ne pourrait ni exfiltrer de données ni télécharger d'outils. Le proxy,
+  # qui a aussi son propre réseau, garde sa sortie. À ROUVRIR au lot des courriels : l'envoi
+  # SMTP demandera à l'API un accès sortant (réseau supplémentaire dédié, ou `internal: false`).
+  chantier-interne:
+    name: chantier-interne
+    internal: true

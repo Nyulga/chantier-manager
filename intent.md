@@ -32,7 +32,7 @@ Application simple de gestion de chantiers qui permet de suivre l'état d'avance
    - Connexion et déconnexion ; chaque utilisateur ne voit que les chantiers qui le concernent.
 
 ### Phase 1 : squelette livré en premier
-Avant la V1 complète, on livre un **squelette** utilisable rapidement : créer et suivre des chantiers, avec leurs étapes, leur validation et leur pourcentage d'avancement. Il n'y a pas d'authentification dans l'application : on choisit son profil (chef ou ouvrier) dans l'interface. Le site en ligne est protégé par un mot de passe d'accès. Le périmètre exact, ce qui est reporté et les critères sont dans [`docs/plan/squelette.md`](docs/plan/squelette.md). Toutes les règles de `.claude/rules/` s'y appliquent. Les autres sections de ce document décrivent la V1 complète (phase 2).
+Avant la V1 complète, on livre un **squelette** utilisable rapidement : créer et suivre des chantiers, avec leurs étapes, leur validation et leur pourcentage d'avancement. Il n'y a pas d'authentification dans l'application : on choisit son profil (chef ou ouvrier) dans l'interface. Le site en ligne est une démonstration publique, sans mot de passe : on n'y saisit aucune donnée réelle. Le périmètre exact, ce qui est reporté et les critères sont dans [`docs/plan/squelette.md`](docs/plan/squelette.md). Toutes les règles de `.claude/rules/` s'y appliquent. Les autres sections de ce document décrivent la V1 complète (phase 2).
 
 ### Périmètre de la V1
 Le produit aura à terme deux parties : une **application web** et une **application mobile**.
@@ -88,7 +88,7 @@ Chaque module est organisé en 4 parties :
 - **Erreurs métier typées** (`TransitionInterdite`, `AccesRefuse`, `NonTrouve`…), traduites en codes HTTP uniquement dans la partie `api`.
 - **Identifiants** : UUID v7, fournis au domaine par le port `GenerateurId`. Ils sont triables et ne révèlent pas le nombre d'enregistrements.
 - **Ports techniques** : `Horloge`, `GenerateurId`, `HacheurMotDePasse`, `StockageFichiers`, `ScanneurAntivirus`, `EnvoiEmail`, `UnitOfWork`, `JournalAudit` (disponible dès le noyau partagé, pour journaliser les actions sensibles dès leur création), plus un repository par agrégat.
-- **Avancement affiché sur les chantiers** : `chantiers` déclare un port `FournisseurAvancement`, que la composition root branche sur le calcul du module `etapes`. Aucun module n'importe donc l'autre dans les deux sens.
+- **Avancement affiché sur les chantiers** : `chantiers` déclare un port `FournisseurResumeEtapes` (avancement et compteurs d'étapes), que la composition root branche sur le calcul du module `etapes`. Aucun module n'importe donc l'autre dans les deux sens.
 - **Concurrence** : chaque étape porte un numéro de version (verrou optimiste). Deux actions simultanées sur la même étape ne s'écrasent jamais : la seconde est rejetée (409).
 
 ### 2.4 Persistance

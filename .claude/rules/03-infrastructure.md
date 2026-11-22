@@ -38,5 +38,5 @@ Implémenter les ports déclarés par `application`. **C'est la seule couche qui
 - Requêtes de liste : chargement explicite des relations nécessaires (pas de requêtes N+1) et pagination.
 
 ## Tests (voir aussi `07-tests-et-migrations.md`)
-- **Tests de contrat** : une suite de tests unique par port, exécutée sur l'implémentation SQL (PostgreSQL réel via testcontainers) **et** sur l'implémentation mémoire. Les deux doivent se comporter exactement de la même façon (principe L).
+- **Tests de contrat** : une suite de tests unique par port, exécutée sur l'implémentation SQL (PostgreSQL réel via testcontainers ; SQLite pendant le squelette, voir l'ADR 0007) **et** sur l'implémentation mémoire. Les deux doivent se comporter exactement de la même façon (principe L).
 - Les adaptateurs externes (ClamAV, SMTP) sont testés en intégration contre les conteneurs de développement : fichier EICAR pour ClamAV, Mailpit pour le SMTP.

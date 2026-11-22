@@ -1,4 +1,4 @@
-// Tests de la page 404 : message clair et retour vers la liste des chantiers.
+// Tests de la page 404 : message clair et retour vers le tableau de bord.
 import { screen } from '@testing-library/react';
 import { Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
@@ -17,11 +17,14 @@ function afficherPage() {
   );
 }
 
-it('explique que la page n’existe pas et propose de revenir aux chantiers', () => {
+it('explique que la page n’existe pas et propose de revenir au tableau de bord', () => {
   afficherPage();
 
-  expect(screen.getByRole('heading', { level: 2, name: 'Page introuvable' })).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Retour aux chantiers' })).toHaveAttribute('href', '/');
+  expect(screen.getByRole('heading', { level: 1, name: 'Page introuvable' })).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Retour au tableau de bord' })).toHaveAttribute(
+    'href',
+    '/',
+  );
 });
 
 it('n’a aucun défaut d’accessibilité détectable par axe', async () => {

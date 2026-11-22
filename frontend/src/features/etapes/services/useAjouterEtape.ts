@@ -3,8 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { creerClientApi } from '@/api/client';
 import { erreurApi } from '@/api/erreurApi';
-
-import { rafraichirChantier } from './rafraichirChantier';
+import { rafraichirChantier } from '@/api/rafraichissement';
 
 /**
  * Ajoute une étape (par son titre) au chantier. L'avancement baisse quand une étape s'ajoute :

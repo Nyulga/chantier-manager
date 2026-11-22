@@ -32,5 +32,10 @@ def reponse_depuis(vue: ChantierVue) -> ChantierReponse:
         echeance=vue.echeance,
         budget=vue.budget,
         avancement=vue.avancement,
+        etapes_validees=vue.etapes_validees,
+        etapes_total=vue.etapes_total,
+        etapes_a_valider=vue.etapes_a_valider,
+        jours_restants=vue.jours_restants,
+        en_retard=vue.en_retard,
         peut_ajouter_etape=vue.peut_ajouter_etape,
     )

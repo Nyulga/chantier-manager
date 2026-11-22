@@ -1,5 +1,6 @@
 """Schémas JSON des routes des étapes : ce que l'API reçoit et ce qu'elle renvoie."""
 
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -16,6 +17,7 @@ LONGUEUR_COMMENTAIRE_MAX = 1000
 # elles sont donc répétées ici ; le test du parcours complet les traverse toutes.
 StatutReponse = Literal["a_faire", "en_cours", "terminee_a_valider", "validee"]
 ActionEtape = Literal["demarrer", "signaler_terminee", "valider", "refuser"]
+RoleReponse = Literal["chef", "ouvrier"]
 
 
 class AjouterEtapeRequete(BaseModel):
@@ -51,3 +53,39 @@ class EtapeReponse(BaseModel):
     statut: StatutReponse
     version: int
     actions_permises: list[ActionEtape]
+
+
+class EtapeAValiderReponse(BaseModel):
+    """Étape qui attend la décision d'un chef, telle qu'elle figure dans « À valider ».
+
+    La liste va de l'étape signalée depuis le plus longtemps à la plus récente.
+    `signalee_le` est la date du dernier signalement « terminée » (après un refus,
+    c'est le nouveau qui compte) ; elle n'est `null` que sur une donnée incohérente.
+    """
+
+    model_config = CONFIG_SORTIE
+
+    id: UUID
+    chantier_id: UUID
+    titre: str
+    version: int
+    actions_permises: list[ActionEtape]
+    signalee_le: datetime | None
+
+
+class ActiviteReponse(BaseModel):
+    """Une entrée du fil d'activité : un changement de statut d'une étape.
+
+    `role` est le profil qui a agi. `commentaire` n'est renseigné que pour un refus.
+    """
+
+    model_config = CONFIG_SORTIE
+
+    etape_id: UUID
+    chantier_id: UUID
+    titre_etape: str
+    role: RoleReponse
+    ancien_statut: StatutReponse
+    nouveau_statut: StatutReponse
+    date: datetime
+    commentaire: str | None

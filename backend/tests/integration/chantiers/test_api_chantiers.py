@@ -24,6 +24,9 @@ def test_un_chef_cree_un_chantier_sans_avancement(client: TestClient) -> None:
     chantier = creer(client)
 
     assert UUID(chantier.pop("id")).version == UUID_VERSION_7
+    # Le délai dépend de la date du jour : le test ne doit pas changer d'avis avec l'horloge.
+    assert chantier.pop("jours_restants") >= 0
+    assert isinstance(chantier.pop("en_retard"), bool)
     assert chantier == {
         "nom": "Rénovation école",
         "adresse": {"voie": "12 rue des Lilas", "code_postal": "69001", "ville": "Lyon"},
@@ -32,6 +35,9 @@ def test_un_chef_cree_un_chantier_sans_avancement(client: TestClient) -> None:
         "echeance": "2027-03-31",
         "budget": "125000.50",
         "avancement": 0,
+        "etapes_validees": 0,
+        "etapes_total": 0,
+        "etapes_a_valider": 0,
         "peut_ajouter_etape": True,
     }
 

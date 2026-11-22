@@ -19,9 +19,10 @@ def acteur_courant(
     """Construit l'acteur à partir de l'en-tête `X-Profil`.
 
     Le squelette n'a pas d'authentification (docs/plan/squelette.md) : le profil
-    est une simple déclaration, protégée seulement par le mot de passe du site. En
-    phase 2, cette fonction lira le jeton de session au lieu de l'en-tête, sans
-    changer ni les routes ni les cas d'usage.
+    est une simple déclaration, que rien ne protège. Le site en ligne est une
+    démonstration publique, sans mot de passe, où l'on ne saisit aucune donnée
+    réelle (intent.md, §1). En phase 2, cette fonction lira le jeton de session au
+    lieu de l'en-tête, sans changer ni les routes ni les cas d'usage.
 
     Lève :
         ProfilInvalideError : l'en-tête est absent ou ne vaut ni `chef` ni `ouvrier`.

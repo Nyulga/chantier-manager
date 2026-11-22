@@ -1,9 +1,9 @@
-"""Propriétés de la machine à états et de l'avancement, vérifiées par hypothesis."""
+"""Propriétés de la machine à états et du résumé des étapes, vérifiées par hypothesis."""
 
 from hypothesis import given
 from hypothesis import strategies as st
 
-from app.etapes.domain.avancement import POURCENTAGE_MAX, calculer_avancement
+from app.etapes.domain.avancement import POURCENTAGE_MAX, resumer_etapes
 from app.etapes.domain.cycle import ActionEtape, StatutEtape
 from app.etapes.domain.etape import Etape
 from app.shared.domain.acteur import Acteur, Role
@@ -82,4 +82,15 @@ def test_l_historique_forme_une_chaine_continue_de_statuts(partie: list[Coup]) -
 def test_l_avancement_reste_entre_0_et_100(statuts: list[StatutEtape]) -> None:
     etapes = [une_etape(statut, ordre) for ordre, statut in enumerate(statuts, start=1)]
 
-    assert 0 <= calculer_avancement(etapes) <= POURCENTAGE_MAX
+    assert 0 <= resumer_etapes(etapes).avancement <= POURCENTAGE_MAX
+
+
+@given(st.lists(st.sampled_from(StatutEtape), max_size=50))
+def test_les_validees_et_les_a_valider_n_excedent_jamais_le_total(
+    statuts: list[StatutEtape],
+) -> None:
+    etapes = [une_etape(statut, ordre) for ordre, statut in enumerate(statuts, start=1)]
+
+    resume = resumer_etapes(etapes)
+
+    assert resume.validees + resume.a_valider <= resume.total == len(statuts)

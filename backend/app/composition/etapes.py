@@ -6,7 +6,9 @@ from app.chantiers.application import AutoriserAjoutEtape, VerifierChantierExist
 from app.chantiers.infrastructure.sql.unit_of_work import SqlUnitOfWorkChantiers
 from app.etapes.application.ajouter_etape import AjouterEtape
 from app.etapes.application.changer_statut_etape import ChangerStatutEtape
+from app.etapes.application.lister_activite_recente import ListerActiviteRecente
 from app.etapes.application.lister_etapes import ListerEtapes
+from app.etapes.application.lister_etapes_a_valider import ListerEtapesAValider
 from app.etapes.infrastructure.sql.unit_of_work import SqlUnitOfWorkEtapes
 from app.shared.application.ports import GenerateurId
 from app.shared.infrastructure.horloge_systeme import HorlogeSysteme
@@ -43,3 +45,11 @@ class FournisseursEtapes:
     def changer_statut_etape(self) -> ChangerStatutEtape:
         """Fournit le cas d'usage de changement de statut."""
         return ChangerStatutEtape(self._uow(), HorlogeSysteme())
+
+    def lister_etapes_a_valider(self) -> ListerEtapesAValider:
+        """Fournit le cas d'usage de la liste « À valider »."""
+        return ListerEtapesAValider(self._uow())
+
+    def lister_activite_recente(self) -> ListerActiviteRecente:
+        """Fournit le cas d'usage du fil d'activité."""
+        return ListerActiviteRecente(self._uow())

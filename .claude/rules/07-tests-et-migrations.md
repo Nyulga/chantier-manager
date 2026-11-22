@@ -20,7 +20,7 @@ Relire d'abord `00-principes.md`.
 backend/tests/
 ├── unitaires/<module>/        # domain et application, sans base ni réseau
 ├── contrats/                  # une suite par port, jouée sur SQL ET mémoire
-├── integration/<module>/      # routes API + PostgreSQL réel (testcontainers)
+├── integration/<module>/      # routes API + PostgreSQL réel (testcontainers ; SQLite pendant le squelette, ADR 0007)
 └── architecture/              # contrats import-linter et limites de taille
 ```
 Côté frontend : un fichier `*.test.tsx` à côté du fichier testé, et les tests Playwright dans `frontend/e2e/`.
@@ -56,7 +56,7 @@ Côté frontend : un fichier `*.test.tsx` à côté du fichier testé, et les te
 - **Toute** modification du schéma passe par une migration Alembic. On ne modifie jamais la base à la main.
 - Une migration générée automatiquement (`--autogenerate`) est **relue et corrigée** avant d'être commitée.
 - Une migration = un changement cohérent, avec un nom explicite : `ajoute_table_etapes`.
-- `upgrade` **et** `downgrade` sont écrits et testés : un test applique toutes les migrations, puis les annule, puis les réapplique, sur un PostgreSQL réel.
+- `upgrade` **et** `downgrade` sont écrits et testés : un test applique toutes les migrations, puis les annule, puis les réapplique, sur un PostgreSQL réel (SQLite pendant le squelette, ADR 0007).
 - **Aucune perte de données** :
   - pour renommer une colonne ou changer son type, on procède en plusieurs étapes (ajout, copie, suppression), jamais par une suppression directe ;
   - toute suppression de données est signalée à l'utilisateur avant d'être écrite.

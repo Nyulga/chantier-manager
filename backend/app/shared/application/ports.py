@@ -5,7 +5,7 @@ ont besoin. Elles arrivent par le constructeur, ce qui permet de les remplacer
 par des fakes dans les tests (règle 02).
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from types import TracebackType
 from typing import Protocol, Self
 from uuid import UUID
@@ -16,6 +16,15 @@ class Horloge(Protocol):
 
     def maintenant(self) -> datetime:
         """Renvoie l'instant présent, avec son fuseau horaire."""
+        ...
+
+    def aujourd_hui(self) -> date:
+        """Renvoie la date du jour à Paris, et non en UTC.
+
+        C'est la date que vivent les utilisateurs : elle sert aux règles comptées en
+        jours, comme le délai d'un chantier. La date UTC retarderait d'un jour entre
+        minuit et 1 h (2 h en été), heure de Paris.
+        """
         ...
 
 
