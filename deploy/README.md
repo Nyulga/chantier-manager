@@ -7,7 +7,7 @@ Ce dossier contient tout ce qu'il faut pour mettre l'application en ligne avec D
 | `compose.prod.yaml` | Les services `chantier-api` et `chantier-web`, le volume `chantier-donnees` et le réseau externe `vtt-prod_vtt-network`. Aucun port n'est publié sur l'hôte. |
 | `backend.Dockerfile` | Image de l'API (Python 3.13, uv, utilisateur non root). |
 | `frontend.Dockerfile`, `frontend.Caddyfile` | Image du site (construction Vite, puis fichiers statiques servis par Caddy, utilisateur non root). |
-| `Caddyfile.extrait` | Le bloc à ajouter au Caddy du serveur : HTTPS, mot de passe d'accès, en-têtes de sécurité, aiguillage `/api` et site. |
+| `Caddyfile.extrait` | Le bloc à ajouter au Caddy du serveur : HTTPS, en-têtes de sécurité, limite de taille des requêtes, aiguillage `/api` et site. |
 | `compose.local.yaml`, `Caddyfile.local` | Surcharge pour tester sur un poste de développement, sans le Caddy du serveur. |
 
 Le Caddy du serveur n'appartient pas à ce dépôt : on n'y ajoute que le bloc de `Caddyfile.extrait`.
@@ -44,9 +44,11 @@ Aucune de ces commandes ne s'exécute toute seule : chacune se lance à la main 
    Le réseau `vtt-prod_vtt-network` doit déjà exister (c'est celui du Caddy du serveur) ; sinon la commande s'arrête avec un message d'erreur.
 
 3. **Brancher le Caddy du serveur** :
-   - générer l'empreinte du mot de passe d'accès : `docker exec -it <conteneur-caddy> caddy hash-password` ;
-   - ajouter au Caddyfile du serveur le bloc de `Caddyfile.extrait`, en remplaçant `<EMPREINTE_BCRYPT>` par cette empreinte. Ne la commite jamais ;
-   - recharger Caddy : `docker exec <conteneur-caddy> caddy reload --config /etc/caddy/Caddyfile`.
+   - sauvegarder le Caddyfile du serveur, puis y ajouter le bloc de `Caddyfile.extrait` **sans changer l'inode du fichier** (`cat >>`, pas `sed -i`), car il est monté dans le conteneur ;
+   - valider : `docker exec <conteneur-caddy> caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`, et remettre la sauvegarde en cas d'échec ;
+   - recharger à chaud : `docker exec <conteneur-caddy> caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile`.
+
+   Le site est une **démonstration publique**, sans mot de passe : voir l'en-tête de `Caddyfile.extrait` pour le protéger.
 
    Le nom `chantier-ultra.ddns.net` doit pointer vers le serveur, et les ports 80 et 443 doivent être ouverts : Caddy obtient lui-même le certificat HTTPS.
 
