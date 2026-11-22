@@ -17,7 +17,7 @@ export function CadreApplication({ barreLaterale, children }: CadreApplicationPr
   return (
     <div className="flex min-h-screen flex-col ordinateur:flex-row">
       {barreLaterale}
-      <main className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col gap-7 p-4 tablette:p-8 ordinateur:px-10 ordinateur:pb-10">
+      <main className="mx-auto flex w-full min-w-0 max-w-contenu flex-1 flex-col gap-7 p-4 tablette:p-8 ordinateur:px-10 ordinateur:pb-10">
         {children}
       </main>
     </div>

@@ -1,5 +1,5 @@
 // Composant `Titre` du design system Balise : titres condensés de type « panneau de chantier ».
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 /** Niveau de titre : 1 pour la page, 2 pour une section, 3 pour une carte. */
 type NiveauTitre = 1 | 2 | 3;
@@ -11,6 +11,12 @@ type TitreProps = {
    * sur une page sans section, pour ne pas sauter de niveau dans le plan de la page.
    */
   readonly taille?: NiveauTitre;
+  /**
+   * Référence vers le titre. En la fournissant, on rend aussi le titre focalisable par programme
+   * (hors de l'ordre de tabulation) : un écran peut y replacer le focus quand l'élément focalisé
+   * disparaît, par exemple après la validation d'une étape.
+   */
+  readonly refTitre?: Ref<HTMLHeadingElement> | undefined;
   readonly children: ReactNode;
 };
 
@@ -31,8 +37,16 @@ const TAILLE_PAR_NIVEAU = {
 } as const satisfies Record<NiveauTitre, string>;
 
 /** Titre en Archivo condensé, majuscules, graisse 800 (utilitaire `titre-balise` du thème). */
-export function Titre({ niveau, taille = niveau, children }: TitreProps) {
+export function Titre({ niveau, taille = niveau, refTitre, children }: TitreProps) {
   const Element = ELEMENT_PAR_NIVEAU[niveau];
 
-  return <Element className={`titre-balise ${TAILLE_PAR_NIVEAU[taille]}`}>{children}</Element>;
+  return (
+    <Element
+      ref={refTitre}
+      tabIndex={refTitre === undefined ? undefined : -1}
+      className={`titre-balise ${TAILLE_PAR_NIVEAU[taille]}`}
+    >
+      {children}
+    </Element>
+  );
 }

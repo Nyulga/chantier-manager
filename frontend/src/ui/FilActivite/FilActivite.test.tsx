@@ -8,8 +8,8 @@ import { FilActivite } from './FilActivite';
 const ENTREES = [
   {
     id: 'a',
-    initiales: 'TO',
-    qui: 'Toi',
+    initiales: 'TU',
+    qui: 'Tu',
     quoi: 'as validé « Fondations »',
     contexte: 'Mairie · hier',
   },
@@ -28,7 +28,7 @@ it('affiche une ligne par événement : qui, quoi, puis le contexte', () => {
   const liste = screen.getByRole('list', { name: 'Activité récente' });
   const lignes = within(liste).getAllByRole('listitem');
   expect(lignes).toHaveLength(2);
-  expect(lignes[0]).toHaveTextContent('Toi as validé « Fondations »');
+  expect(lignes[0]).toHaveTextContent('Tu as validé « Fondations »');
   expect(lignes[0]).toHaveTextContent('Mairie · hier');
 });
 

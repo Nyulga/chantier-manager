@@ -1,10 +1,13 @@
 // Section « À valider » du tableau de bord : les étapes signalées terminées, avec leurs actions.
-import { Alerte, BlocAValider, formaterMoment, LigneAValider, Section, Texte } from '@/ui';
+import type { ReactNode } from 'react';
+
+import { Alerte, BlocAValider, Section, Texte } from '@/ui';
 
 import type { Chantier } from '../services/useChantiers';
 import type { EtapeAValider } from '../services/useEtapesAValider';
-import { ActionsAValider } from './ActionsAValider';
+import { LigneEtapeAValider } from './LigneEtapeAValider';
 import { nomDuChantier } from './nomDuChantier';
+import { useFocusApresValidation } from './useFocusApresValidation';
 
 type SectionAValiderProps = {
   /** `undefined` tant que la liste n'est pas chargée. */
@@ -13,18 +16,24 @@ type SectionAValiderProps = {
   readonly chantiers: readonly Chantier[] | undefined;
   readonly maintenant: Date;
   readonly enCours: boolean;
-  /** Erreur de la dernière validation, avec l'étape concernée : seule sa ligne l'affiche. */
-  readonly erreurValidation?: { readonly etapeId: string; readonly message: string } | undefined;
+  /**
+   * Erreur de la dernière validation, avec le titre de l'étape concernée. Elle s'affiche au niveau
+   * de la section, et non sur la ligne : après un 409 la relecture retire l'étape de la liste, et
+   * la ligne (avec son alerte) disparaîtrait avant que l'utilisateur ait pu lire le message.
+   */
+  readonly erreurValidation?: { readonly titre: string; readonly message: string } | undefined;
   readonly onValider: (etape: EtapeAValider) => void;
 };
 
 const TITRE = 'À valider';
 
-/** Texte du signalement : l'API peut ne pas donner de date sur une donnée incohérente. */
-function signalement(etape: EtapeAValider, maintenant: Date): string {
-  return etape.signalee_le === null
-    ? 'Signalée terminée'
-    : `Signalée ${formaterMoment(etape.signalee_le, maintenant)}`;
+/** L'étape est nommée : la ligne a pu disparaître de la liste avant que l'utilisateur lise le message. */
+function AlerteValidation({ erreur }: { readonly erreur: { titre: string; message: string } }) {
+  return (
+    <Alerte variante="erreur">
+      Impossible de valider « {erreur.titre} » : {erreur.message}
+    </Alerte>
+  );
 }
 
 /**
@@ -40,28 +49,30 @@ export function SectionAValider({
   erreurValidation,
   onValider,
 }: SectionAValiderProps) {
+  const { refTitre, refLigne, memoriser } = useFocusApresValidation(etapes, enCours);
+
+  const dansSection = (contenu: ReactNode) => (
+    <Section titre={TITRE} refTitre={refTitre}>
+      {contenu}
+    </Section>
+  );
+
   if (erreurChargement !== undefined) {
-    return (
-      <Section titre={TITRE}>
-        <Alerte variante="erreur">{erreurChargement}</Alerte>
-      </Section>
-    );
+    return dansSection(<Alerte variante="erreur">{erreurChargement}</Alerte>);
   }
   if (etapes === undefined) {
-    return (
-      <Section titre={TITRE}>
-        <Texte variante="secondaire">Chargement des étapes à valider…</Texte>
-      </Section>
-    );
+    return dansSection(<Texte variante="secondaire">Chargement des étapes à valider…</Texte>);
   }
+  const alerte = erreurValidation && <AlerteValidation erreur={erreurValidation} />;
   if (etapes.length === 0) {
-    return (
-      <Section titre={TITRE}>
+    return dansSection(
+      <>
+        {alerte}
         <Texte>
           Rien à valider pour le moment. Les étapes que tes ouvriers signalent terminées
           apparaîtront ici.
         </Texte>
-      </Section>
+      </>,
     );
   }
 
@@ -70,15 +81,21 @@ export function SectionAValider({
       titre={TITRE}
       compteur={etapes.length}
       sousTitre="Étapes signalées terminées par tes ouvriers"
+      refTitre={refTitre}
+      alerte={alerte}
     >
       {etapes.map((etape) => (
-        <LigneAValider
+        <LigneEtapeAValider
           key={etape.id}
-          titre={etape.titre}
-          contexte={nomDuChantier(chantiers, etape.chantier_id)}
-          signalement={signalement(etape, maintenant)}
-          erreur={erreurValidation?.etapeId === etape.id ? erreurValidation.message : undefined}
-          actions={<ActionsAValider etape={etape} enCours={enCours} onValider={onValider} />}
+          etape={etape}
+          nomChantier={nomDuChantier(chantiers, etape.chantier_id)}
+          maintenant={maintenant}
+          enCours={enCours}
+          reference={refLigne(etape.id)}
+          onValider={(aValider) => {
+            memoriser(aValider.id);
+            onValider(aValider);
+          }}
         />
       ))}
     </BlocAValider>

@@ -11,7 +11,7 @@ type SectionActiviteProps = {
   readonly entrees: readonly EntreeActivite[] | undefined;
   readonly erreur?: string | undefined;
   readonly chantiers: readonly Chantier[] | undefined;
-  /** Rôle de l'utilisateur courant : ses propres actions s'écrivent « Toi ». */
+  /** Rôle de l'utilisateur courant : ses propres actions s'écrivent « Tu as… ». */
   readonly profil: EntreeActivite['role'];
   readonly maintenant: Date;
 };

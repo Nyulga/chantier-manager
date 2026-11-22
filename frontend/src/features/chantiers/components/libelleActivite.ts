@@ -35,18 +35,18 @@ const INITIALES_PAR_ROLE: Readonly<Record<Role, string>> = { chef: 'CH', ouvrier
 
 /**
  * Écrit une entrée du fil. Si le rôle est celui du profil courant, la phrase s'adresse à
- * l'utilisateur (« Toi as validé ») ; sinon elle est à la troisième personne (« Le chef a validé »).
+ * l'utilisateur (« Tu as validé ») ; sinon elle est à la troisième personne (« Le chef a validé »).
  * Le motif d'un refus est ajouté après la phrase, séparé par « : ».
  */
 export function libelleActivite(entree: EntreeActivite, profil: Role): LibelleActivite {
   const cle = `${entree.ancien_statut}>${entree.nouveau_statut}`;
   const action = (ACTION_PAR_TRANSITION[cle] ?? ACTION_PAR_DEFAUT)(entree.titre_etape);
   const motif = entree.commentaire === null ? '' : ` : ${entree.commentaire}`;
-  const estToi = entree.role === profil;
+  const estUtilisateur = entree.role === profil;
 
   return {
-    qui: estToi ? 'Toi' : NOM_PAR_ROLE[entree.role],
-    quoi: `${estToi ? 'as' : 'a'} ${action}${motif}`,
+    qui: estUtilisateur ? 'Tu' : NOM_PAR_ROLE[entree.role],
+    quoi: `${estUtilisateur ? 'as' : 'a'} ${action}${motif}`,
     initiales: INITIALES_PAR_ROLE[entree.role],
   };
 }

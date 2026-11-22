@@ -2,52 +2,72 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-import { ajouterEtape, choisirProfil, creerChantier } from './aides';
+import { signalerUneEtape } from './aides';
 
 test('le chef valide une étape signalée depuis le tableau de bord', async ({ page }, info) => {
-  // Un nom par projet : les deux tailles d'écran partagent la même base.
-  const nom = `Tableau de bord ${info.project.name}`;
-  const etape = `Fondations ${info.project.name}`;
+  // Un nom unique par projet et par essai : la base est partagée entre les tests parallèles et les reprises.
+  const suffixe = `${info.project.name} ${Date.now().toString(36)}`;
+  const nom = `Tableau de bord ${suffixe}`;
+  const etape = `Fondations ${suffixe}`;
 
-  await creerChantier(page, nom);
-  await ajouterEtape(page, etape);
-  await choisirProfil(page, 'Ouvrier');
-  await page.getByRole('button', { name: `Démarrer : ${etape}` }).click();
-  await page.getByRole('button', { name: `Signaler terminée : ${etape}` }).click();
-  await expect(page.getByText('Terminée (à valider)')).toBeVisible();
-
-  await choisirProfil(page, 'Chef');
+  await signalerUneEtape(page, nom, etape);
   await page.getByRole('link', { name: 'Tableau de bord' }).click();
 
   const aValider = page.getByRole('region', { name: 'À valider' });
-  await expect(aValider.getByText(etape)).toBeVisible();
-  await expect(aValider.getByText(nom)).toBeVisible();
-  await expect(aValider.getByRole('link', { name: `Examiner : ${etape}` })).toBeVisible();
+  const ligne = aValider.getByRole('listitem').filter({ hasText: etape });
+  await expect(ligne.getByText(nom)).toBeVisible();
+  const examiner = ligne.getByRole('link', { name: `Examiner : ${etape}` });
+  const adresseChantier = await examiner.getAttribute('href');
 
-  await aValider.getByRole('button', { name: `Valider : ${etape}` }).click();
+  await ligne.getByRole('button', { name: `Valider : ${etape}` }).click();
 
   await expect(aValider.getByText(etape)).toHaveCount(0);
-  const carte = page.getByRole('progressbar', { name: `Avancement de ${nom}` });
-  await expect(carte).toHaveAttribute('aria-valuenow', '100');
-  const activite = page.getByRole('list', { name: 'Activité récente' });
-  await expect(activite.getByText(`as validé « ${etape} »`)).toBeVisible();
+  // Le bouton cliqué disparaît avec sa ligne : le focus ne doit pas retomber sur la page entière.
+  await expect
+    .poll(() => page.evaluate(() => document.activeElement === document.body))
+    .toBe(false);
+  // L'aperçu du tableau de bord ne montre que quelques chantiers : l'avancement se vérifie sur le chantier.
+  await page.goto(adresseChantier ?? '/chantiers');
+  await expect(page.getByRole('progressbar', { name: 'Avancement du chantier' })).toHaveAttribute(
+    'aria-valuenow',
+    '100',
+  );
+  await page.getByRole('link', { name: 'Tableau de bord' }).click();
+  // On cible l'entrée par le titre unique de l'étape : le fil ne garde que les plus récentes.
+  await expect(
+    page.getByRole('list', { name: 'Activité récente' }).getByText(`Tu as validé « ${etape} »`),
+  ).toBeVisible();
 });
 
 test('le tableau de bord n’a pas de défilement horizontal ni de défaut d’accessibilité', async ({
   page,
-}) => {
+}, info) => {
+  // Une étape à valider existe toujours : le bloc jaune, sa pastille et ses rayures sont rendus.
+  const suffixe = `${info.project.name} ${Date.now().toString(36)}`;
+  const etape = `Armatures ${suffixe}`;
+  await signalerUneEtape(page, `Accessibilité ${suffixe}`, etape);
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: 'Tableau de bord' })).toBeVisible();
+  const ligne = page
+    .getByRole('region', { name: 'À valider' })
+    .getByRole('listitem')
+    .filter({ hasText: etape });
+  await expect(ligne).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 
   const debordement = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   // Axe tourne dans le vrai navigateur : il vérifie aussi les contrastes, que jsdom ne calcule pas.
-  const resultats = await new AxeBuilder({ page }).analyze();
+  const clair = await new AxeBuilder({ page }).analyze();
+  await expect(ligne).toHaveCSS('background-color', 'rgb(255, 248, 230)');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(ligne).toHaveCSS('background-color', 'rgb(42, 36, 18)');
+  const sombre = await new AxeBuilder({ page }).analyze();
 
   expect(debordement).toBeLessThanOrEqual(0);
-  expect(resultats.violations).toEqual([]);
+  expect(clair.violations).toEqual([]);
+  expect(sombre.violations).toEqual([]);
 });
 
 test('la barre latérale propose la navigation et les entrées « Bientôt » désactivées', async ({

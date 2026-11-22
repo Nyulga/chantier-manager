@@ -3,10 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import { clesRequetes } from '@/api/clesRequetes';
 import { creerClientApi } from '@/api/client';
-import { erreurApi } from '@/api/erreurApi';
+import { AccesRefuseError, erreurApi } from '@/api/erreurApi';
+import { reessayerRequete } from '@/api/reessai';
 import type { components } from '@/api/schema';
-
-import { useProfilCourant } from './useProfilCourant';
 
 /** Étape qui attend la décision d'un chef, avec la date de son dernier signalement. */
 export type EtapeAValider = components['schemas']['EtapeAValiderReponse'];
@@ -14,22 +13,25 @@ export type EtapeAValider = components['schemas']['EtapeAValiderReponse'];
 /**
  * Liste les étapes à valider, de la plus ancienne à la plus récente (ordre de l'API).
  *
- * L'API réserve cette liste au chef (403 pour un ouvrier) : la requête n'est donc pas envoyée
- * pour un ouvrier. Ce n'est pas un droit déduit côté client (l'API reste seule juge) : on évite
- * seulement un appel dont on connaît déjà la réponse.
+ * La requête part quel que soit le profil : l'API est seule juge du droit, et elle répond 403 à
+ * qui n'est pas chef. L'écran masque alors la section (voir `estAccesRefuse`). Un 403 n'est pas
+ * rejoué (voir `reessai.ts`) : la section serait masquée avec retard pour rien.
  */
 export function useEtapesAValider() {
-  const profil = useProfilCourant();
-
   return useQuery({
     queryKey: clesRequetes.etapesAValider(),
-    enabled: profil === 'chef',
+    retry: reessayerRequete,
     queryFn: async () => {
-      const { data, error } = await creerClientApi().GET('/etapes/a-valider');
+      const { data, error, response } = await creerClientApi().GET('/etapes/a-valider');
       if (data === undefined) {
-        throw erreurApi(error);
+        throw erreurApi(error, response.status);
       }
       return data;
     },
   });
+}
+
+/** Vrai si l'erreur est un refus 403 de l'API : la section n'est alors pas à afficher, sans message. */
+export function estAccesRefuse(erreur: Error | null): boolean {
+  return erreur instanceof AccesRefuseError;
 }

@@ -63,10 +63,10 @@ it('affiche qui, quoi, puis le nom du chantier et le moment', () => {
   expect(screen.getByRole('listitem')).toHaveTextContent('Rénovation cuisine · hier à 17:42');
 });
 
-it('écrit « Toi » quand le rôle est celui du profil courant', () => {
+it('écrit « Tu » quand le rôle est celui du profil courant', () => {
   afficher({ profil: 'ouvrier' });
 
-  expect(screen.getByRole('listitem')).toHaveTextContent('Toi as signalé');
+  expect(screen.getByRole('listitem')).toHaveTextContent('Tu as signalé');
 });
 
 it('écrit « Chantier » quand la liste des chantiers n’est pas encore chargée', () => {

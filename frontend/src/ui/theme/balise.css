@@ -34,6 +34,7 @@
   --text-shadow-*: initial;
   --tracking-*: initial;
   --breakpoint-*: initial;
+  --container-*: initial;
   --spacing: initial;
 
   /* -------- Couleurs, thème clair (§2.1) -------- */
@@ -114,6 +115,10 @@
   /* -------- Points de rupture : conçu d'abord pour le mobile (360 px) -------- */
   --breakpoint-tablette: 48rem; /* 768 px */
   --breakpoint-ordinateur: 64rem; /* 1024 px */
+
+  /* -------- Largeurs de conteneur : zone principale et requête de conteneur de la grille -------- */
+  --container-contenu: 72rem; /* 1152 px : largeur maximale de la zone principale */
+  --container-grille: 36rem; /* 576 px : au-delà, la grille de cartes passe à deux colonnes */
 }
 
 /* -------- Thème sombre (§2.2) : les mêmes variables, redéfinies -------- */

@@ -73,7 +73,7 @@ it('appelle « Le chef » ou « L’ouvrier » la personne qui a agi', () => {
   expect(libelleActivite(entree({ role: 'ouvrier' }), 'chef').qui).toBe('L’ouvrier');
 });
 
-it('écrit « Toi » et conjugue à la deuxième personne quand le rôle est celui du profil courant', () => {
+it('écrit « Tu » et conjugue à la deuxième personne quand le rôle est celui du profil courant', () => {
   const validation = entree({
     role: 'chef',
     ancien_statut: 'terminee_a_valider',
@@ -81,7 +81,7 @@ it('écrit « Toi » et conjugue à la deuxième personne quand le rôle est cel
   });
 
   expect(libelleActivite(validation, 'chef')).toMatchObject({
-    qui: 'Toi',
+    qui: 'Tu',
     quoi: 'as validé « Pose des meubles »',
   });
 });

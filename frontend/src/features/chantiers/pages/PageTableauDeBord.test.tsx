@@ -1,52 +1,14 @@
 // Tests de la page « tableau de bord » (adresse `/`) : à valider, chantiers, activité et profils.
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { Route, Routes } from 'react-router';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { expect, it } from 'vitest';
 
-import { afficherAvecFournisseurs } from '@/ui/test/afficherAvecFournisseurs';
-import { installerServeurApi } from '@/ui/test/serveurApiSimule';
 import { verifierAccessibilite } from '@/ui/test/verifierAccessibilite';
 
 import { activiteDeTest } from '../services/activiteDeTest';
-import { chantierDeTest } from '../services/chantierDeTest';
-import { etapeAValiderDeTest } from '../services/etapeAValiderDeTest';
-import { PageTableauDeBord } from './PageTableauDeBord';
+import { CHANTIER, erreurProbleme, ETAPE, preparerTableauDeBord } from './tableauDeBordDeTest';
 
-const serveur = installerServeurApi();
-const CHANTIER = chantierDeTest({ etapes_a_valider: 1 });
-const ETAPE = etapeAValiderDeTest();
-
-beforeEach(() => {
-  // Seule la date est figée : les délais de MSW et de `waitFor` gardent leur horloge réelle.
-  vi.useFakeTimers({ toFake: ['Date'] });
-  vi.setSystemTime(new Date(2026, 10, 22, 10, 0));
-});
-
-afterEach(() => {
-  vi.useRealTimers();
-  localStorage.clear();
-});
-
-/** Réponses par défaut : un chantier, une étape à valider signalée hier, une entrée d'activité. */
-function simuler(surcharges: { chantiers?: unknown; etapes?: unknown; activite?: unknown } = {}) {
-  const signaleeLe = new Date(2026, 10, 21, 17, 42).toISOString();
-  serveur.use(
-    http.get('/api/chantiers', () => HttpResponse.json(surcharges.chantiers ?? [CHANTIER])),
-    http.get('/api/etapes/a-valider', () =>
-      HttpResponse.json(surcharges.etapes ?? [{ ...ETAPE, signalee_le: signaleeLe }]),
-    ),
-    http.get('/api/activite', () => HttpResponse.json(surcharges.activite ?? [activiteDeTest()])),
-  );
-}
-
-function afficherPage() {
-  return afficherAvecFournisseurs(
-    <Routes>
-      <Route path="/" element={<PageTableauDeBord />} />
-    </Routes>,
-  );
-}
+const { serveur, simuler, afficherPage } = preparerTableauDeBord();
 
 it('affiche la date du jour, le titre de la page, la recherche « Bientôt » et la création pour un chef', async () => {
   simuler();
@@ -92,49 +54,6 @@ it('n’affiche pas « Valider » quand l’API ne permet pas cette action', asy
   expect(within(region).queryByRole('button', { name: /^Valider/ })).not.toBeInTheDocument();
 });
 
-it('valide l’étape au clic et la retire de la liste une fois relue', async () => {
-  simuler();
-  let corps: unknown = null;
-  serveur.use(
-    http.post(`/api/etapes/${ETAPE.id}/transitions`, async ({ request }) => {
-      corps = await request.json();
-      // Après la validation, l'API ne renvoie plus l'étape.
-      serveur.use(http.get('/api/etapes/a-valider', () => HttpResponse.json([])));
-      return HttpResponse.json({ ...ETAPE, statut: 'validee' });
-    }),
-  );
-  afficherPage();
-  const bouton = await screen.findByRole('button', { name: `Valider : ${ETAPE.titre}` });
-
-  fireEvent.click(bouton);
-
-  await waitFor(() => {
-    expect(screen.queryByRole('button', { name: /^Valider/ })).not.toBeInTheDocument();
-  });
-  expect(corps).toEqual({ action: 'valider' });
-  expect(screen.getByText(/Rien à valider/)).toBeVisible();
-});
-
-it('affiche près de l’action l’erreur 409 de l’API', async () => {
-  simuler();
-  serveur.use(
-    http.post(`/api/etapes/${ETAPE.id}/transitions`, () =>
-      HttpResponse.json(
-        { status: 409, detail: 'Cette étape a déjà changé de statut.' },
-        { status: 409, headers: { 'Content-Type': 'application/problem+json' } },
-      ),
-    ),
-  );
-  afficherPage();
-
-  fireEvent.click(await screen.findByRole('button', { name: `Valider : ${ETAPE.titre}` }));
-
-  const region = screen.getByRole('region', { name: 'À valider' });
-  expect(await within(region).findByRole('alert')).toHaveTextContent(
-    'Cette étape a déjà changé de statut.',
-  );
-});
-
 it('dit qu’il n’y a rien à valider quand la liste est vide', async () => {
   simuler({ etapes: [] });
 
@@ -170,18 +89,29 @@ it('annonce le chargement des étapes à valider', () => {
   expect(screen.getByText('Chargement des étapes à valider…')).toBeVisible();
 });
 
-it('ne montre ni « À valider » ni « Nouveau chantier » à un ouvrier, et ne demande pas la liste à l’API', async () => {
+it('masque « À valider » à un ouvrier quand l’API refuse (403), sans afficher d’erreur', async () => {
   localStorage.setItem('chantier-manager.profil', 'ouvrier');
-  // Aucune réponse n'est prévue pour `/api/etapes/a-valider` : l'appel ferait échouer le test.
+  let demandes = 0;
   serveur.use(
     http.get('/api/chantiers', () => HttpResponse.json([CHANTIER])),
     http.get('/api/activite', () => HttpResponse.json([])),
+    http.get('/api/etapes/a-valider', ({ request }) => {
+      // Seules les demandes de l'ouvrier comptent : un test précédent peut laisser une requête en vol.
+      if (request.headers.get('X-Profil') === 'ouvrier') {
+        demandes += 1;
+      }
+      return erreurProbleme(403, 'Action réservée à un chef.');
+    }),
   );
 
   afficherPage();
 
   await screen.findByRole('heading', { level: 3, name: CHANTIER.nom });
-  expect(screen.queryByRole('region', { name: 'À valider' })).not.toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.queryByRole('region', { name: 'À valider' })).not.toBeInTheDocument();
+  });
+  expect(demandes).toBe(1);
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.queryByRole('link', { name: 'Nouveau chantier' })).not.toBeInTheDocument();
 });
 
@@ -200,7 +130,7 @@ it('affiche les cartes de chantiers et un lien vers la liste complète', async (
   );
 });
 
-it('affiche l’activité récente avec le chantier et le moment, et « Toi » pour le profil courant', async () => {
+it('affiche l’activité récente avec le chantier et le moment, et « Tu » pour le profil courant', async () => {
   const moment = new Date(2026, 10, 21, 17, 45).toISOString();
   simuler({
     activite: [
@@ -219,7 +149,7 @@ it('affiche l’activité récente avec le chantier et le moment, et « Toi » p
 
   const liste = await screen.findByRole('list', { name: 'Activité récente' });
   const [refus, signalement] = within(liste).getAllByRole('listitem');
-  expect(refus).toHaveTextContent('Toi as refusé « Pose des meubles » : Reprise côté nord');
+  expect(refus).toHaveTextContent('Tu as refusé « Pose des meubles » : Reprise côté nord');
   expect(refus).toHaveTextContent(`${CHANTIER.nom} · hier à 17:45`);
   expect(signalement).toHaveTextContent('L’ouvrier a signalé « Pose des meubles » terminée');
 });

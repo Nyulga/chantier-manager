@@ -3,9 +3,13 @@ import { formaterDate } from './formaterDate';
 
 const MILLISECONDES_PAR_JOUR = 24 * 60 * 60 * 1000;
 
+/** Nombre écrit sur deux chiffres, « 08 ». */
+function deuxChiffres(nombre: number): string {
+  return String(nombre).padStart(2, '0');
+}
+
 /** Heure locale sur deux chiffres, « 08:05 ». */
 function formaterHeure(date: Date): string {
-  const deuxChiffres = (nombre: number) => String(nombre).padStart(2, '0');
   return `${deuxChiffres(date.getHours())}:${deuxChiffres(date.getMinutes())}`;
 }
 
@@ -16,7 +20,6 @@ function debutDeJournee(date: Date): number {
 
 /** Date locale au format `JJ/MM/AAAA`, sans passer par l'UTC qui pourrait décaler la journée. */
 function dateLocale(date: Date): string {
-  const deuxChiffres = (nombre: number) => String(nombre).padStart(2, '0');
   const iso = `${String(date.getFullYear())}-${deuxChiffres(date.getMonth() + 1)}-${deuxChiffres(date.getDate())}`;
   return formaterDate(iso);
 }

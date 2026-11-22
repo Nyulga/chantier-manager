@@ -1,7 +1,9 @@
 // Tests du `BlocAValider` et de la `LigneAValider` : le bloc des étapes qui attendent le chef.
 import { render, screen, within } from '@testing-library/react';
+import { createRef } from 'react';
 import { expect, it } from 'vitest';
 
+import { Alerte } from '../Alerte/Alerte';
 import { LigneAValider } from '../LigneAValider/LigneAValider';
 import { verifierAccessibilite } from '../test/verifierAccessibilite';
 import { BlocAValider } from './BlocAValider';
@@ -12,13 +14,13 @@ function afficher() {
       titre="À valider"
       compteur={2}
       sousTitre="Étapes signalées terminées par tes ouvriers"
+      alerte={<Alerte variante="erreur">Impossible de valider « Faïence ».</Alerte>}
     >
       <LigneAValider
         titre="Pose des meubles"
         contexte="Rénovation cuisine"
         signalement="Signalée hier à 17:42"
         actions={<button type="button">Valider</button>}
-        erreur="Cette étape a déjà changé de statut."
       />
       <LigneAValider
         titre="Faïence"
@@ -50,13 +52,28 @@ it('liste les étapes avec leur contexte, leur signalement et leurs actions', ()
   expect(seconde).toHaveTextContent('Faïence');
 });
 
-it('affiche l’erreur de l’API près de l’action de la ligne concernée', () => {
+it('affiche l’alerte au niveau du bloc, hors des lignes', () => {
   afficher();
 
-  const [premiere, seconde] = screen.getAllByRole('listitem');
-  expect(premiere).toContainElement(screen.getByRole('alert'));
-  expect(screen.getByRole('alert')).toHaveTextContent('Cette étape a déjà changé de statut.');
-  expect(seconde).not.toContainElement(screen.getByRole('alert'));
+  const alerte = screen.getByRole('alert');
+  expect(alerte).toHaveTextContent('Impossible de valider « Faïence ».');
+  expect(within(screen.getByRole('region', { name: 'À valider' })).getByRole('alert')).toBe(alerte);
+  for (const ligne of screen.getAllByRole('listitem')) {
+    expect(ligne).not.toContainElement(alerte);
+  }
+});
+
+it('rend son titre focalisable par programme quand une référence lui est donnée', () => {
+  const reference = createRef<HTMLHeadingElement>();
+  render(
+    <BlocAValider titre="À valider" compteur={1} sousTitre="Sous-titre" refTitre={reference}>
+      <LigneAValider titre="Pose" contexte="Cuisine" signalement="Hier" actions={null} />
+    </BlocAValider>,
+  );
+
+  reference.current?.focus();
+
+  expect(screen.getByRole('heading', { level: 2, name: 'À valider' })).toHaveFocus();
 });
 
 it('n’a aucun défaut d’accessibilité détectable par axe', async () => {

@@ -28,3 +28,17 @@ export async function ajouterEtape(page: Page, titre: string) {
   await page.getByRole('button', { name: 'Ajouter l’étape' }).click();
   await expect(page.getByRole('heading', { level: 3, name: titre })).toBeVisible();
 }
+
+/**
+ * Crée un chantier avec une étape que l'ouvrier signale terminée, puis repasse en chef : le chef
+ * a ainsi au moins une étape « à valider ». Les noms doivent être uniques (la base est partagée).
+ */
+export async function signalerUneEtape(page: Page, nomChantier: string, titreEtape: string) {
+  await creerChantier(page, nomChantier);
+  await ajouterEtape(page, titreEtape);
+  await choisirProfil(page, 'Ouvrier');
+  await page.getByRole('button', { name: `Démarrer : ${titreEtape}` }).click();
+  await page.getByRole('button', { name: `Signaler terminée : ${titreEtape}` }).click();
+  await expect(page.getByText('Terminée (à valider)')).toBeVisible();
+  await choisirProfil(page, 'Chef');
+}

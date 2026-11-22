@@ -9,14 +9,14 @@ import { SectionAValider } from '../components/SectionAValider';
 import { SectionMesChantiers } from '../components/SectionMesChantiers';
 import { useActiviteRecente } from '../services/useActiviteRecente';
 import { useChantiers } from '../services/useChantiers';
-import { useEtapesAValider } from '../services/useEtapesAValider';
+import { estAccesRefuse, useEtapesAValider } from '../services/useEtapesAValider';
 import { useProfilCourant } from '../services/useProfilCourant';
 import { useValiderEtape } from '../services/useValiderEtape';
 
 /**
  * Écran d'accueil. Il ne calcule rien : compteurs, avancement, retards et actions permises
- * viennent de l'API. La section « À valider » n'existe que pour le chef (l'API répond 403 à un
- * ouvrier, et le hook ne l'interroge pas).
+ * viennent de l'API. La section « À valider » est demandée à l'API pour tous les profils : c'est
+ * elle qui décide, et un 403 (ouvrier) masque la section sans message d'erreur.
  */
 export function PageTableauDeBord() {
   const profil = useProfilCourant();
@@ -30,7 +30,7 @@ export function PageTableauDeBord() {
   return (
     <Pile espace="grand">
       <EnTeteTableauDeBord maintenant={maintenant} peutCreerChantier={profil === 'chef'} />
-      {profil === 'chef' && (
+      {!estAccesRefuse(aValider.error) && (
         <SectionAValider
           etapes={aValider.data}
           erreurChargement={aValider.error?.message}
@@ -39,7 +39,7 @@ export function PageTableauDeBord() {
           enCours={validation.isPending}
           erreurValidation={
             validation.isError
-              ? { etapeId: validation.variables.id, message: validation.error.message }
+              ? { titre: validation.variables.titre, message: validation.error.message }
               : undefined
           }
           onValider={(etape) => {

@@ -1,7 +1,5 @@
 // Composant `LigneAValider` du design system Balise : une étape signalée terminée, avec ses actions.
-import type { ReactNode } from 'react';
-
-import { Alerte } from '../Alerte/Alerte';
+import type { ReactNode, Ref } from 'react';
 
 type LigneAValiderProps = {
   readonly titre: string;
@@ -11,25 +9,24 @@ type LigneAValiderProps = {
   readonly signalement: string;
   /** Les boutons et liens d'action : seules les actions permises par l'API y figurent. */
   readonly actions: ReactNode;
-  /** Message de l'API (409 par exemple), affiché sous la ligne, près de l'action. */
-  readonly erreur?: string | undefined;
+  /**
+   * Référence vers la ligne. La ligne est focalisable par programme (hors de l'ordre de
+   * tabulation) : un écran peut y replacer le focus quand la ligne précédente disparaît.
+   */
+  readonly ref?: Ref<HTMLLIElement>;
 };
 
 /**
- * Ligne du `BlocAValider` : titre et chantier à gauche, signalement au milieu, actions à droite
- * (elles passent sous le texte sur mobile). L'erreur de l'API s'affiche juste en dessous : une
- * alerte en haut de page resterait hors de l'écran sur mobile.
+ * Ligne du `BlocAValider` : bord gauche rayé « balise » et fond `accent-soft` (Balise §4 et §5),
+ * puis le titre et le chantier à gauche, le signalement au milieu et les actions à droite (elles
+ * passent sous le texte sur mobile). Le texte reste en `fg` et `muted` : leur contraste sur
+ * `accent-soft` dépasse 4,5:1 en clair comme en sombre.
  */
-export function LigneAValider({
-  titre,
-  contexte,
-  signalement,
-  actions,
-  erreur,
-}: LigneAValiderProps) {
+export function LigneAValider({ titre, contexte, signalement, actions, ref }: LigneAValiderProps) {
   return (
-    <li className="flex flex-col gap-3 border-t border-line-soft px-5 py-4">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+    <li ref={ref} tabIndex={-1} className="flex border-t border-line-soft bg-accent-soft">
+      <div aria-hidden="true" className="rayures-balise w-rayure shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-5 gap-y-3 px-5 py-4">
         <div className="flex min-w-0 flex-1 basis-full flex-col gap-1 tablette:basis-1/3">
           <p className="font-bold">{titre}</p>
           <p className="text-secondaire text-muted">{contexte}</p>
@@ -39,7 +36,6 @@ export function LigneAValider({
           {actions}
         </div>
       </div>
-      {erreur !== undefined && <Alerte variante="erreur">{erreur}</Alerte>}
     </li>
   );
 }
