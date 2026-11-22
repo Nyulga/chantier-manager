@@ -21,7 +21,7 @@ RUN pnpm build
 
 # --- Étape 2 : service des fichiers statiques ----------------------------------------------
 # caddy:2-alpine
-FROM caddy@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
+FROM caddy@sha256:4851e54a46b206517c574821bb5cc67f170d2156041e9fbc4c9193b45e84a75b
 
 COPY deploy/frontend.Caddyfile /etc/caddy/Caddyfile
 COPY --from=construction /frontend/dist /srv
