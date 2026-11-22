@@ -33,6 +33,8 @@ Référence : [`intent.md`](../../intent.md) · Décisions : [`docs/adr/`](../ad
 2. Relire [`.claude/rules/00-principes.md`](../../.claude/rules/00-principes.md) et la règle de chaque couche touchée par le lot.
 3. Travailler en TDD, dans l'ordre de construction défini par la règle 00 (§8).
 
+Le déroulé complet (plan validé, sous-agents, vérifications, commits, journal, proposition de PR) est défini par le skill [`lot`](../../.claude/skills/lot/SKILL.md). Les preuves de chaque lot (sorties rouges et vertes, verdicts des vérificateurs) sont consignées dans [`journal/`](journal/README.md).
+
 ## Définition de « terminé » (commune à tous les lots)
 
 Un lot est terminé quand :

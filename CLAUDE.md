@@ -10,6 +10,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Ne pousse jamais sur `main`, ne fusionne jamais dans `main`** et ne modifie jamais `main` sans l'autorisation explicite de l'utilisateur, demandée à chaque fois.
 - `main` est protégée sur GitHub : le push direct, le force-push et la suppression sont interdits, y compris pour les admins. Le seul chemin vers `main` est une **pull request de `dev` vers `main`**. N'ouvre cette PR que si l'utilisateur le demande ; seul lui décide de la fusionner.
 - **Ne démarre jamais un lot de développement de toi-même** : chaque lot ne commence que sur la demande explicite de l'utilisateur.
+- Un lot se traite **toujours avec le skill `lot`** (`/lot NN`).
+  - La session principale coordonne, en Opus 5.5 avec un effort élevé au minimum. Elle délègue le code aux sous-agents `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` et `dev-socle`, puis fait vérifier le travail par `revue`, `conformite` et `securite`.
+  - Le skill fixe le modèle et l'effort de chaque agent.
+  - Un commit `feat(lot-NN): <étape>` est fait par étape validée, sur `dev`.
+  - À la fin du lot, la PR vers `main` est **proposée**, jamais ouverte sans accord.
+- Le backlog vit dans les GitHub Issues (skill et agent `backlog`). Une idée ou un constat hors lot y devient une issue ; on ne le code pas.
 - Dépôt : https://github.com/Nyulga/chantier-manager (public). N'y mets jamais de secret ni de donnée réelle de chantier ou de client.
 
 ## Documents de référence

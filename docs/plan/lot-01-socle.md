@@ -25,7 +25,8 @@ Disposer d'un dépôt outillé où un squelette backend et frontend démarre, av
 - **Qualité frontend** : TypeScript strict (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), ESLint strict, Prettier, Vitest, Testing Library, Playwright.
 - **Client API généré** : script openapi-typescript, et la CI vérifie que le client généré est à jour.
 - **Squelette fonctionnel** : `GET /api/health` côté backend ; côté frontend, une page d'accueil en français qui appelle `/api/health` via le client généré.
-- **Développement local** : `docker-compose.dev.yml` (PostgreSQL, ClamAV, Mailpit), `.env.example`, et un `justfile` (installer, lancer, tester, lint, générer le client).
+- **Prérequis sur le poste** : Docker Desktop (avec WSL 2), uv et just, installés par l'utilisateur ou avec son accord.
+- **Développement local** : `docker-compose.dev.yml` (PostgreSQL, ClamAV, Mailpit), `.env.example`, et un `justfile` dont les recettes portent les noms attendus par le skill `lot` : `installer`, `lancer`, `verifier`, `test-back`, `test-front`, `e2e`, `client`.
 - **pre-commit** : ruff, mypy, ESLint, Prettier, gitleaks.
 - **CI GitHub Actions** : jobs backend, frontend, e2e, mutation (Linux) et sécurité (pip-audit, pnpm audit, bandit, gitleaks, CodeQL, Trivy), plus Dependabot.
 - **Protection de `main`** : ajout des jobs de la CI comme checks obligatoires.
