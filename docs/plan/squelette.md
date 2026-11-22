@@ -46,6 +46,19 @@ Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `
 - [ ] Les contrats d'architecture, le typage strict, le lint et les tests passent en CI, avec 100 % de couverture sur le domaine et les services.
 - [ ] L'application est en ligne en HTTPS, et inaccessible sans le mot de passe du site.
 
+## Mise à jour du 2026-11-22 : un premier socle en 2 à 3 heures
+
+À la demande du propriétaire du projet, le squelette est encore resserré, pour obtenir un premier socle en 2 à 3 heures.
+
+- **Base de données : SQLite** pour l'instant, car Docker n'est pas encore installé. Le code passe par SQLAlchemy et Alembic, ce qui permet de passer ensuite à PostgreSQL en changeant surtout la configuration. Ce passage se fera avant la mise en ligne.
+- **Tout tourne en local** : le lot S3 (mise en ligne) est reporté.
+- **Le lot S2 est resserré** :
+  - **inclus** : créer un chantier, lister les chantiers avec leur avancement, consulter le détail d'un chantier, ajouter des étapes, les faire avancer, les valider ou les refuser avec un commentaire, et choisir son profil. L'historique est enregistré à chaque transition ;
+  - **reporté** : la modification et l'archivage d'un chantier, la modification, la suppression et le réordonnancement des étapes, et l'affichage de l'historique.
+- **CI** : lint, typage, contrats d'architecture et tests uniquement.
+
+Critères du premier socle : ceux de la section ci-dessus, **sauf** la modification d'un chantier, la gestion avancée des étapes (modifier, réordonner, supprimer), l'affichage de l'historique et la mise en ligne.
+
 ## Estimation
 
 | Lot | Travail des agents |
