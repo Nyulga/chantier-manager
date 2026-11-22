@@ -15,10 +15,25 @@ chantier-ultra.ddns.net {
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
 		Referrer-Policy strict-origin-when-cross-origin
+		# Politique de contenu stricte : tout vient du site lui-même (polices auto-hébergées).
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy same-origin
 		-Server
 	}
 
+
 	handle /api/* {
+		# La documentation de l'API n'est pas exposée en production : le client TypeScript
+		# est généré au build, et la page Swagger chargerait des scripts externes.
+		@documentation path /api/docs* /api/openapi.json /api/redoc*
+		respond @documentation 404
+
+		# Les requêtes de l'API sont de petits JSON : on refuse tout corps plus gros,
+		# avant qu'il ne soit lu en mémoire par l'application.
+		request_body {
+			max_size 64KB
+		}
 		reverse_proxy chantier-api:8000
 	}
 

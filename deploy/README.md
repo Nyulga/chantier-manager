@@ -57,15 +57,16 @@ Aucune de ces commandes ne s'exécute toute seule : chacune se lance à la main 
 La base SQLite vit dans le volume Docker `chantier-donnees`. Pour une copie cohérente, on arrête l'API quelques secondes.
 
 ```bash
-# Sauvegarde : une archive datée dans le dossier courant
+# Sauvegarde : une archive datée, HORS du clone git (le dépôt est public).
+sudo install -d -m 700 -o "$USER" /srv/sauvegardes/chantier
 docker compose -f compose.prod.yaml stop chantier-api
-docker run --rm -v chantier-donnees:/donnees:ro -v "$PWD":/sauvegarde alpine \
+docker run --rm -v chantier-donnees:/donnees:ro -v /srv/sauvegardes/chantier:/sauvegarde alpine \
   tar czf /sauvegarde/chantier-donnees-$(date +%F).tgz -C /donnees .
 docker compose -f compose.prod.yaml start chantier-api
 
 # Restauration : remet le contenu d'une archive dans le volume (API arrêtée)
 docker compose -f compose.prod.yaml stop chantier-api
-docker run --rm -v chantier-donnees:/donnees -v "$PWD":/sauvegarde alpine \
+docker run --rm -v chantier-donnees:/donnees -v /srv/sauvegardes/chantier:/sauvegarde alpine \
   sh -c "cd /donnees && tar xzf /sauvegarde/chantier-donnees-AAAA-MM-JJ.tgz && chown -R 10001 /donnees"
 docker compose -f compose.prod.yaml start chantier-api
 ```
