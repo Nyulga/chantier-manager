@@ -28,6 +28,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## État du projet
 
+**Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S3). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
+
+
 Seule la documentation existe pour l'instant ; aucun code n'a été écrit. Ajoute ici les commandes de build, de lint et de test (y compris celle qui lance un seul test) dès qu'elles existent, c'est-à-dire à la fin du lot 01.
 
 ## Architecture

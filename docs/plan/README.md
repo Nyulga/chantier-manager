@@ -2,6 +2,10 @@
 
 Référence : [`intent.md`](../../intent.md) · Décisions : [`docs/adr/`](../adr/README.md)
 
+## Phase 1 : squelette (en cours)
+
+On livre d'abord le **[squelette](squelette.md)** (lots S1, S2 et S3) : chantiers, étapes, validation et avancement, sans authentification et en ligne derrière un mot de passe d'accès au site. Les lots 01 à 09 ci-dessous forment la phase 2 : chacun repart de ce que le squelette a déjà livré.
+
 ## Principe
 
 - Les lots sont **verticaux** : chaque lot fonctionnel livre son backend, son frontend et ses tests de bout en bout. Chaque lot est donc démontrable et testé de bout en bout.
