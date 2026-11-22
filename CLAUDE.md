@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **⚠️ OBLIGATOIRE : lis `intent.md` en entier au début de chaque session et avant chaque tâche, sans exception.** C'est la source de vérité du projet. En cas de contradiction avec ce fichier ou avec un autre document, c'est `intent.md` qui prévaut, et tu le signales à l'utilisateur.
+
 ## Règles de travail
 
 - Travaille **uniquement sur la branche `dev`**. Vérifie la branche courante avant chaque commit.
