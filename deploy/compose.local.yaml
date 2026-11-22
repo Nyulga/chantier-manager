@@ -14,8 +14,11 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+    # `chantier-interne` est fermé vers Internet et n'accepte aucun port publié : le réseau par
+    # défaut sert à publier le port 8080 sur le poste, comme le réseau propre du Caddy du serveur.
     networks:
       - chantier-interne
+      - default
     depends_on:
       chantier-api:
         condition: service_healthy

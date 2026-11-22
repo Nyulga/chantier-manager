@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
         with:
           just-version: 1.59.0
       - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
         with:
           just-version: 1.59.0
       # La version de pnpm est lue dans le champ `packageManager` de frontend/package.json.
@@ -106,11 +106,23 @@ jobs:
       # gitleaks est lancé par son image officielle, épinglée par empreinte, plutôt que par
       # gitleaks-action : l'action n'examine que les commits de l'événement, pas tout l'historique.
       # Image ghcr.io/gitleaks/gitleaks v8.30.1.
+      # Deux garde-fous contre un contrôle qui réussirait sans rien analyser :
+      # - `safe.directory` est passé à git par l'environnement : le dépôt monté appartient à un
+      #   autre utilisateur que celui du conteneur, et git refuserait sinon de le lire ;
+      # - le journal est relu, et le job échoue si aucun commit n'a été analysé.
       - name: Rechercher des secrets dans tout l'historique (gitleaks)
-        run: >-
-          docker run --rm -v "$GITHUB_WORKSPACE:/depot:ro"
-          ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
-          git /depot --redact --no-banner --verbose
+        run: |
+          set -o pipefail
+          docker run --rm -v "$GITHUB_WORKSPACE:/depot:ro" \
+            -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/depot \
+            ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+            git /depot --redact --no-banner --no-color --verbose 2>&1 | tee "$RUNNER_TEMP/gitleaks.log"
+          analyses=$(sed -n 's/.*INF \([0-9][0-9]*\) commits scanned.*/\1/p' "$RUNNER_TEMP/gitleaks.log")
+          if [ -z "$analyses" ] || [ "$analyses" -lt 1 ]; then
+            echo "::error::gitleaks n'a analysé aucun commit : le contrôle ne prouve rien."
+            exit 1
+          fi
+          echo "gitleaks : $analyses commits analysés."
       - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
       # Les dépendances d'exécution exactes du verrou (uv.lock), avec leurs empreintes.
       - name: Auditer les dépendances Python (pip-audit)
@@ -133,6 +145,8 @@ jobs:
       - name: Analyser le dépôt (Trivy fs)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
+          # Version de Trivy fixée ici : sans cela, l'action en choisit une à chaque mise à jour.
+          version: v0.70.0
           scan-type: fs
           scan-ref: .
           scanners: vuln,secret
@@ -142,6 +156,7 @@ jobs:
       - name: Analyser la configuration (Trivy config)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
+          version: v0.70.0
           scan-type: config
           scan-ref: .
           skip-dirs: .cache

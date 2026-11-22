@@ -14,7 +14,7 @@ Le Caddy du serveur n'appartient pas à ce dépôt : on n'y ajoute que le bloc d
 
 ## Réseau et durcissement
 
-**Réseau dédié.** `chantier-api` et `chantier-web` ne sont plus sur le réseau de vtt : ils sont sur `chantier-interne`, créé par `compose.prod.yaml` (nom fixe, `internal: false` pour ne pas bloquer les sorties vers Internet). Le Caddy du serveur, qui appartient au projet vtt, rejoint ce réseau en plus du sien : les autres conteneurs de vtt ne peuvent plus joindre l'API en contournant le Caddy.
+**Réseau dédié.** `chantier-api` et `chantier-web` ne sont pas sur le réseau des autres projets du serveur : ils sont sur `chantier-interne`, créé par `compose.prod.yaml` (nom fixe). Ce réseau est `internal: true` : il est **fermé vers Internet**, car ni l'API ni le site n'ont besoin de sortir. Il faudra l'ouvrir au lot des courriels (SMTP). Le Caddy du serveur, qui appartient à l'autre projet servi par le même Caddy, rejoint ce réseau en plus du sien et garde sa propre sortie : les autres conteneurs de cet autre projet ne peuvent plus joindre l'API en contournant le Caddy.
 
 **Conteneurs durcis**, pour les deux services :
 - système de fichiers en lecture seule (`read_only`), avec `/tmp` en mémoire (`tmpfs`) ; seul le volume `/donnees` de l'API est inscriptible (base SQLite et migrations) ;
@@ -34,7 +34,7 @@ docker compose -f deploy/compose.prod.yaml -f deploy/compose.local.yaml up -d --
 docker compose -f deploy/compose.prod.yaml -f deploy/compose.local.yaml down -v
 ```
 
-Le Caddy local rejoint `chantier-interne` comme le fera celui du serveur. `down -v` supprime aussi le volume de données de test.
+Le Caddy local rejoint `chantier-interne` comme le fera celui du serveur ; il reste aussi sur le réseau par défaut, indispensable pour publier le port 8080 sur le poste. `down -v` supprime aussi le volume de données de test.
 
 ## Déployer sur le serveur
 
@@ -57,28 +57,28 @@ Aucune de ces commandes ne s'exécute toute seule : chacune se lance à la main 
 
    La commande crée le réseau `chantier-interne`.
 
-3. **Brancher le Caddy du serveur** (celui du projet vtt, conteneur `vtt-prod-vtt-proxy-1`) :
+3. **Brancher le Caddy du serveur** (celui de l'autre projet servi par le même Caddy ; `<conteneur-caddy>` désigne son conteneur, que `docker ps` permet de retrouver) :
    - le rattacher au réseau `chantier-interne`, tout de suite et sans le redémarrer :
 
      ```bash
-     docker network connect chantier-interne vtt-prod-vtt-proxy-1
+     docker network connect chantier-interne <conteneur-caddy>
      ```
 
-   - rendre ce rattachement durable, sinon il disparaît quand le conteneur de vtt est recréé : dans le compose de vtt, ajouter un réseau externe `chantier-interne` **au seul service du proxy** (les noms ci-dessous sont à adapter à ceux du fichier de vtt) :
+   - rendre ce rattachement durable, sinon il disparaît quand le conteneur du proxy est recréé : dans le compose de cet autre projet, ajouter un réseau externe `chantier-interne` **au seul service du proxy** (les noms ci-dessous sont à adapter à ceux de son fichier) :
 
      ```yaml
      services:
-       vtt-proxy:
+       <service-proxy>:
          networks:
-           - vtt-network        # le réseau actuel du proxy, à conserver
-           - chantier-interne   # ajouté
+           - <reseau-du-proxy>    # le réseau actuel du proxy, à conserver
+           - chantier-interne    # ajouté
      networks:
        chantier-interne:        # ajouté
          name: chantier-interne
          external: true
      ```
 
-     Ce réseau doit exister avant le prochain `up` de vtt (étape 2 de ce document) ; tant que le projet chantier est arrêté (`down`), il ne peut pas être supprimé car le proxy y est branché, et Docker l'indique par un avertissement sans conséquence.
+     Ce réseau doit exister avant le prochain `up` de l'autre projet (étape 2 de ce document) ; tant que le projet chantier est arrêté (`down`), il ne peut pas être supprimé car le proxy y est branché, et Docker l'indique par un avertissement sans conséquence.
    - sauvegarder le Caddyfile du serveur, puis y ajouter le bloc de `Caddyfile.extrait` **sans changer l'inode du fichier** (`cat >>`, pas `sed -i`), car il est monté dans le conteneur ;
    - valider : `docker exec <conteneur-caddy> caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`, et remettre la sauvegarde en cas d'échec ;
    - si le bloc de `chantier-ultra.ddns.net` est déjà dans le Caddyfile du serveur, remplacer sa cible `chantier-web:80` par `chantier-web:8080` (le site écoute désormais sur ce port) ;

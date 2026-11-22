@@ -1,7 +1,7 @@
 # Déploiement de chantier-manager : l'API et le site statique, derrière le Caddy du serveur.
 # Aucun port n'est publié sur l'hôte : le Caddy du serveur joint les conteneurs par leur nom,
 # sur le réseau dédié `chantier-interne`, que ce fichier crée et que seul ce Caddy rejoint
-# en plus des deux conteneurs. Les autres projets du serveur (vtt) ne peuvent donc pas
+# en plus des deux conteneurs. Les autres projets du serveur ne peuvent donc pas
 # atteindre l'API sans passer par le Caddy et son éventuel mot de passe.
 #
 # Commande : docker compose -f compose.prod.yaml up -d --build   (depuis le dossier deploy/)
@@ -75,10 +75,12 @@ volumes:
     name: chantier-donnees
 
 networks:
-  # Réseau dédié, créé par ce fichier, avec un nom fixe : le compose de vtt le déclare
-  # `external` pour y rattacher son seul proxy. `internal: false` laisse les conteneurs
-  # sortir vers Internet (envoi des courriels, plus tard) ; seul le trafic entrant est
-  # limité aux conteneurs qui rejoignent ce réseau.
+  # Réseau dédié, créé par ce fichier, avec un nom fixe : le compose du projet qui héberge le
+  # Caddy du serveur le déclare `external` pour y rattacher son seul proxy.
+  # `internal: true` coupe l'accès à Internet : ni l'API ni le site n'ont besoin de sortir, et
+  # un conteneur compromis ne pourrait ni exfiltrer de données ni télécharger d'outils. Le proxy,
+  # qui a aussi son propre réseau, garde sa sortie. À ROUVRIR au lot des courriels : l'envoi
+  # SMTP demandera à l'API un accès sortant (réseau supplémentaire dédié, ou `internal: false`).
   chantier-interne:
     name: chantier-interne
-    internal: false
+    internal: true
