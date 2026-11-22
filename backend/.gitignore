@@ -1,0 +1,3 @@
+# Caches des outils du backend
+.import_linter_cache/
+.hypothesis/

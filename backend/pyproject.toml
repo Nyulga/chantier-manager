@@ -1,0 +1,221 @@
+[project]
+name = "chantier-manager-backend"
+version = "0.1.0"
+description = "API REST de chantier-manager : suivi de chantiers et de leurs étapes."
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.20.1",
+    "fastapi>=0.165.0",
+    "psycopg[binary]>=3.3.9",
+    "pydantic-settings>=2.16.3",
+    "sqlalchemy>=2",
+    "uvicorn>=0.54.0",
+]
+
+[tool.uv]
+# L'application n'est pas une bibliothèque : on ne la construit ni ne l'installe.
+package = false
+
+[dependency-groups]
+dev = [
+    "bandit[toml]>=1.9.4",
+    "httpx>=0.28.1",
+    "hypothesis>=6.170.17",
+    "import-linter>=2.17",
+    "mypy>=2.4.1",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.17.6",
+]
+
+# ---------------------------------------------------------------------------
+# ruff : lint et formatage. Les limites de complexité sont celles de la règle
+# 00 (§4) ; les désactiver est interdit sans l'accord du propriétaire.
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.format]
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",  # erreurs de style et de syntaxe
+    "I",            # tri des imports
+    "B",            # bugs probables (flake8-bugbear)
+    "UP",           # syntaxe Python moderne
+    "S",            # sécurité (flake8-bandit)
+    "N",            # nommage
+    "SIM",          # simplifications
+    "RUF",          # règles propres à ruff
+    "PGH",          # pas de noqa ni de type: ignore sans code précis
+    "C901",         # complexité cyclomatique
+    "PLR0911",      # nombre de return
+    "PLR0912",      # nombre de branches
+    "PLR0913",      # nombre de paramètres
+    "PLR0915",      # nombre d'instructions
+    "PLR2004",      # pas de valeur magique
+    "D100", "D101", "D104",  # docstrings de module, de classe et de package
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+[tool.ruff.lint.pylint]
+max-returns = 4
+max-branches = 8
+max-args = 5
+max-statements = 25
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Les assertions sont l'outil des tests ; les docstrings y sont facultatives.
+"tests/**" = ["S101", "D"]
+
+# ---------------------------------------------------------------------------
+# mypy : typage strict, sans exception.
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["app", "tests", "tools"]
+plugins = ["pydantic.mypy"]
+
+# ---------------------------------------------------------------------------
+# pytest et couverture. Le seuil global est de 95 % (lignes et branches).
+# Le seuil de 100 % sur domain et application est vérifié à part, voir
+# la recette « test-back » : `coverage report` avec ses propres options.
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=app",
+    "--cov=tools",
+    "--cov-branch",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-fail-under=95",
+]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+skip_empty = true
+
+# ---------------------------------------------------------------------------
+# bandit : analyse de sécurité du code applicatif (les tests sont exclus).
+# ---------------------------------------------------------------------------
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
+
+# ---------------------------------------------------------------------------
+# import-linter : les règles de dépendance de l'architecture (ADR 0001 et 0005).
+# Chaque contrat porte un identifiant, et un test de tests/architecture/ prouve
+# qu'une violation le fait échouer. Quand un module est ajouté (auth, documents,
+# rgpd), il faut l'ajouter aux listes ci-dessous.
+# ---------------------------------------------------------------------------
+[tool.importlinter]
+root_package = "app"
+include_external_packages = true
+
+# Au sein d'un module : api et infrastructure dépendent de application, qui
+# dépend de domain. api et infrastructure s'ignorent l'un l'autre (le « | »).
+[[tool.importlinter.contracts]]
+id = "couches"
+name = "Couches de chaque module : api | infrastructure, puis application, puis domain"
+type = "layers"
+containers = ["app.chantiers", "app.etapes", "app.shared"]
+layers = ["api | infrastructure", "application", "domain"]
+
+# Le domaine reste en Python pur : aucune bibliothèque technique.
+[[tool.importlinter.contracts]]
+id = "domaine-pur"
+name = "Le domaine n'importe aucune bibliothèque technique (web, validation, base)"
+type = "forbidden"
+source_modules = ["app.chantiers.domain", "app.etapes.domain", "app.shared.domain"]
+forbidden_modules = [
+    "fastapi", "starlette", "pydantic", "pydantic_settings",
+    "sqlalchemy", "psycopg", "alembic",
+]
+
+# Seules l'infrastructure et la composition root parlent à la base. Les imports
+# indirects sont permis : app.main passe légitimement par app.composition. La
+# fuite par une infrastructure est fermée par le contrat « infrastructure-reservee ».
+[[tool.importlinter.contracts]]
+id = "base-reservee"
+name = "Seuls infrastructure et composition importent sqlalchemy et psycopg"
+type = "forbidden"
+source_modules = [
+    "app.chantiers.domain", "app.chantiers.application", "app.chantiers.api",
+    "app.etapes.domain", "app.etapes.application", "app.etapes.api",
+    "app.shared.domain", "app.shared.application", "app.shared.api",
+    "app.main", "app.cli",
+]
+forbidden_modules = ["sqlalchemy", "psycopg"]
+allow_indirect_imports = true
+
+# Sans ce contrat, une route pourrait atteindre sqlalchemy en passant par
+# l'infrastructure de shared sans que le contrat précédent ne le voie.
+[[tool.importlinter.contracts]]
+id = "infrastructure-reservee"
+name = "Seules la composition et les commandes importent une infrastructure"
+type = "forbidden"
+source_modules = [
+    "app.chantiers.domain", "app.chantiers.application", "app.chantiers.api",
+    "app.etapes.domain", "app.etapes.application", "app.etapes.api",
+    "app.shared.domain", "app.shared.application", "app.shared.api",
+]
+forbidden_modules = [
+    "app.chantiers.infrastructure",
+    "app.etapes.infrastructure",
+    "app.shared.infrastructure",
+]
+allow_indirect_imports = true
+
+# Règle 04 : une route ne connaît que les cas d'usage et leurs vues. Le
+# traducteur d'erreurs de shared.api est la seule exception prévue : il
+# ne fait pas partie de cette liste de sources.
+[[tool.importlinter.contracts]]
+id = "api-sans-domain"
+name = "L'api d'un module métier n'importe pas le domaine"
+type = "forbidden"
+source_modules = ["app.chantiers.api", "app.etapes.api"]
+forbidden_modules = ["app.chantiers.domain", "app.etapes.domain", "app.shared.domain"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+id = "shared-sans-metier"
+name = "shared n'importe aucun module métier"
+type = "forbidden"
+source_modules = ["app.shared"]
+forbidden_modules = ["app.chantiers", "app.etapes"]
+
+# chantiers ne connaît pas etapes : l'avancement lui arrive par un port
+# (FournisseurAvancement) branché dans la composition root. Cela évite aussi
+# tout import circulaire entre les deux modules.
+[[tool.importlinter.contracts]]
+id = "chantiers-sans-etapes"
+name = "chantiers n'importe pas etapes"
+type = "forbidden"
+source_modules = ["app.chantiers"]
+forbidden_modules = ["app.etapes"]
+
+# Un module n'utilise un autre que par sa partie application (intent.md, §2.2).
+[[tool.importlinter.contracts]]
+id = "etapes-via-application"
+name = "etapes n'utilise chantiers que par sa partie application"
+type = "forbidden"
+source_modules = ["app.etapes"]
+forbidden_modules = [
+    "app.chantiers.domain",
+    "app.chantiers.infrastructure",
+    "app.chantiers.api",
+]
+allow_indirect_imports = true

@@ -1,0 +1,19 @@
+"""Route de santé : permet à Docker, au proxy et à la CI de savoir si l'API répond."""
+
+from http import HTTPStatus
+
+from fastapi import APIRouter
+
+from app.shared.api.schemas import ReponseSante
+
+routeur = APIRouter(tags=["santé"])
+
+
+@routeur.get("/health", response_model=ReponseSante, status_code=HTTPStatus.OK)
+def lire_sante() -> ReponseSante:
+    """Renvoie `{"statut": "ok"}` : elle ne touche ni la base ni aucun service externe.
+
+    Une sonde de vie ne doit dépendre de rien, sinon une panne de la base ferait
+    redémarrer l'API pour rien.
+    """
+    return ReponseSante(statut="ok")
