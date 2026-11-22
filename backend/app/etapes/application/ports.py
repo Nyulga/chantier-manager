@@ -4,7 +4,8 @@ from collections.abc import Sequence
 from typing import Protocol
 from uuid import UUID
 
-from app.etapes.domain.etape import Etape
+from app.etapes.domain.cycle import StatutEtape
+from app.etapes.domain.etape import Etape, HistoriqueEtape
 from app.shared.application.ports import UnitOfWork
 from app.shared.domain.acteur import Acteur
 
@@ -30,6 +31,23 @@ class EtapeRepository(Protocol):
 
     def lister_par_chantiers(self, chantier_ids: Sequence[UUID]) -> list[Etape]:
         """Renvoie les étapes de ces chantiers, triées par ordre, en une seule lecture."""
+        ...
+
+    def lister_par_statut(self, statut: StatutEtape) -> list[Etape]:
+        """Renvoie toutes les étapes à ce statut, tous chantiers confondus, historique compris.
+
+        L'ordre n'est pas garanti : le tri utile au cas d'usage est une règle du domaine.
+        """
+        ...
+
+    def lister_dernieres_transitions(self, limite: int) -> list[tuple[Etape, HistoriqueEtape]]:
+        """Renvoie au plus `limite` entrées d'historique, toutes étapes confondues.
+
+        Elles vont de la plus récente à la plus ancienne, chacune avec l'étape qui
+        la porte. À date égale, l'entrée la plus récemment ajoutée à une même étape
+        vient en premier ; entre deux étapes différentes, l'ordre n'est pas garanti.
+        La limite est déjà validée par le domaine (`LimiteActivite`).
+        """
         ...
 
 

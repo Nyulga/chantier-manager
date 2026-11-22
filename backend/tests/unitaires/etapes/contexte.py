@@ -10,9 +10,11 @@ from app.chantiers.application.autoriser_ajout_etape import AutoriserAjoutEtape
 from app.chantiers.application.verifier_chantier_existe import VerifierChantierExiste
 from app.chantiers.infrastructure.memoire.unit_of_work import MemoireUnitOfWorkChantiers
 from app.etapes.application.ajouter_etape import AjouterEtape
-from app.etapes.application.calculer_avancements import CalculerAvancements
+from app.etapes.application.calculer_resumes_etapes import CalculerResumesEtapes
 from app.etapes.application.changer_statut_etape import ChangerStatutEtape
+from app.etapes.application.lister_activite_recente import ListerActiviteRecente
 from app.etapes.application.lister_etapes import ListerEtapes
+from app.etapes.application.lister_etapes_a_valider import ListerEtapesAValider
 from app.etapes.infrastructure.memoire.unit_of_work import MemoireUnitOfWorkEtapes
 from app.shared.infrastructure.memoire.generateur_id_previsible import GenerateurIdPrevisible
 from app.shared.infrastructure.memoire.horloge_fixe import HorlogeFixe
@@ -40,5 +42,11 @@ class Contexte:
     def changer_statut(self) -> ChangerStatutEtape:
         return ChangerStatutEtape(self.uow, HorlogeFixe(INSTANT))
 
-    def calculer_avancements(self) -> CalculerAvancements:
-        return CalculerAvancements(self.uow)
+    def calculer_resumes(self) -> CalculerResumesEtapes:
+        return CalculerResumesEtapes(self.uow)
+
+    def lister_etapes_a_valider(self) -> ListerEtapesAValider:
+        return ListerEtapesAValider(self.uow)
+
+    def lister_activite_recente(self) -> ListerActiviteRecente:
+        return ListerActiviteRecente(self.uow)

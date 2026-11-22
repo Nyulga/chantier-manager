@@ -1,6 +1,6 @@
 """Fabriques de données de test fictives pour le module chantiers."""
 
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -13,6 +13,9 @@ NOM = "Rénovation école"
 DEBUT = date(2026, 12, 1)
 ECHEANCE = date(2027, 3, 31)
 BUDGET = Decimal("125000.50")
+# Instant des horloges fixes : neuf jours avant l'échéance, à 10 h en UTC.
+MAINTENANT = datetime(2027, 3, 22, 10, 0, tzinfo=UTC)
+JOURS_AVANT_ECHEANCE = 9
 
 
 CLIENT = "Mairie fictive"

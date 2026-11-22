@@ -6,7 +6,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.etapes.domain.etape import Etape
+from app.etapes.domain.cycle import StatutEtape
+from app.etapes.domain.etape import Etape, HistoriqueEtape
 from app.etapes.infrastructure.sql.tables import TABLE_ETAPES
 from app.shared.domain.erreurs import NonTrouveError
 
@@ -47,3 +48,19 @@ class SqlEtapeRepository:
             .order_by(TABLE_ETAPES.c.ordre, TABLE_ETAPES.c.id)
         )
         return list(self._session.scalars(requete))
+
+    def lister_par_statut(self, statut: StatutEtape) -> list[Etape]:
+        """Provisoire : la requête SQL est écrite à l'étape 2 du lot S4 (issue #28).
+
+        Lève :
+            NotImplementedError : toujours, tant que la requête n'est pas écrite.
+        """
+        raise NotImplementedError("Lot S4, étape 2 : requête des étapes par statut.")
+
+    def lister_dernieres_transitions(self, limite: int) -> list[tuple[Etape, HistoriqueEtape]]:
+        """Provisoire : la requête SQL est écrite à l'étape 2 du lot S4 (issue #28).
+
+        Lève :
+            NotImplementedError : toujours, tant que la requête n'est pas écrite.
+        """
+        raise NotImplementedError("Lot S4, étape 2 : requête des dernières transitions.")

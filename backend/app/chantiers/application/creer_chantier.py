@@ -4,17 +4,15 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
-from app.chantiers.application.ports import UnitOfWorkChantiers
+from app.chantiers.application.ports import RESUME_SANS_ETAPE, UnitOfWorkChantiers
 from app.chantiers.application.vues import ChantierVue, vue_chantier
 from app.chantiers.domain.adresse import Adresse
 from app.chantiers.domain.chantier import Chantier, FicheChantier
 from app.chantiers.domain.montant import Montant
 from app.chantiers.domain.politiques import peut_creer_chantier
-from app.shared.application.ports import GenerateurId
+from app.shared.application.ports import GenerateurId, Horloge
 from app.shared.domain.acteur import Acteur
 from app.shared.domain.erreurs import AccesRefuseError
-
-AVANCEMENT_INITIAL = 0
 
 
 @dataclass(frozen=True)
@@ -34,17 +32,22 @@ class NouveauChantier:
 class CreerChantier:
     """Crée un chantier, ce que seul un chef peut faire.
 
-    Un chantier qui vient d'être créé n'a encore aucune étape : son avancement vaut
-    toujours 0 %, sans qu'il soit besoin de le calculer.
+    Un chantier qui vient d'être créé n'a encore aucune étape : son résumé est nul
+    (0 % et aucun compteur), sans qu'il soit besoin de le demander au module étapes.
+    L'horloge sert au délai de la vue : une échéance déjà passée est acceptée, et le
+    chantier apparaît alors aussitôt en retard.
 
     Lève :
         AccesRefuseError : l'acteur n'est pas chef.
         ValeurInvalideError : une information du chantier viole un invariant du domaine.
     """
 
-    def __init__(self, uow: UnitOfWorkChantiers, generateur_id: GenerateurId) -> None:
+    def __init__(
+        self, uow: UnitOfWorkChantiers, generateur_id: GenerateurId, horloge: Horloge
+    ) -> None:
         self._uow = uow
         self._generateur_id = generateur_id
+        self._horloge = horloge
 
     def executer(self, commande: NouveauChantier, acteur: Acteur) -> ChantierVue:
         """Crée le chantier et renvoie sa vue pour l'acteur."""
@@ -63,4 +66,5 @@ class CreerChantier:
             chantier = Chantier.creer(self._generateur_id.nouveau(), fiche)
             self._uow.chantiers.ajouter(chantier)
             self._uow.valider()
-        return vue_chantier(chantier, acteur, AVANCEMENT_INITIAL)
+        aujourd_hui = self._horloge.maintenant().date()
+        return vue_chantier(chantier, acteur, RESUME_SANS_ETAPE, aujourd_hui)

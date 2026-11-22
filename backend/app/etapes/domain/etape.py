@@ -93,6 +93,20 @@ class Etape:
         self.statut = transition.arrivee
         self.version += 1
 
+    def signalee_le(self) -> datetime | None:
+        """Renvoie la date du dernier signalement de l'étape comme terminée.
+
+        C'est la plus récente transition vers « Terminée (à valider) » : après un
+        refus, l'étape est signalée de nouveau, et c'est ce nouveau signalement que
+        le chef doit traiter. Renvoie `None` si l'historique n'en garde aucun.
+        """
+        dates = [
+            entree.date
+            for entree in self.historique
+            if entree.nouveau_statut is StatutEtape.TERMINEE_A_VALIDER
+        ]
+        return max(dates, default=None)
+
 
 def ordre_suivant(etapes: Sequence[Etape]) -> int:
     """Renvoie l'ordre d'une étape ajoutée en fin de liste.
@@ -101,3 +115,25 @@ def ordre_suivant(etapes: Sequence[Etape]) -> int:
     juste quand des étapes seront supprimées (phase 2).
     """
     return max((etape.ordre for etape in etapes), default=PREMIER_ORDRE - 1) + 1
+
+
+def trier_par_signalement(etapes: Sequence[Etape]) -> list[Etape]:
+    """Trie des étapes de la plus anciennement signalée à la plus récente.
+
+    L'étape qui attend depuis le plus longtemps passe en premier : c'est elle que
+    le chef doit traiter d'abord. Une étape sans signalement connu (une donnée
+    incohérente, que le cycle ne produit pas) passe en tête, pour ne jamais rester
+    cachée en bas de la liste. À date égale, l'identifiant, croissant comme l'ordre
+    de création des UUID v7, départage les étapes : le tri reste ainsi stable.
+    """
+    return sorted(etapes, key=_cle_de_signalement)
+
+
+def _cle_de_signalement(etape: Etape) -> tuple[bool, datetime | None, UUID]:
+    """Clé de tri : d'abord les étapes sans date, puis par date, puis par identifiant.
+
+    Deux étapes sans date ont le même premier et le même deuxième élément : Python
+    passe alors directement à l'identifiant, sans jamais comparer `None` à `None`.
+    """
+    date_signalement = etape.signalee_le()
+    return (date_signalement is not None, date_signalement, etape.id)
