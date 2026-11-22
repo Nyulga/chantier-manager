@@ -83,3 +83,13 @@ it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
 
   await verifierAccessibilite(container);
 });
+
+it('affiche le titre de la page et propose de revenir à la liste des chantiers', () => {
+  afficherPage();
+
+  expect(screen.getByRole('heading', { level: 1, name: 'Nouveau chantier' })).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Retour aux chantiers' })).toHaveAttribute(
+    'href',
+    '/chantiers',
+  );
+});

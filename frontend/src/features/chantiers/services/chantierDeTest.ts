@@ -13,6 +13,11 @@ export function chantierDeTest(surcharges: Partial<Chantier> = {}): Chantier {
     budget: '18450.00',
     avancement: 50,
     peut_ajouter_etape: true,
+    etapes_validees: 3,
+    etapes_total: 6,
+    etapes_a_valider: 0,
+    jours_restants: 54,
+    en_retard: false,
     ...surcharges,
   };
 }

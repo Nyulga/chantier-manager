@@ -25,21 +25,35 @@ function afficherPage() {
   );
 }
 
-it('affiche une carte par chantier : nom, ville, échéance, avancement et lien', async () => {
+it('affiche une carte par chantier : nom, adresse, avancement, échéance et lien', async () => {
   const chantier = chantierDeTest();
   serveur.use(http.get('/api/chantiers', () => HttpResponse.json([chantier])));
 
   afficherPage();
 
-  expect(await screen.findByRole('heading', { level: 3, name: chantier.nom })).toBeVisible();
-  expect(screen.getByText('Lyon')).toBeVisible();
-  expect(screen.getByText('Échéance : 30/09/2026')).toBeVisible();
+  expect(screen.getByRole('heading', { level: 1, name: 'Chantiers' })).toBeVisible();
+  expect(await screen.findByRole('heading', { level: 2, name: chantier.nom })).toBeVisible();
+  expect(screen.getByText('12 rue des Lilas, 69003 Lyon')).toBeVisible();
+  expect(screen.getByText('30/09/2026')).toBeVisible();
   expect(
     screen.getByRole('progressbar', { name: `Avancement de ${chantier.nom}` }),
   ).toHaveAttribute('aria-valuenow', '50');
-  expect(screen.getByRole('link', { name: `Ouvrir le chantier ${chantier.nom}` })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: chantier.nom })).toHaveAttribute(
     'href',
     `/chantiers/${chantier.id}`,
+  );
+});
+
+it('affiche toutes les cartes, sans limite', async () => {
+  const chantiers = Array.from({ length: 6 }, (_, i) =>
+    chantierDeTest({ id: `chantier-${String(i)}`, nom: `Chantier numéro ${String(i)}` }),
+  );
+  serveur.use(http.get('/api/chantiers', () => HttpResponse.json(chantiers)));
+
+  afficherPage();
+
+  expect(await screen.findAllByRole('heading', { level: 2, name: /Chantier numéro/ })).toHaveLength(
+    6,
   );
 });
 
@@ -91,7 +105,7 @@ it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
   serveur.use(http.get('/api/chantiers', () => HttpResponse.json([chantierDeTest()])));
 
   const { container } = afficherPage();
-  await screen.findByRole('heading', { level: 3 });
+  await screen.findByRole('heading', { level: 2, name: 'Rénovation de la mairie' });
 
   await verifierAccessibilite(container);
 });

@@ -24,3 +24,13 @@ it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
 
   await verifierAccessibilite(container);
 });
+
+it('garde le niveau sémantique quand on demande l’apparence d’un autre niveau', () => {
+  render(
+    <Titre niveau={2} taille={3}>
+      Titre de carte
+    </Titre>,
+  );
+
+  expect(screen.getByRole('heading', { level: 2, name: 'Titre de carte' })).toBeVisible();
+});

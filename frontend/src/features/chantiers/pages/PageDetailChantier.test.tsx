@@ -36,7 +36,7 @@ it('affiche les informations du chantier, dont le budget formaté', async () => 
   afficherPage(chantierDeTest());
 
   expect(
-    await screen.findByRole('heading', { level: 2, name: 'Rénovation de la mairie' }),
+    await screen.findByRole('heading', { level: 1, name: 'Rénovation de la mairie' }),
   ).toBeVisible();
   expect(screen.getByText('12 rue des Lilas, 69003 Lyon')).toBeVisible();
   expect(screen.getByText('Client : Mairie de Lyon')).toBeVisible();
@@ -47,7 +47,7 @@ it('affiche les informations du chantier, dont le budget formaté', async () => 
 it('n’affiche pas le budget quand l’API ne le donne pas', async () => {
   afficherPage(chantierDeTest({ budget: null }));
 
-  await screen.findByRole('heading', { level: 2 });
+  await screen.findByRole('heading', { level: 1 });
   expect(screen.queryByText(/Budget/)).not.toBeInTheDocument();
 });
 
@@ -79,7 +79,16 @@ it('affiche le message de l’API quand le chantier n’existe pas', async () =>
 
 it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
   const { container } = afficherPage(chantierDeTest());
-  await screen.findByRole('heading', { level: 2 });
+  await screen.findByRole('heading', { level: 1 });
 
   await verifierAccessibilite(container);
+});
+
+it('propose de revenir à la liste des chantiers', async () => {
+  afficherPage(chantierDeTest());
+
+  expect(await screen.findByRole('link', { name: 'Retour aux chantiers' })).toHaveAttribute(
+    'href',
+    '/chantiers',
+  );
 });

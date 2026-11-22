@@ -18,6 +18,10 @@ const OPTIONS: readonly { readonly valeur: ProfilSelectionnable; readonly libell
  *
  * Des boutons radio natifs : le clavier et les lecteurs d'écran les comprennent sans code en plus.
  * Le composant est contrôlé : la valeur et le changement viennent de ses props.
+ *
+ * Il ne fixe aucune couleur : le texte et la pastille des boutons radio (`accent-current`)
+ * reprennent celle du conteneur, car on le pose aussi sur la barre latérale graphite, où un
+ * texte `fg` serait invisible.
  */
 export function SelecteurProfil({ valeur, onChange }: SelecteurProfilProps) {
   // Identifiant unique : plusieurs sélecteurs peuvent coexister sans se disputer la légende.
@@ -29,14 +33,14 @@ export function SelecteurProfil({ valeur, onChange }: SelecteurProfilProps) {
       aria-labelledby={identifiantLegende}
       className="flex flex-col gap-2"
     >
-      <legend id={identifiantLegende} className="text-secondaire font-semibold text-fg">
+      <legend id={identifiantLegende} className="text-secondaire font-semibold">
         Profil
       </legend>
       <div className="flex gap-4">
         {OPTIONS.map((option) => (
           <label
             key={option.valeur}
-            className="flex min-h-cible-mobile items-center gap-2 text-texte text-fg ordinateur:min-h-cible"
+            className="flex min-h-cible-mobile items-center gap-2 text-texte ordinateur:min-h-cible"
           >
             <input
               type="radio"
@@ -46,7 +50,7 @@ export function SelecteurProfil({ valeur, onChange }: SelecteurProfilProps) {
               onChange={() => {
                 onChange(option.valeur);
               }}
-              className="accent-fg"
+              className="accent-current"
             />
             {option.libelle}
           </label>

@@ -18,12 +18,12 @@ export function PageDetailChantier() {
 
   return (
     <Pile>
-      <Lien vers="/">Retour aux chantiers</Lien>
+      <Lien vers="/chantiers">Retour aux chantiers</Lien>
       {chantier.isPending && <Texte variante="secondaire">Chargement du chantier…</Texte>}
       {chantier.isError && <Alerte variante="erreur">{chantier.error.message}</Alerte>}
       {chantier.data !== undefined && (
         <>
-          <Titre niveau={2}>{chantier.data.nom}</Titre>
+          <Titre niveau={1}>{chantier.data.nom}</Titre>
           <InformationsChantier chantier={chantier.data} />
           <Outlet
             context={{

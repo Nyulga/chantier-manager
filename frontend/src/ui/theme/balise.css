@@ -83,6 +83,7 @@
   --text-etiquette--line-height: 1.4;
 
   --tracking-titre: 0.01em;
+  --tracking-etiquette: 0.08em; /* surtitres en petites capitales */
 
   /* -------- Formes (§4) : aucune ombre, rayons de 4 px, 6 px et 50 % -------- */
   --radius-controle: 0.25rem; /* boutons, champs et cartes */
@@ -106,6 +107,9 @@
   --spacing-cible-mobile-confort: 3.5rem; /* 56 px : actions principales sur mobile */
   --spacing-barre: 0.625rem; /* 10 px : hauteur de la barre d'avancement */
   --spacing-rayure: 0.5rem; /* 8 px : hauteur du bandeau rayé */
+  --spacing-barre-laterale: 15.5rem; /* 248 px : largeur de la barre latérale sur ordinateur */
+  --spacing-champ-recherche: 18rem; /* 288 px : largeur du champ de recherche dès la tablette */
+  --spacing-colonne-laterale: 18.75rem; /* 300 px : colonne « Activité récente » sur ordinateur */
 
   /* -------- Points de rupture : conçu d'abord pour le mobile (360 px) -------- */
   --breakpoint-tablette: 48rem; /* 768 px */

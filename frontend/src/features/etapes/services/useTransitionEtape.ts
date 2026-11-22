@@ -1,10 +1,9 @@
 // Hook de transition d'une étape : démarrer, signaler terminée, valider ou refuser.
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { creerClientApi } from '@/api/client';
-import { erreurApi } from '@/api/erreurApi';
+import { rafraichirApresTransition } from '@/api/rafraichissement';
+import { transitionnerEtape } from '@/api/transitions';
 
-import { rafraichirChantier } from './rafraichirChantier';
 import type { ActionEtape } from './useEtapes';
 
 /** Demande de transition : le commentaire n'est utile qu'au refus, où l'API l'exige (422 sinon). */
@@ -18,24 +17,17 @@ export type DemandeTransition = {
 
 /**
  * Fait changer une étape de statut. C'est l'API qui décide si la transition est permise : le hook
- * transmet la demande sans rien vérifier. Le chantier et ses étapes sont relus après chaque
- * demande, réussie ou non : après un conflit (409), parce qu'un autre utilisateur a agi,
- * l'écran ne doit pas rester périmé.
+ * transmet la demande sans rien vérifier. Le chantier, ses étapes et le tableau de bord sont relus
+ * après chaque demande, réussie ou non : après un conflit (409), parce qu'un autre utilisateur a
+ * agi, l'écran ne doit pas rester périmé.
  */
 export function useTransitionEtape() {
   const clientRequetes = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ etapeId, action, commentaire }: DemandeTransition) => {
-      const { data, error } = await creerClientApi().POST('/etapes/{etape_id}/transitions', {
-        params: { path: { etape_id: etapeId } },
-        body: commentaire === undefined ? { action } : { action, commentaire },
-      });
-      if (data === undefined) {
-        throw erreurApi(error);
-      }
-      return data;
-    },
-    onSettled: (_etape, _erreur, demande) => rafraichirChantier(clientRequetes, demande.chantierId),
+    mutationFn: ({ etapeId, action, commentaire }: DemandeTransition) =>
+      transitionnerEtape({ etapeId, action, commentaire }),
+    onSettled: (_etape, _erreur, demande) =>
+      rafraichirApresTransition(clientRequetes, demande.chantierId),
   });
 }

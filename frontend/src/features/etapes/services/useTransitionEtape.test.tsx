@@ -1,7 +1,7 @@
 // Tests du hook `useTransitionEtape` : le corps envoyé, la relecture des données (succès comme erreur) et les erreurs de l'API.
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 import { creerClientRequetes, creerEnveloppe } from '@/api/test/enveloppeRequetes';
 import { installerServeurApi } from '@/api/test/serveurApiSimule';
@@ -133,4 +133,24 @@ it('expose le message de l’API quand la transition est refusée (422)', async 
   await waitFor(() => {
     expect(result.current.error?.message).toBe('Le commentaire du refus est obligatoire.');
   });
+});
+
+it('invalide aussi les étapes à valider et l’activité du tableau de bord', async () => {
+  serveur.use(http.post(`/api/etapes/${ETAPE.id}/transitions`, () => HttpResponse.json(ETAPE)));
+  const client = creerClientRequetes();
+  const invalider = vi.spyOn(client, 'invalidateQueries');
+  const { result } = renderHook(() => useTransitionEtape(), { wrapper: creerEnveloppe(client) });
+
+  act(() => {
+    result.current.mutate({
+      etapeId: ETAPE.id,
+      chantierId: ETAPE.chantier_id,
+      action: 'valider',
+    });
+  });
+
+  await waitFor(() => {
+    expect(invalider).toHaveBeenCalledWith({ queryKey: ['etapes', 'a-valider'] });
+  });
+  expect(invalider).toHaveBeenCalledWith({ queryKey: ['activite'] });
 });
