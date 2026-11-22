@@ -109,4 +109,4 @@ docker run --rm -v chantier-donnees:/donnees -v /srv/sauvegardes/chantier:/sauve
 docker compose -f compose.prod.yaml start chantier-api
 ```
 
-Une sauvegarde qu'on n'a jamais restaurée n'est pas une sauvegarde : teste la restauration au moins une fois. Copie aussi l'archive hors du serveur. La sauvegarde automatique, chiffrée, est prévue au lot de mise en ligne.
+Une sauvegarde qu'on n'a jamais restaurée n'est pas une sauvegarde : teste la restauration au moins une fois. Copie aussi l'archive hors du serveur. La sauvegarde automatique, chiffrée, est prévue en phase 2 (lot 09).

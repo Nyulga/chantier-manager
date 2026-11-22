@@ -16,9 +16,9 @@
 - Le cloisonnement par utilisateur : dans le squelette, toute personne qui ouvre le site voit tous les chantiers.
 - Les notes, les photos et les documents, donc aussi ClamAV.
 - Le RGPD complet : export, suppression, purge.
-- Les tests de mutation, CodeQL, Trivy, ZAP et les audits.
+- Les tests de mutation, CodeQL et ZAP. (Trivy, gitleaks, pip-audit et pnpm audit ont été ajoutés à la CI en S4, à la demande du propriétaire.)
 
-**Ce qui ne change pas** : les couches et import-linter ; ESLint (couches et design system Balise) ; le typage strict ; les limites contre le code spaghetti ; les commentaires en français ; le TDD avec 100 % de couverture sur le domaine et les services ; PostgreSQL et Alembic.
+**Ce qui ne change pas** : les couches et import-linter ; ESLint (couches et design system Balise) ; le typage strict ; les limites contre le code spaghetti ; les commentaires en français ; le TDD avec 100 % de couverture sur le domaine et les services ; Alembic. PostgreSQL attend la phase 2 : SQLite pendant le squelette (ADR 0007).
 
 **Risque accepté par le propriétaire du projet** : le site de démonstration est public, et n'importe qui peut agir en tant que chef. On n'y saisit **aucune donnée réelle**. Le HTTPS, la CSP, la limite de taille des requêtes et la documentation masquée restent en place.
 
@@ -56,7 +56,7 @@ Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `
 - **Le lot S2 est resserré** :
   - **inclus** : créer un chantier, lister les chantiers avec leur avancement, consulter le détail d'un chantier, ajouter des étapes, les faire avancer, les valider ou les refuser avec un commentaire, et choisir son profil. L'historique est enregistré à chaque transition ;
   - **reporté** : la modification et l'archivage d'un chantier, la modification, la suppression et le réordonnancement des étapes, et l'affichage de l'historique.
-- **CI** : lint, typage, contrats d'architecture et tests uniquement.
+- **CI** : lint, typage, contrats d'architecture et tests ; depuis S4, aussi le job Sécurité (gitleaks, pip-audit, pnpm audit, Trivy).
 
 Critères du premier socle : ceux de la section ci-dessus, **sauf** la modification d'un chantier, la gestion avancée des étapes (modifier, réordonner, supprimer), et l'affichage de l'historique. La mise en ligne en HTTPS reste exigée ; le mot de passe d'accès a finalement été écarté pour la démonstration.
 
@@ -67,4 +67,5 @@ Critères du premier socle : ceux de la section ci-dessus, **sauf** la modificat
 | S1 | 2 à 3 h |
 | S2 | 4 à 6 h |
 | S3 | 2 à 3 h, plus ce qui dépend de l'utilisateur (nom de domaine, accès à la box et au serveur) |
+| S4 | environ 2 h 30, vérifications et corrections comprises |
 | **Total** | **environ 1 à 1,5 jour de travail** |
