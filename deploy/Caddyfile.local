@@ -1,0 +1,14 @@
+# Caddy de test local : même aiguillage que sur le serveur, sans HTTPS ni mot de passe.
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	handle /api/* {
+		reverse_proxy chantier-api:8000
+	}
+	handle {
+		reverse_proxy chantier-web:80
+	}
+}

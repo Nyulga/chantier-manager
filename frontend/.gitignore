@@ -1,0 +1,7 @@
+# Sorties de build, de couverture et de tests de bout en bout
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+openapi.json

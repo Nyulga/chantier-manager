@@ -1,0 +1,55 @@
+# Déploiement de chantier-manager : l'API et le site statique, derrière le Caddy du serveur.
+# Aucun port n'est publié sur l'hôte : le Caddy du serveur joint les conteneurs par leur nom,
+# sur le réseau Docker qu'il partage déjà avec eux.
+#
+# Commande : docker compose -f compose.prod.yaml up -d --build   (depuis le dossier deploy/)
+
+name: chantier
+
+services:
+  chantier-api:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    restart: unless-stopped
+    environment:
+      CHANTIER_URL_BASE: sqlite:////donnees/chantier.db
+    volumes:
+      - chantier-donnees:/donnees
+    networks:
+      - vtt-network
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  chantier-web:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    restart: unless-stopped
+    networks:
+      - vtt-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  # Nom fixe : la commande de sauvegarde du README s'y réfère.
+  chantier-donnees:
+    name: chantier-donnees
+
+networks:
+  # Réseau du Caddy du serveur : il existe déjà, on s'y rattache sans le créer.
+  vtt-network:
+    name: vtt-prod_vtt-network
+    external: true

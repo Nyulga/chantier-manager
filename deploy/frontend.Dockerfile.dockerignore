@@ -1,0 +1,9 @@
+# Contexte de construction du frontend : sans les dépendances, les sorties et les rapports.
+*
+!frontend
+!deploy/frontend.Caddyfile
+**/node_modules
+frontend/dist
+frontend/coverage
+frontend/playwright-report
+frontend/test-results

@@ -20,6 +20,16 @@ node_modules/
 dist/
 coverage/
 
+# Bases de données, sauvegardes et dumps : ne jamais publier de données réelles
+*.db
+*.db-*
+*.sqlite*
+*.sql
+*.dump
+*.tgz
+*.tar.gz
+sauvegardes/
+
 # Fichiers envoyés (stockage local)
 uploads/
 
