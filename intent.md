@@ -211,6 +211,7 @@ Référentiel : **OWASP ASVS niveau 2** et **OWASP Top 10**.
 - Sauvegardes chiffrées.
 
 ### 3.4 Interface
+- Design system **« Balise »** (signalétique de chantier), validé : voir [`docs/design-system.md`](docs/design-system.md).
 - **Responsive, conçue d'abord pour le mobile** : parfaitement utilisable sur téléphone, tablette et ordinateur.
 - Accessibilité visée : **WCAG 2.1 AA**.
 - Interface **en français uniquement**.
