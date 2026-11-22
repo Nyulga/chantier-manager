@@ -36,8 +36,8 @@ RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin chan
 WORKDIR /app
 COPY --from=construction --chown=chantier /app /app
 
-# La base SQLite vivra dans le volume /donnees : CHANTIER_URL_BASE en donne l'emplacement,
-# que l'application lira dès qu'elle aura une persistance (lot S2).
+# La base SQLite vit dans le volume /donnees ; l'application lit CHANTIER_URL_BASE au
+# démarrage (Parametres) et y applique les migrations.
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
