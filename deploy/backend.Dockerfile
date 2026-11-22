@@ -21,6 +21,9 @@ COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --locked --no-dev --no-install-project
 
 COPY backend/app ./app
+# Les migrations sont appliquées au démarrage de l'API : Alembic les cherche à côté de `app/`.
+COPY backend/alembic.ini ./alembic.ini
+COPY backend/migrations ./migrations
 
 # --- Étape 2 : image finale, minimale ------------------------------------------------------
 FROM python:3.13-slim
