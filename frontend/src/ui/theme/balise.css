@@ -1,0 +1,188 @@
+/*
+ * Thème Tailwind du design system « Balise » (docs/design-system.md).
+ *
+ * C'est le SEUL endroit où une couleur, une taille, une police ou un rayon est écrit en dur.
+ * Partout ailleurs, on utilise les utilitaires générés par ce thème (`bg-surface`, `p-4`,
+ * `text-titre-page`…). Les valeurs par défaut de Tailwind sont volontairement vidées
+ * (`initial`) pour que seuls les tokens de Balise existent.
+ *
+ * Les couleurs sont des variables CSS : le thème sombre ne fait que les redéfinir, sous
+ * `prefers-color-scheme: dark`, sans toucher aux composants.
+ */
+@import 'tailwindcss';
+/* Polices auto-hébergées (RGPD et CSP stricte) : aucune requête vers Google Fonts. */
+@import '@fontsource-variable/archivo/wdth.css';
+/* IBM Plex Mono : seuls les jeux de caractères latins servent à une interface en français. */
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-ext-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import '@fontsource/ibm-plex-mono/latin-ext-500.css';
+
+/*
+ * `static` force l'écriture de toutes les variables, même celles qu'aucun utilitaire
+ * n'utilise encore : le bloc sombre ci-dessous doit toujours pouvoir les redéfinir.
+ */
+@theme static {
+  /* -------- Remise à zéro des valeurs par défaut de Tailwind -------- */
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --tracking-*: initial;
+  --breakpoint-*: initial;
+  --spacing: initial;
+
+  /* -------- Couleurs, thème clair (§2.1) -------- */
+  --color-bg: #f1f0ec;
+  --color-surface: #ffffff;
+  --color-fg: #1f2124;
+  --color-muted: #5a5d62;
+  --color-line: #d6d4ce;
+  --color-line-soft: #ebe9e4;
+  --color-accent: #f2a900;
+  --color-on-accent: #1f2124;
+  --color-accent-ink: #855600;
+  --color-accent-soft: #fff8e6;
+  --color-danger: #b42318;
+  --color-danger-soft: #fbe4e1;
+
+  /* -------- Statuts d'étape, thème clair (§2.3) : fond et texte -------- */
+  --color-statut-a-faire-fond: #e7e6e2;
+  --color-statut-a-faire-texte: #3d4045;
+  --color-statut-en-cours-fond: #dde8f6;
+  --color-statut-en-cours-texte: #1d4f8c;
+  --color-statut-a-valider-fond: #f2a900;
+  --color-statut-a-valider-texte: #1f2124;
+  --color-statut-validee-fond: #dcefe1;
+  --color-statut-validee-texte: #1c6b34;
+
+  /* -------- Typographie (§3) -------- */
+  --font-sans: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Échelle en rem (16 px = 1 rem) : elle suit le réglage de taille du navigateur. */
+  --text-titre-page: 1.75rem; /* 28 px, mobile */
+  --text-titre-page--line-height: 1.1;
+  --text-titre-page-ordinateur: 2.75rem; /* 44 px */
+  --text-titre-page-ordinateur--line-height: 1.1;
+  --text-titre-section: 1.5rem; /* 24 px */
+  --text-titre-section--line-height: 1.2;
+  --text-titre-carte: 1.25rem; /* 20 px */
+  --text-titre-carte--line-height: 1.2;
+  --text-texte: 1rem; /* 16 px, texte de base sur mobile */
+  --text-texte--line-height: 1.5;
+  --text-secondaire: 0.875rem; /* 14 px */
+  --text-secondaire--line-height: 1.5;
+  --text-badge: 0.78125rem; /* 12,5 px */
+  --text-badge--line-height: 1.4;
+  --text-etiquette: 0.75rem; /* 12 px */
+  --text-etiquette--line-height: 1.4;
+
+  --tracking-titre: 0.01em;
+
+  /* -------- Formes (§4) : aucune ombre, rayons de 4 px, 6 px et 50 % -------- */
+  --radius-controle: 0.25rem; /* boutons, champs et cartes */
+  --radius-badge: 0.375rem;
+  --radius-avatar: 50%;
+
+  /* -------- Espacements (§4) : multiples de 4 px, dans l'échelle de Balise uniquement -------- */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem; /* 4 px */
+  --spacing-2: 0.5rem; /* 8 px */
+  --spacing-3: 0.75rem; /* 12 px */
+  --spacing-4: 1rem; /* 16 px */
+  --spacing-5: 1.25rem; /* 20 px */
+  --spacing-6: 1.5rem; /* 24 px */
+  --spacing-7: 1.75rem; /* 28 px */
+  --spacing-8: 2rem; /* 32 px */
+  --spacing-10: 2.5rem; /* 40 px */
+  /* Dimensions de composants (§5) : zones de toucher, barre d'avancement, rayures. */
+  --spacing-cible: 2.75rem; /* 44 px : hauteur minimale sur ordinateur */
+  --spacing-cible-mobile: 3.25rem; /* 52 px : hauteur minimale sur mobile */
+  --spacing-cible-mobile-confort: 3.5rem; /* 56 px : actions principales sur mobile */
+  --spacing-barre: 0.625rem; /* 10 px : hauteur de la barre d'avancement */
+  --spacing-rayure: 0.5rem; /* 8 px : hauteur du bandeau rayé */
+
+  /* -------- Points de rupture : conçu d'abord pour le mobile (360 px) -------- */
+  --breakpoint-tablette: 48rem; /* 768 px */
+  --breakpoint-ordinateur: 64rem; /* 1024 px */
+}
+
+/* -------- Thème sombre (§2.2) : les mêmes variables, redéfinies -------- */
+@layer base {
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #17191c;
+      --color-surface: #202327;
+      --color-fg: #ecebe7;
+      --color-muted: #a4a7ac;
+      --color-line: #353940;
+      /* Le design system ne donne pas de valeur sombre pour ce séparateur : voir le rapport. */
+      --color-line-soft: #2a2d32;
+      --color-accent: #f5b521;
+      --color-on-accent: #17191c;
+      --color-accent-ink: #f5b521;
+      --color-accent-soft: #2a2412;
+      --color-danger: #f0716a;
+      --color-danger-soft: #3a1d1b;
+
+      --color-statut-a-faire-fond: #2c2f34;
+      --color-statut-a-faire-texte: #c9cbcf;
+      --color-statut-en-cours-fond: #1d3352;
+      --color-statut-en-cours-texte: #9cc3f5;
+      --color-statut-a-valider-fond: #f5b521;
+      --color-statut-a-valider-texte: #17191c;
+      --color-statut-validee-fond: #183823;
+      --color-statut-validee-texte: #8fd6a4;
+    }
+  }
+
+  :root {
+    /* Indique au navigateur d'adapter ses propres contrôles (barres de défilement…). */
+    color-scheme: light dark;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: var(--text-texte);
+    line-height: var(--text-texte--line-height);
+  }
+
+  /* Focus clavier toujours visible : contour de 3 px décalé de 2 px (§5). */
+  :focus-visible {
+    outline: 3px solid var(--color-fg);
+    outline-offset: 2px;
+  }
+}
+
+/* -------- Utilitaires propres à Balise -------- */
+
+/*
+ * Titre « panneau de chantier » : Archivo condensé à 72 %, graisse 800, majuscules (§3).
+ * Défini ici plutôt qu'avec une valeur arbitraire, car la largeur 72 % est un token du design.
+ */
+@utility titre-balise {
+  font-family: var(--font-sans);
+  font-stretch: 72%;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-titre);
+}
+
+/*
+ * Rayures « balise » (§4). À réserver aux étapes à valider et au logo : voir la règle d'or
+ * du design system. Ce n'est jamais un élément de décoration.
+ */
+@utility rayures-balise {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-accent) 0 0.5rem,
+    var(--color-fg) 0.5rem 1rem
+  );
+}
