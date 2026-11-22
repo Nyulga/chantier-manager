@@ -42,7 +42,9 @@ export default defineConfig({
   webServer: [
     {
       // L'API réelle, démarrée depuis le backend ; ses migrations s'appliquent au démarrage.
-      command: `uv run uvicorn app.main:creer_application --factory --host 127.0.0.1 --port ${String(PORT_API)}`,
+      // `--no-dev` : sans lui, `uv run` réinstallerait le groupe `dev` et annulerait le
+      // `uv sync --no-dev` de la CI ; l'API n'a besoin d'aucun outil de développement.
+      command: `uv run --no-dev uvicorn app.main:creer_application --factory --host 127.0.0.1 --port ${String(PORT_API)}`,
       cwd: '../backend',
       env: { CHANTIER_URL_BASE: urlBase },
       url: `http://127.0.0.1:${String(PORT_API)}/api/health`,

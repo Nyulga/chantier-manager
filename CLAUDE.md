@@ -41,11 +41,14 @@ Toutes passent par le `justfile` de la racine (Windows et Linux) :
 |---|---|
 | `just installer` | `uv sync --locked` (backend), puis `pnpm install --frozen-lockfile` (frontend) |
 | `just lancer` | l'API sur le port 8000 (avec `--reload`) et Vite, qui relaie `/api` vers l'API |
-| `just verifier` | tous les contrôles de la CI : ruff, format, mypy, import-linter, limites de taille, bandit, pytest et couverture (100 % sur domain et application) ; ESLint, tsc, Prettier, Vitest et build |
+| `just verifier` | tous les contrôles de la CI : ruff, format, mypy, import-linter, limites de taille, bandit, pytest et couverture (100 % sur domain et application) ; ESLint, tsc, Prettier, Vitest et build ; duplication de code (`just doublons`) |
 | `just test-back <chemin ou -k nom>` | un test backend précis, sans couverture (par exemple `just test-back tests/unitaires/etapes/test_cycle.py`) |
 | `just test-front <motif>` | un test frontend précis (`vitest run <motif>`) |
 | `just e2e` | Playwright à 360 et 1280 px, contre l'API réelle sur une base SQLite temporaire |
 | `just client` | régénère `frontend/src/api/schema.d.ts` depuis le schéma OpenAPI de l'API |
+| `just doublons` | duplication de code (jscpd) : 2 % au plus en production (Python et TypeScript), seuil séparé pour les tests TypeScript |
+| `just hooks` | installe les hooks git (`.pre-commit-config.yaml`) : contrôles rapides au commit, tests et duplication au push |
+| `just normaliser-fins-de-ligne` | réécrit en LF les fichiers restés en CRLF dans la copie de travail Windows (échoue s'il reste des modifications non indexées) |
 
 Sous Windows, uv et just viennent de winget : si le shell ne les trouve pas, rafraîchis le `PATH`.
 

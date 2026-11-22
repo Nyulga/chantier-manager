@@ -1,7 +1,7 @@
 # Intégration continue : rejoue sur GitHub les vérifications du poste (`just verifier`).
-# Squelette : lint, typage, architecture, tailles, sécurité du code, tests et couverture, plus les
-# tests de bout en bout, et le job `securite` (secrets, dépendances, Trivy). Les tests de mutation
-# et CodeQL sont reportés à la phase 2.
+# Squelette : lint, typage, architecture, tailles, duplication, sécurité du code, tests et couverture,
+# plus les tests de bout en bout, le job `hooks` (les hooks git, rejoués sur tout le dépôt) et le job
+# `securite` (secrets, dépendances, Trivy). Les tests de mutation et CodeQL sont reportés à la phase 2.
 #
 # Toutes les actions sont épinglées par l'empreinte (SHA) d'un commit, la version restant en
 # commentaire : un tag peut être déplacé, pas un SHA. Dependabot propose les mises à jour.
@@ -68,6 +68,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Vérifier le frontend
         run: just verifier-front
+      # La duplication (jscpd) se mesure ici, parce que l'outil est une dépendance du frontend, mais
+      # elle porte aussi sur le code Python du backend.
+      - name: Mesurer la duplication de code (backend et frontend)
+        run: just doublons
       # Les tests de bout en bout jouent le parcours contre l'API réelle : Playwright la lance
       # depuis ../backend avec uv, sur une base SQLite temporaire.
       - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
@@ -90,6 +94,50 @@ jobs:
           name: rapport-playwright
           path: frontend/playwright-report
           retention-days: 7
+
+  # Les hooks git (.pre-commit-config.yaml), rejoués sur tout le dépôt. Ils appellent les mêmes outils
+  # que les jobs ci-dessus : le contrôle est donc en partie redondant. Il est gardé pour deux raisons :
+  # - un hook cassé (mauvais chemin, outil renommé) bloquerait les commits locaux sans qu'aucun autre
+  #   job ne le voie ;
+  # - il ajoute des contrôles qu'aucun autre job ne fait : fins de ligne, espaces en fin de ligne,
+  #   YAML et TOML valides, marqueurs de fusion oubliés, fichiers volumineux.
+  # Les hooks de push (tests, duplication) ne sont pas rejoués : les autres jobs les couvrent.
+  # gitleaks est ignoré ici, car le job `securite` l'exécute sur tout l'historique.
+  hooks:
+    name: Hooks git
+    runs-on: ubuntu-latest
+    env:
+      SKIP: gitleaks
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
+        with:
+          just-version: 1.59.0
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - name: Installer les dépendances du backend (versions verrouillées)
+        working-directory: backend
+        run: uv sync --locked
+      # La version de pnpm est lue dans le champ `packageManager` de frontend/package.json.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Installer les dépendances du frontend (versions verrouillées)
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      # pre-commit est lancé à sa version exacte, comme dans la recette `just hooks`.
+      - name: Rejouer les hooks de commit sur tous les fichiers
+        run: uvx --from pre-commit==4.7.0 pre-commit run --all-files --show-diff-on-failure
 
   # Analyses de sécurité : secrets dans l'historique, dépendances vulnérables, configuration.
   # Une vulnérabilité réelle fait échouer le job : on la corrige, on ne la masque pas.

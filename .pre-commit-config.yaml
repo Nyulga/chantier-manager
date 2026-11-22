@@ -1,0 +1,134 @@
+# Hooks git : les mêmes outils que la CI (voir le justfile et .github/workflows/ci.yml), lancés plus tôt.
+# Installation : `just hooks`. Lancement à la main : `pre-commit run --all-files`.
+#
+# - Au commit : les contrôles rapides (style, typage, architecture, tailles, secrets), sur les fichiers
+#   modifiés quand l'outil sait les traiter un par un, sur tout le projet sinon (mypy, import-linter, tsc).
+# - Au push : les tests et la duplication. Ils durent une à deux minutes : trop long pour chaque commit,
+#   mais utile avant de publier, plutôt que d'attendre la CI. Ils ne partent que si le push touche le
+#   backend ou le frontend. `SKIP=pytest git push` passe un hook une fois, la CI reste la référence.
+#
+# Les hooks distants sont épinglés par l'empreinte (SHA) d'un commit, la version restant en commentaire.
+# Dependabot propose les mises à jour. Les hooks locaux utilisent les outils verrouillés du projet
+# (uv.lock, pnpm-lock.yaml) : aucune seconde version à maintenir.
+minimum_pre_commit_version: "4.0.0"
+default_install_hook_types: [pre-commit, pre-push]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      # Le dépôt est en LF (.gitattributes). Un fichier en CRLF est réécrit en LF, ce qui fait échouer
+      # le hook une fois : il suffit de réindexer le fichier. `just normaliser-fins-de-ligne` fait de
+      # même pour toute la copie de travail d'un coup.
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      # pnpm-lock.yaml contient plusieurs documents YAML : le contrôle d'un seul document le refuse.
+      - id: check-yaml
+        exclude: ^frontend/pnpm-lock\.yaml$
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+
+  # Détection de secrets sur les fichiers indexés. gitleaks est compilé par pre-commit (Go), au
+  # premier lancement seulement. La CI le rejoue sur tout l'historique (job `securite`).
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: 83d9cd684c87d95d656c1458ef04895a7f1cbd8e # v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      # --- Backend ---
+      # Les chemins reçus partent de la racine du dépôt : ruff retrouve de lui-même la configuration
+      # de backend/pyproject.toml, et `--force-exclude` garde les exclusions même pour un fichier nommé.
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --project backend ruff check --force-exclude
+        language: system
+        types: [python]
+        files: ^backend/
+      - id: ruff-format
+        name: ruff format --check
+        entry: uv run --project backend ruff format --check --force-exclude
+        language: system
+        types: [python]
+        files: ^backend/
+      - id: limites-de-taille-python
+        name: limites de taille (fichiers et fonctions Python)
+        entry: uv run --project backend python backend/tools/verifier_tailles.py
+        language: system
+        types: [python]
+        files: ^backend/(app|tools|tests)/
+      # mypy, import-linter et bandit lisent leur configuration dans backend/pyproject.toml : ils
+      # tournent dans backend/ et examinent tout le projet (typage et contrats portent sur l'ensemble).
+      - id: mypy
+        name: mypy --strict
+        entry: uv run --directory backend mypy
+        language: system
+        pass_filenames: false
+        types: [python]
+        files: ^backend/
+      - id: import-linter
+        name: import-linter (contrats d'architecture)
+        entry: uv run --directory backend lint-imports
+        language: system
+        pass_filenames: false
+        types: [python]
+        files: ^backend/(app|tests|pyproject\.toml)
+      - id: bandit
+        name: bandit (sécurité du code)
+        entry: uv run --directory backend bandit -c pyproject.toml -r app tools -q
+        language: system
+        pass_filenames: false
+        types: [python]
+        files: ^backend/(app|tools)/
+
+      # --- Frontend ---
+      # Les recettes `_hook-*` retirent le préfixe `frontend/` des chemins reçus (voir le justfile).
+      - id: prettier
+        name: prettier --check
+        entry: just _hook-prettier
+        language: system
+        files: ^frontend/
+        exclude: ^frontend/(src/api/schema\.d\.ts|openapi\.json|pnpm-lock\.yaml|tests/garde-fous/fixtures/)
+      - id: eslint
+        name: eslint (limites de taille, dépendances, design system)
+        entry: just _hook-eslint
+        language: system
+        types_or: [ts, tsx, javascript]
+        files: ^frontend/
+        exclude: ^frontend/(src/api/schema\.d\.ts|tests/garde-fous/fixtures/)
+      - id: tsc
+        name: tsc (typage strict)
+        entry: pnpm --dir frontend typecheck
+        language: system
+        pass_filenames: false
+        files: ^frontend/(src|e2e|tests)/|^frontend/[^/]+\.(ts|json)$
+
+      # --- Au push : tests et duplication ---
+      - id: pytest
+        name: pytest (couverture 95 %, et 100 % sur domain et application)
+        entry: just _couverture-back
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: ^backend/
+      - id: vitest
+        name: vitest (couverture)
+        entry: pnpm --dir frontend test
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: ^frontend/
+      - id: doublons
+        name: jscpd (duplication de code)
+        entry: just doublons
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: ^(backend|frontend)/

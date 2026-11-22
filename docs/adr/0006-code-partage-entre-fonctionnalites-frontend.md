@@ -15,6 +15,7 @@ Le squelette avait déjà ouvert la voie avec `api/clesRequetes.ts` et `api/prof
 - des **fonctions d'appel partagées**, nommées par ressource (`api/chantiers.ts`, `api/transitions.ts`). Ce sont de simples appels au client, sans React ;
 - les **clés de cache** de TanStack Query (`api/clesRequetes.ts`) ;
 - des **fonctions d'invalidation** partagées (`api/rafraichissement.ts`). Elles reçoivent le `QueryClient` en paramètre et n'utilisent que son type.
+- les **aides propres au client**, sans React non plus : la traduction d'une réponse d'erreur en erreur affichable (`api/erreurApi.ts`), la règle de nouvelle tentative des requêtes (`api/reessai.ts`) et le profil courant (`api/profil.ts`). Ce dernier lit et écrit `localStorage` et écoute `window` : ces accès au navigateur restent confinés à `src/api`, et le reste du frontend passe par ses fonctions.
 
 Ce qui reste interdit dans `src/api` :
 - les hooks React (`useQuery`, `useMutation`, `use…`) et les composants : ils restent dans les `services` de chaque fonctionnalité ;

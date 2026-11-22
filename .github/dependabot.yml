@@ -25,3 +25,8 @@ updates:
     directory: /deploy
     schedule:
       interval: weekly
+  # Les hooks distants de .pre-commit-config.yaml, épinglés par SHA.
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: weekly
