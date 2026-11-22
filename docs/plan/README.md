@@ -27,6 +27,30 @@ Référence : [`intent.md`](../../intent.md) · Décisions : [`docs/adr/`](../ad
                       └─► 06 ─┴─► 07 ─► 08 ─► 09
 ```
 
+## Prérequis du poste (avant le lot 01)
+
+- **Docker Desktop**, avec WSL 2, installé et démarré. C'est à l'utilisateur de l'installer, car il faut les droits administrateur.
+- **uv** et **just**, installés avec l'accord de l'utilisateur.
+- `gh` connecté au compte GitHub, `git`, `pnpm` et Node.js : déjà présents.
+
+## Prérequis de la production (avant le lot 09)
+
+Un nom de domaine, un DNS dynamique si l'adresse IP change, un accès à la box, un compte SMTP chez un fournisseur établi dans l'UE, un stockage dans l'UE pour la copie des sauvegardes, et un accès SSH par clé au serveur. Le détail est dans le [lot 09](lot-09-production.md).
+
+## Contenu d'un fichier de lot
+
+Chaque lot contient :
+- son objectif ;
+- les **points à trancher au démarrage** ;
+- ses **étapes**, chacune avec son agent, son modèle et son effort, dans l'ordre domaine → service → données → API → frontend → e2e ;
+- les **composants `ui`** qu'il introduit : uniquement ceux dont il a besoin ;
+- la table **critère → test qui le prouve** ;
+- ce qui est hors du lot.
+
+Les vérificateurs `revue`, `conformite` et `securite` passent à la fin de **chaque** lot (skill `lot`, §4) : ils ne sont pas répétés dans les tableaux des lots.
+
+Les lots **05 et 06** ne dépendent que du lot 04. Ils peuvent donc être menés en parallèle, chaque codeur travaillant dans son propre worktree.
+
 ## Avant de démarrer un lot
 
 1. Relire `intent.md`, puis le fichier du lot.

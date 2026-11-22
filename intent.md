@@ -84,7 +84,9 @@ Chaque module est organisé en 4 parties :
 - **Politiques d'accès** : fonctions pures du domaine (`peut_voir`, `peut_modifier`, `peut_valider`…), appelées par **chaque** service.
 - **Erreurs métier typées** (`TransitionInterdite`, `AccesRefuse`, `NonTrouve`…), traduites en codes HTTP uniquement dans la partie `api`.
 - **Identifiants** : UUID v7, fournis au domaine par le port `GenerateurId`. Ils sont triables et ne révèlent pas le nombre d'enregistrements.
-- **Ports techniques** : `Horloge`, `GenerateurId`, `HacheurMotDePasse`, `StockageFichiers`, `ScanneurAntivirus`, `EnvoiEmail`, `UnitOfWork`, plus un repository par agrégat.
+- **Ports techniques** : `Horloge`, `GenerateurId`, `HacheurMotDePasse`, `StockageFichiers`, `ScanneurAntivirus`, `EnvoiEmail`, `UnitOfWork`, `JournalAudit` (disponible dès le noyau partagé, pour journaliser les actions sensibles dès leur création), plus un repository par agrégat.
+- **Avancement affiché sur les chantiers** : `chantiers` déclare un port `FournisseurAvancement`, que la composition root branche sur le calcul du module `etapes`. Aucun module n'importe donc l'autre dans les deux sens.
+- **Concurrence** : chaque étape porte un numéro de version (verrou optimiste). Deux actions simultanées sur la même étape ne s'écrasent jamais : la seconde est rejetée (409).
 
 ### 2.4 Persistance
 - **PostgreSQL 16+**, via **SQLAlchemy 2 en mode synchrone** (avec le pilote psycopg 3).
@@ -285,6 +287,7 @@ La V1 est acceptée quand **tous** les critères ci-dessous sont remplis. Le lot
 - [ ] Toute transition non autorisée est rejetée par l'API, par exemple un ouvrier qui tente de valider ou un saut d'état.
 - [ ] Le pourcentage d'avancement est égal au nombre d'étapes validées divisé par le nombre total d'étapes. Il vaut 0 % s'il n'y a aucune étape.
 - [ ] L'historique de chaque étape est conservé : qui a fait quel changement, et quand.
+- [ ] Deux actions simultanées sur la même étape ne s'écrasent pas : la seconde est rejetée et l'utilisateur est invité à recharger.
 
 **Notes, photos et documents** [lot 06]
 - [ ] Tout utilisateur rattaché à un chantier peut y ajouter une note, affichée avec son auteur et sa date.
