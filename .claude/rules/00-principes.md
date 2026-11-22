@@ -78,6 +78,17 @@ Un pattern du catalogue qui n'est pas listé dans nos règles ne s'introduit qu'
 - god object / god service ;
 - pattern ajouté « au cas où », sans besoin réel dans le lot en cours.
 
+### Sobriété : le code le plus simple qui respecte les règles
+
+La meilleure ligne de code est celle qu'on n'a pas besoin d'écrire. La sobriété porte sur la **solution**, jamais sur les exigences : elle ne dispense d'aucune règle de ce dossier, ni des tests, ni des commentaires, ni de la structure en couches.
+
+- **Chercher avant d'écrire.** Avant de créer une fonction, un composant, un port ou un adaptateur, vérifier qu'il n'existe pas déjà dans le projet. S'il existe, le réutiliser comme le fait le code voisin.
+- **Pas de dépendance pour quelques lignes.** On utilise d'abord la bibliothèque standard, puis une dépendance déjà installée. Une nouvelle dépendance se justifie dans le rapport de l'étape : besoin réel, maintenance active, licence compatible et aucune vulnérabilité connue.
+- **Supprimer vaut mieux qu'ajouter.** Quand une modification rend du code inutile, on le supprime dans la même étape, avec les tests qui ne servent plus.
+- **Corriger la cause, pas le symptôme.** Avant de corriger un bug, chercher tous les appelants du code concerné, puis corriger la cause une seule fois, à l'endroit partagé. Pas de rustine chez chaque appelant.
+- **Rien « pour plus tard ».** Pas d'option, de paramètre, de configuration ni de fonctionnalité que le lot en cours ne demande pas. On l'écrit dans le rapport, puis on en fait une issue.
+- **À taille égale, la solution correcte sur les cas limites.** Le plus court n'est pas toujours le meilleur : un code compact mais difficile à relire ne compte pas comme simple.
+
 ## 6. Nommage
 
 - Le **langage métier est en français**, partout : `Chantier`, `Etape`, `valider`, `SignalerEtapeTerminee`.
