@@ -6,7 +6,7 @@
 
 - **Source** : la branche `main` (fusion des PR #25 et #26), clonée sur le serveur Ubuntu 24.04.
 - **Conteneurs** : `chantier-api` (FastAPI, un seul worker, base SQLite dans le volume `chantier-donnees`) et `chantier-web` (fichiers statiques servis par Caddy). Les deux tournent en non-root (uid 10001), sans port publié sur l'hôte.
-- **Proxy** : le Caddy déjà présent pour vtt sur son réseau Docker. Un bloc `chantier-ultra.ddns.net` a été ajouté à la fin de le Caddyfile de cet autre projet, avec une sauvegarde préalable, `caddy validate`, puis un rechargement à chaud, sans coupure pour l'autre projet.
+- **Proxy** : le Caddy déjà présent sur le serveur pour un autre projet, sur son réseau Docker. Un bloc `chantier-ultra.ddns.net` a été ajouté à la fin de son Caddyfile, avec une sauvegarde préalable, `caddy validate`, puis un rechargement à chaud, sans coupure pour l'autre projet.
 - **Migrations** : appliquées automatiquement au premier démarrage de l'API.
 
 ## Décision du propriétaire au moment de la mise en ligne
