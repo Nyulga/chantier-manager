@@ -10,7 +10,7 @@ Le lot reprend la page d'accueil de la maquette Balise (« Tableau de bord · ch
 - **Éléments non câblés** : « Équipe », « Inviter un utilisateur » et la recherche sont affichés comme sur la maquette, mais **désactivés, avec la mention « Bientôt »**. Ce ne sont pas des liens morts. Ils seront câblés au lot 03, avec les comptes.
 - **Pas de comptes** : « Signalée par K. Benali » devient « Signalée le … ». L'activité dit « Le chef », « L'ouvrier » ou « Tu ». Le code de référence du chantier (`CH-2026-…`) n'est pas affiché, car il n'existe pas dans les données.
 - **Code partagé du frontend** : il va dans `src/api` (ADR 0006, règle 05 ajustée).
-- **Issues #13, #14 et #15** : traitées pendant S4 **à la demande du propriétaire** (« corrige l'issue… », puis « lance la correction des erreurs qu'il y a dans les issues »), en gardant vtt en ligne, avec un réseau dédié. Elles étaient prévues pour la phase 2.
+- **Issues #13, #14 et #15** : traitées pendant S4 **à la demande du propriétaire** (« corrige l'issue… », puis « lance la correction des erreurs qu'il y a dans les issues »), en gardant en ligne l'autre projet servi par le même Caddy, avec un réseau dédié. Elles étaient prévues pour la phase 2.
 - **Base SQLite** : décision du squelette, consignée dans l'ADR 0007 à la demande de l'audit global.
 - **« Examiner » et « Valider »** sur chaque ligne « À valider » : c'est ce que montre la maquette du tableau de bord. « Refuser » se fait depuis le détail du chantier, qui demande le motif obligatoire.
 - **Historique git** : les détails du serveur publiés avant S4 restent dans l'historique. Ils ne contiennent aucun secret, et l'historique n'est pas réécrit.
