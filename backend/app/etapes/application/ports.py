@@ -1,0 +1,70 @@
+"""Ports du module étapes : son repository, sa transaction et ce qu'il demande à chantiers."""
+
+from collections.abc import Sequence
+from typing import Protocol
+from uuid import UUID
+
+from app.etapes.domain.etape import Etape
+from app.shared.application.ports import UnitOfWork
+from app.shared.domain.acteur import Acteur
+
+
+class EtapeRepository(Protocol):
+    """Charge et enregistre des étapes complètes, historique compris.
+
+    Il n'a pas de méthode « enregistrer » : une étape chargée puis modifiée dans une
+    transaction est enregistrée à sa validation, comme le fait la session SQLAlchemy.
+    """
+
+    def ajouter(self, etape: Etape) -> None:
+        """Enregistre une nouvelle étape dans la transaction en cours."""
+        ...
+
+    def obtenir(self, etape_id: UUID) -> Etape:
+        """Charge une étape et son historique.
+
+        Lève :
+            NonTrouveError : aucune étape n'a cet identifiant.
+        """
+        ...
+
+    def lister_par_chantiers(self, chantier_ids: Sequence[UUID]) -> list[Etape]:
+        """Renvoie les étapes de ces chantiers, triées par ordre, en une seule lecture."""
+        ...
+
+
+class UnitOfWorkEtapes(UnitOfWork, Protocol):
+    """Transaction du module étapes, qui donne accès à son repository."""
+
+    @property
+    def etapes(self) -> EtapeRepository:
+        """Le repository des étapes, lié à la transaction en cours."""
+        ...
+
+
+class VerificationChantier(Protocol):
+    """Vérifie qu'un chantier existe ; branché sur `VerifierChantierExiste` de chantiers.
+
+    Le port est déclaré ici, du côté de celui qui en a besoin : étapes n'importe
+    rien de chantiers, et la composition root fait le branchement.
+    """
+
+    def executer(self, chantier_id: UUID) -> None:
+        """Lève `NonTrouveError` si le chantier n'existe pas."""
+        ...
+
+
+class AutorisationAjoutEtape(Protocol):
+    """Vérifie qu'un acteur peut ajouter une étape ; branché sur `AutoriserAjoutEtape`.
+
+    Ce droit porte sur le chantier, donc chantiers le décide : étapes ne le duplique pas.
+    """
+
+    def executer(self, chantier_id: UUID, acteur: Acteur) -> None:
+        """Ne renvoie rien si l'ajout est permis.
+
+        Lève :
+            NonTrouveError : le chantier n'existe pas.
+            AccesRefuseError : l'acteur n'a pas le droit d'ajouter une étape.
+        """
+        ...
