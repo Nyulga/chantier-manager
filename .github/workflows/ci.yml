@@ -27,7 +27,7 @@ jobs:
       - uses: extractions/setup-just@v4
         with:
           just-version: 1.59.0
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           python-version: "3.13"
           enable-cache: true
