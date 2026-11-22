@@ -2,7 +2,6 @@
 name: conformite
 description: Vérifie en lecture seule que le code d'un lot de chantier-manager respecte les règles de .claude/rules/ (couches, SOLID, design patterns, limites anti-spaghetti, design system Balise, commentaires en français, tests et migrations). Lancé par le coordinateur à la fin d'un lot, ou quand l'utilisateur demande un contrôle d'architecture.
 tools: Read, Grep, Glob, Bash
-skills: design-patterns
 model: sonnet
 effort: high
 ---

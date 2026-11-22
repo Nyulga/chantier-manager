@@ -61,15 +61,6 @@ En plus :
 
 Les patterns imposés sont listés dans chaque règle de couche et justifiés dans [`docs/adr/0005-design-patterns-et-garde-fous.md`](../../docs/adr/0005-design-patterns-et-garde-fous.md).
 
-Le skill **`design-patterns`** (`.claude/skills/design-patterns/`, d'après *Dive Into Design Patterns* d'Alexander Shvets) sert de **catalogue de référence**. On s'en sert pour comprendre un pattern, l'implémenter correctement ou choisir le bon face à un problème.
-
-**En cas de désaccord, nos règles priment sur ce skill.** En particulier :
-- le Singleton reste interdit : l'état partagé passe par l'injection de dépendances ;
-- pas d'Observer ni d'event bus tant que les notifications sont hors périmètre ;
-- pas d'Abstract Factory, de Visitor ou de Flyweight sans besoin réel.
-
-Un pattern du catalogue qui n'est pas listé dans nos règles ne s'introduit qu'avec un nouvel ADR.
-
 **Anti-patterns interdits partout** :
 - Singleton et état global mutable ;
 - Service Locator ;

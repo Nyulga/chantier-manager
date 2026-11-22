@@ -2,7 +2,6 @@
 name: dev-donnees
 description: Code en TDD la couche infrastructure de chantier-manager (repositories SQLAlchemy, mapping impératif, migrations Alembic, adaptateurs ClamAV, SMTP, disque, Argon2) et son branchement dans la composition root. Lancé par le coordinateur du skill lot, pour une étape précise.
 tools: Read, Write, Edit, Grep, Glob, Bash
-skills: design-patterns
 model: sonnet
 effort: high
 ---
