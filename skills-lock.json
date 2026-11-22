@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "design-patterns": {
+      "source": "ariaramin/design-patterns-skill",
+      "commit": "0c8ee2a5b0bd136b9a42d7fec4084176ac91dbc3",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "e346ba98371bf5c8dda807e5243323c808f762c4f5e6a4263bcab26b8fdbbdc5"
+    }
+  }
+}

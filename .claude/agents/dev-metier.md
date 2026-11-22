@@ -2,6 +2,7 @@
 name: dev-metier
 description: Code en TDD les couches domain et application (règles métier, machine à états, politiques d'accès, cas d'usage, ports) d'un lot de chantier-manager. Lancé par le coordinateur du skill lot, pour une étape précise.
 tools: Read, Write, Edit, Grep, Glob, Bash
+skills: design-patterns
 model: opus
 effort: high
 ---
