@@ -24,13 +24,13 @@ Porter **toutes** les règles métier : les invariants, la machine à états des
 ## Patterns obligatoires
 | Pattern | Application |
 |---|---|
-| **Entity** | `@dataclass(slots=True)` avec une identité (`id: UUID`), et des **méthodes métier** qui modifient l'état (`etape.signaler_terminee(acteur, maintenant)`). Pas de *setters* publics « nus ». |
-| **Value Object** | `@dataclass(frozen=True, slots=True)`, validé dans `__post_init__` : `Adresse`, `Montant`, `Email`, `Commentaire`. Une valeur invalide **ne peut pas exister**. |
+| **Entity** | `@dataclass` (**sans `slots` et non figée** : le mapping impératif de SQLAlchemy doit pouvoir y attacher son état, voir l'ADR 0002 ; décision du 2026-11-22) avec une identité (`id: UUID`), et des **méthodes métier** qui modifient l'état (`etape.signaler_terminee(acteur, maintenant)`). Pas de *setters* publics « nus ». |
+| **Value Object** | `@dataclass(frozen=True, slots=True)`, validé dans `__post_init__`. Il est persisté via `composite()`, jamais mappé comme une table : `Adresse`, `Montant`, `Email`, `Commentaire`. Une valeur invalide **ne peut pas exister**. |
 | **Aggregate** | `Chantier` est une racine : ses affectations ne se modifient que par ses méthodes. On ne référence un autre agrégat que **par son identifiant**. |
 | **State** | Le cycle d'une étape est une **table de transitions déclarative** (statut de départ × action × rôle → statut d'arrivée). Une transition absente de la table lève `TransitionInterdite`. Chaque transition produit une entrée `HistoriqueEtape`. |
 | **Specification / Policy** | Des fonctions pures `peut_voir(...)`, `peut_modifier(...)`, `peut_valider(...)`… qui renvoient `bool` et ne lèvent rien. |
 | **Factory** | Une méthode de classe `creer(...)` pour chaque entité, qui garantit qu'un objet naît toujours valide. |
-| **Erreurs métier** | Une hiérarchie de classes qui héritent de `ErreurMetier` (`app.shared.domain`) : `TransitionInterdite`, `AccesRefuse`, `NonTrouve`, `ValeurInvalide`… Le message est en français et ne contient aucune donnée personnelle. |
+| **Erreurs métier** | Une hiérarchie de classes qui héritent de `ErreurMetierError` (`app.shared.domain`) : `TransitionInterditeError`, `AccesRefuseError`, `NonTrouveError`, `ValeurInvalideError`… Le suffixe `Error` est imposé par la règle ruff `N818` (décision du 2026-11-22). Dans les documents, on garde le nom court : `NonTrouve` désigne `NonTrouveError`. Le message est en français et ne contient aucune donnée personnelle. |
 
 ## Organisation des fichiers
 - Un fichier par entité ou par objet valeur important : `chantier.py`, `adresse.py`, `montant.py`.

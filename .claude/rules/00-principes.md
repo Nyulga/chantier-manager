@@ -86,6 +86,7 @@ La meilleure ligne de code est celle qu'on n'a pas besoin d'écrire. La sobriét
 - Les identifiants n'ont **pas d'accents**. Les termes techniques des patterns restent en anglais : `Repository`, `UnitOfWork`, `Adapter`.
 - Python : `snake_case` pour les fichiers, fonctions et variables ; `PascalCase` pour les classes.
 - TypeScript : `PascalCase.tsx` pour les composants, `useQuelqueChose.ts` pour les hooks, `camelCase` pour le reste.
+- **Exceptions** : le nom français suivi du suffixe `Error`, exigé par ruff `N818`. Exemple : `NonTrouveError`. Les documents peuvent garder le nom court.
 - Un nom dit **ce que fait** la chose, jamais comment elle est faite : `ChantierRepository`, et pas `ChantierDao`.
 
 ## 7. Commentaires : en français, utiles et bien écrits
