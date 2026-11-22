@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Travaille **uniquement sur la branche `dev`**. Vérifie la branche courante avant chaque commit.
 - **Ne pousse jamais sur `main`, ne fusionne jamais dans `main`** et ne modifie jamais `main` sans l'autorisation explicite de l'utilisateur, demandée à chaque fois.
+- `main` est protégée sur GitHub : le push direct, le force-push et la suppression sont interdits, y compris pour les admins. Le seul chemin vers `main` est une **pull request de `dev` vers `main`**. Tu peux ouvrir cette PR, mais seul l'utilisateur décide de la fusionner.
+- Dépôt : https://github.com/Nyulga/chantier-manager (public). N'y mets jamais de secret ni de donnée réelle de chantier ou de client.
 
 ## État du projet
 
