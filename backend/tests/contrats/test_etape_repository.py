@@ -8,7 +8,13 @@ from app.etapes.domain.etape import Etape
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import NonTrouveError
 from tests.contrats.conftest import AUTRE_CHANTIER
-from tests.unitaires.etapes.fabriques import ID_CHANTIER, INSTANT, une_etape
+from tests.unitaires.etapes.fabriques import (
+    ID_CHANTIER,
+    INSTANT,
+    heures_apres,
+    une_etape,
+    une_etape_signalee,
+)
 
 OUVRIER = Acteur(Role.OUVRIER)
 VERSION_APRES_UNE_TRANSITION = 2
@@ -113,3 +119,115 @@ def test_aucun_chantier_demande_donne_une_liste_vide(uow_etapes: UnitOfWorkEtape
         etapes = uow_etapes.etapes.lister_par_chantiers([])
 
     assert etapes == []
+
+
+def test_les_etapes_sont_listees_par_statut_tous_chantiers_confondus(
+    uow_etapes: UnitOfWorkEtapes,
+) -> None:
+    signalee = une_etape_signalee(heures_apres(1), ordre=1)
+    signalee_ailleurs = une_etape_signalee(heures_apres(2), ordre=1, chantier_id=AUTRE_CHANTIER)
+    enregistrer(
+        uow_etapes,
+        signalee,
+        signalee_ailleurs,
+        une_etape(ordre=2),
+        une_etape(StatutEtape.VALIDEE, ordre=3),
+    )
+
+    with uow_etapes:
+        etapes = uow_etapes.etapes.lister_par_statut(StatutEtape.TERMINEE_A_VALIDER)
+
+    assert {etape.id for etape in etapes} == {signalee.id, signalee_ailleurs.id}
+
+
+def test_une_etape_listee_par_statut_garde_son_historique(uow_etapes: UnitOfWorkEtapes) -> None:
+    signalee = une_etape_signalee(heures_apres(1))
+    enregistrer(uow_etapes, signalee)
+
+    with uow_etapes:
+        [relue] = uow_etapes.etapes.lister_par_statut(StatutEtape.TERMINEE_A_VALIDER)
+
+    assert relue.signalee_le() == heures_apres(1)
+
+
+def test_aucune_etape_a_ce_statut_donne_une_liste_vide(uow_etapes: UnitOfWorkEtapes) -> None:
+    enregistrer(uow_etapes, une_etape())
+
+    with uow_etapes:
+        etapes = uow_etapes.etapes.lister_par_statut(StatutEtape.VALIDEE)
+
+    assert etapes == []
+
+
+def test_sans_historique_il_n_y_a_aucune_transition(uow_etapes: UnitOfWorkEtapes) -> None:
+    enregistrer(uow_etapes, une_etape())
+
+    with uow_etapes:
+        transitions = uow_etapes.etapes.lister_dernieres_transitions(10)
+
+    assert transitions == []
+
+
+def test_les_transitions_vont_de_la_plus_recente_a_la_plus_ancienne(
+    uow_etapes: UnitOfWorkEtapes,
+) -> None:
+    ancienne = une_etape_signalee(heures_apres(2), ordre=1)
+    recente = une_etape_signalee(heures_apres(4), ordre=2, chantier_id=AUTRE_CHANTIER)
+    enregistrer(uow_etapes, ancienne, recente)
+
+    with uow_etapes:
+        transitions = uow_etapes.etapes.lister_dernieres_transitions(10)
+
+    assert [(etape.id, entree.date) for etape, entree in transitions] == [
+        (recente.id, heures_apres(4)),
+        (recente.id, heures_apres(3)),
+        (ancienne.id, heures_apres(2)),
+        (ancienne.id, heures_apres(1)),
+    ]
+
+
+def test_la_limite_ne_garde_que_les_transitions_les_plus_recentes(
+    uow_etapes: UnitOfWorkEtapes,
+) -> None:
+    etape = une_etape_signalee(heures_apres(10))
+    enregistrer(uow_etapes, etape)
+
+    with uow_etapes:
+        transitions = uow_etapes.etapes.lister_dernieres_transitions(1)
+
+    assert [entree.nouveau_statut for _, entree in transitions] == [StatutEtape.TERMINEE_A_VALIDER]
+
+
+def test_a_date_egale_la_transition_ajoutee_en_dernier_vient_en_premier(
+    uow_etapes: UnitOfWorkEtapes,
+) -> None:
+    etape = une_etape()
+    etape.appliquer(ActionEtape.DEMARRER, OUVRIER, INSTANT)
+    etape.appliquer(ActionEtape.SIGNALER_TERMINEE, OUVRIER, INSTANT)
+    enregistrer(uow_etapes, etape)
+
+    with uow_etapes:
+        transitions = uow_etapes.etapes.lister_dernieres_transitions(10)
+
+    assert [entree.nouveau_statut for _, entree in transitions] == [
+        StatutEtape.TERMINEE_A_VALIDER,
+        StatutEtape.EN_COURS,
+    ]
+
+
+def test_une_transition_est_renvoyee_avec_son_etape_et_son_commentaire(
+    uow_etapes: UnitOfWorkEtapes,
+) -> None:
+    etape = une_etape_signalee(heures_apres(1))
+    etape.appliquer(ActionEtape.REFUSER, Acteur(Role.CHEF), heures_apres(2), "Joints à reprendre")
+    enregistrer(uow_etapes, etape)
+
+    with uow_etapes:
+        [(etape_relue, entree), *_] = uow_etapes.etapes.lister_dernieres_transitions(10)
+
+    assert (etape_relue.id, etape_relue.titre, entree.role, entree.commentaire) == (
+        etape.id,
+        etape.titre,
+        Role.CHEF,
+        "Joints à reprendre",
+    )

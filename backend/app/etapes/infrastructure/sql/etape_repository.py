@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.etapes.domain.cycle import StatutEtape
 from app.etapes.domain.etape import Etape, HistoriqueEtape
-from app.etapes.infrastructure.sql.tables import TABLE_ETAPES
+from app.etapes.infrastructure.sql.tables import TABLE_ETAPES, TABLE_HISTORIQUE_ETAPES
 from app.shared.domain.erreurs import NonTrouveError
 
 
@@ -50,17 +50,27 @@ class SqlEtapeRepository:
         return list(self._session.scalars(requete))
 
     def lister_par_statut(self, statut: StatutEtape) -> list[Etape]:
-        """Provisoire : la requête SQL est écrite à l'étape 2 du lot S4 (issue #28).
+        """Renvoie les étapes à ce statut, tous chantiers confondus, historique compris.
 
-        Lève :
-            NotImplementedError : toujours, tant que la requête n'est pas écrite.
+        Le tri par identifiant rend la lecture déterministe ; l'ordre utile à
+        l'affichage est une règle du domaine, appliquée par le cas d'usage.
         """
-        raise NotImplementedError("Lot S4, étape 2 : requête des étapes par statut.")
+        requete = select(Etape).where(TABLE_ETAPES.c.statut == statut).order_by(TABLE_ETAPES.c.id)
+        return list(self._session.scalars(requete))
 
     def lister_dernieres_transitions(self, limite: int) -> list[tuple[Etape, HistoriqueEtape]]:
-        """Provisoire : la requête SQL est écrite à l'étape 2 du lot S4 (issue #28).
+        """Renvoie au plus `limite` entrées d'historique, de la plus récente à la plus ancienne.
 
-        Lève :
-            NotImplementedError : toujours, tant que la requête n'est pas écrite.
+        La limite est appliquée par la base (`LIMIT`) : on ne charge jamais tout
+        l'historique. La clé technique de l'entrée départage deux entrées de même
+        date, comme l'ordre d'ajout. L'étape est lue dans la même requête (jointure),
+        et son historique complet par la requête groupée de `lazy="selectin"` : deux
+        requêtes au total, quel que soit le nombre d'entrées.
         """
-        raise NotImplementedError("Lot S4, étape 2 : requête des dernières transitions.")
+        requete = (
+            select(HistoriqueEtape, Etape)
+            .join(Etape, TABLE_HISTORIQUE_ETAPES.c.etape_id == TABLE_ETAPES.c.id)
+            .order_by(TABLE_HISTORIQUE_ETAPES.c.date.desc(), TABLE_HISTORIQUE_ETAPES.c.id.desc())
+            .limit(limite)
+        )
+        return [(etape, entree) for entree, etape in self._session.execute(requete)]

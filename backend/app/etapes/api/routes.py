@@ -12,6 +12,10 @@ from app.etapes.api.conversions import (
     reponse_depuis,
 )
 from app.etapes.api.schemas import AjouterEtapeRequete, EtapeReponse, TransitionRequete
+from app.etapes.api.tableau_de_bord import (
+    FournisseursTableauDeBord,
+    creer_routeur_tableau_de_bord,
+)
 from app.etapes.application.ajouter_etape import AjouterEtape
 from app.etapes.application.changer_statut_etape import ChangerStatutEtape
 from app.etapes.application.lister_etapes import ListerEtapes
@@ -28,8 +32,11 @@ ERREURS: dict[int | str, dict[str, Any]] = {
 }
 
 
-class FournisseursEtapes(Protocol):
-    """Ce que les routes demandent à la composition root : des cas d'usage prêts à l'emploi."""
+class FournisseursEtapes(FournisseursTableauDeBord, Protocol):
+    """Ce que les routes demandent à la composition root : des cas d'usage prêts à l'emploi.
+
+    Les cas d'usage du tableau de bord sont déclarés avec leurs routes, dans `tableau_de_bord.py`.
+    """
 
     def lister_etapes(self) -> ListerEtapes:
         """Fournit le cas d'usage de liste."""
@@ -80,4 +87,5 @@ def creer_routeur(fournisseurs: FournisseursEtapes) -> APIRouter:
         commande = commande_statut_depuis(etape_id, requete)
         return reponse_depuis(cas_usage.executer(commande, acteur))
 
+    routeur.include_router(creer_routeur_tableau_de_bord(fournisseurs))
     return routeur

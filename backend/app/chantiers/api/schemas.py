@@ -53,7 +53,8 @@ class ChantierReponse(BaseModel):
     """Chantier tel que le voit l'acteur.
 
     `budget` est une chaîne décimale en euros (`"125000.50"`), ou `null` pour un
-    ouvrier. `avancement` est un pourcentage entier de 0 à 100.
+    ouvrier. `avancement` est un pourcentage entier de 0 à 100. Lui comme les
+    compteurs d'étapes sont calculés à chaque lecture, jamais stockés.
     """
 
     model_config = CONFIG_SORTIE
@@ -66,4 +67,20 @@ class ChantierReponse(BaseModel):
     echeance: date
     budget: Decimal | None
     avancement: int
+    etapes_validees: int = Field(description="Nombre d'étapes validées du chantier.")
+    etapes_total: int = Field(description="Nombre total d'étapes du chantier.")
+    etapes_a_valider: int = Field(
+        description="Nombre d'étapes signalées terminées, qui attendent la décision d'un chef."
+    )
+    jours_restants: int = Field(
+        ge=0,
+        description=(
+            "Nombre de jours entiers, toujours positif ou nul. Si `en_retard` est faux, "
+            "c'est le temps qui reste avant l'échéance (0 le jour même). Si `en_retard` "
+            "est vrai, c'est le nombre de jours de retard depuis l'échéance, au moins 1."
+        ),
+    )
+    en_retard: bool = Field(
+        description="Vrai quand l'échéance est dépassée d'au moins un jour entier."
+    )
     peut_ajouter_etape: bool

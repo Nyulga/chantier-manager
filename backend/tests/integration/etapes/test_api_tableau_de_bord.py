@@ -1,0 +1,192 @@
+"""Routes du tableau de bord : étapes à valider, activité récente, compteurs et délai."""
+
+from http import HTTPStatus
+from typing import Any
+
+import pytest
+from fastapi.testclient import TestClient
+
+from tests.integration.conftest import CHANTIER_A_CREER, CHEF, OUVRIER
+from tests.integration.etapes.scenario import (
+    ajouter_etape,
+    creer_chantier,
+    signaler_terminee,
+    transitionner,
+)
+
+LIMITE_PAR_DEFAUT = 10
+VERSION_APRES_SIGNALEMENT = 3
+ETAPES_POUR_DEPASSER_LA_LIMITE = 6
+ECHEANCE_LOINTAINE = {**CHANTIER_A_CREER, "echeance": "2999-12-31"}
+ECHEANCE_DEPASSEE = {**CHANTIER_A_CREER, "date_debut": "2020-01-01", "echeance": "2020-01-31"}
+
+
+def a_valider(client: TestClient) -> list[dict[str, Any]]:
+    reponse = client.get("/api/etapes/a-valider", headers=CHEF)
+    assert reponse.status_code == HTTPStatus.OK
+    liste: list[dict[str, Any]] = reponse.json()
+    return liste
+
+
+def activite(client: TestClient, parametres: dict[str, int] | None = None) -> list[dict[str, Any]]:
+    reponse = client.get("/api/activite", params=parametres, headers=OUVRIER)
+    assert reponse.status_code == HTTPStatus.OK
+    liste: list[dict[str, Any]] = reponse.json()
+    return liste
+
+
+def test_sans_etape_signalee_la_liste_a_valider_est_vide(client: TestClient) -> None:
+    creer_chantier(client)
+
+    reponse = client.get("/api/etapes/a-valider", headers=CHEF)
+
+    assert (reponse.status_code, reponse.json()) == (HTTPStatus.OK, [])
+
+
+def test_une_etape_signalee_apparait_a_valider_puis_disparait_une_fois_validee(
+    client: TestClient,
+) -> None:
+    chantier_id = creer_chantier(client)
+    etape_id = ajouter_etape(client, chantier_id, "Plomberie")
+    transitionner(client, etape_id, "demarrer", OUVRIER)
+    avant_signalement = a_valider(client)
+    transitionner(client, etape_id, "signaler_terminee", OUVRIER)
+
+    en_attente = a_valider(client)
+    transitionner(client, etape_id, "valider", CHEF)
+    apres_validation = a_valider(client)
+
+    assert avant_signalement == []
+    assert [(e["id"], e["chantier_id"], e["titre"]) for e in en_attente] == [
+        (etape_id, chantier_id, "Plomberie")
+    ]
+    assert en_attente[0]["actions_permises"] == ["valider", "refuser"]
+    assert en_attente[0]["version"] == VERSION_APRES_SIGNALEMENT
+    assert en_attente[0]["signalee_le"] is not None
+    assert apres_validation == []
+
+
+def test_les_etapes_a_valider_vont_de_la_plus_anciennement_signalee_a_la_plus_recente(
+    client: TestClient,
+) -> None:
+    chantier_id = creer_chantier(client)
+    premiere = ajouter_etape(client, chantier_id, "Première")
+    seconde = ajouter_etape(client, chantier_id, "Seconde")
+    signaler_terminee(client, seconde)
+    signaler_terminee(client, premiere)
+
+    titres = [etape["titre"] for etape in a_valider(client)]
+
+    assert titres == ["Seconde", "Première"]
+
+
+def test_un_ouvrier_ne_peut_pas_lister_les_etapes_a_valider(client: TestClient) -> None:
+    reponse = client.get("/api/etapes/a-valider", headers=OUVRIER)
+
+    assert reponse.status_code == HTTPStatus.FORBIDDEN
+    assert reponse.headers["content-type"] == "application/problem+json"
+
+
+@pytest.mark.parametrize("chemin", ["/api/etapes/a-valider", "/api/activite"])
+def test_sans_profil_les_routes_du_tableau_de_bord_donnent_un_400(
+    client: TestClient, chemin: str
+) -> None:
+    reponse = client.get(chemin)
+
+    assert reponse.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_l_activite_va_de_la_transition_la_plus_recente_a_la_plus_ancienne(
+    client: TestClient,
+) -> None:
+    etape_id = ajouter_etape(client, creer_chantier(client), "Peinture")
+    signaler_terminee(client, etape_id)
+    transitionner(client, etape_id, "refuser", CHEF, "Reprendre les angles")
+
+    entrees = activite(client)
+
+    assert [(e["role"], e["ancien_statut"], e["nouveau_statut"]) for e in entrees] == [
+        ("chef", "terminee_a_valider", "en_cours"),
+        ("ouvrier", "en_cours", "terminee_a_valider"),
+        ("ouvrier", "a_faire", "en_cours"),
+    ]
+    assert entrees[0]["commentaire"] == "Reprendre les angles"
+    assert entrees[1]["commentaire"] is None
+    assert (entrees[0]["etape_id"], entrees[0]["titre_etape"]) == (etape_id, "Peinture")
+    assert entrees[0]["date"] >= entrees[1]["date"] >= entrees[2]["date"]
+
+
+def test_l_activite_est_vide_sans_transition(client: TestClient) -> None:
+    ajouter_etape(client, creer_chantier(client))
+
+    assert activite(client) == []
+
+
+def test_la_limite_par_defaut_du_fil_d_activite_est_celle_du_domaine(client: TestClient) -> None:
+    chantier_id = creer_chantier(client)
+    for _ in range(ETAPES_POUR_DEPASSER_LA_LIMITE):
+        signaler_terminee(client, ajouter_etape(client, chantier_id))
+
+    assert len(activite(client)) == LIMITE_PAR_DEFAUT
+
+
+def test_la_limite_demandee_borne_le_fil_d_activite(client: TestClient) -> None:
+    signaler_terminee(client, ajouter_etape(client, creer_chantier(client)))
+
+    entrees = activite(client, {"limite": 1})
+
+    assert [e["nouveau_statut"] for e in entrees] == ["terminee_a_valider"]
+
+
+@pytest.mark.parametrize("limite", ["0", "51", "-1", "abc"])
+def test_une_limite_hors_bornes_donne_un_422(client: TestClient, limite: str) -> None:
+    reponse = client.get("/api/activite", params={"limite": limite}, headers=CHEF)
+
+    assert reponse.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert reponse.headers["content-type"] == "application/problem+json"
+
+
+def test_les_compteurs_d_etapes_sont_dans_la_liste_et_le_detail_des_chantiers(
+    client: TestClient,
+) -> None:
+    chantier_id = creer_chantier(client)
+    validee, signalee, _ = (ajouter_etape(client, chantier_id) for _ in range(3))
+    signaler_terminee(client, validee)
+    transitionner(client, validee, "valider", CHEF)
+    signaler_terminee(client, signalee)
+
+    liste = client.get("/api/chantiers", headers=OUVRIER).json()[0]
+    detail = client.get(f"/api/chantiers/{chantier_id}", headers=CHEF).json()
+
+    for chantier in (liste, detail):
+        assert (chantier["etapes_validees"], chantier["etapes_total"]) == (1, 3)
+        assert chantier["etapes_a_valider"] == 1
+
+
+def test_un_chantier_sans_etape_a_des_compteurs_nuls(client: TestClient) -> None:
+    creer_chantier(client)
+
+    chantier = client.get("/api/chantiers", headers=CHEF).json()[0]
+
+    assert (chantier["etapes_validees"], chantier["etapes_total"]) == (0, 0)
+    assert chantier["etapes_a_valider"] == 0
+
+
+def test_un_chantier_a_l_echeance_lointaine_a_des_jours_restants(client: TestClient) -> None:
+    chantier_id = creer_chantier(client, ECHEANCE_LOINTAINE)
+
+    chantier = client.get(f"/api/chantiers/{chantier_id}", headers=CHEF).json()
+
+    assert chantier["en_retard"] is False
+    assert chantier["jours_restants"] > 0
+
+
+def test_un_chantier_a_l_echeance_depassee_est_en_retard_de_plusieurs_jours(
+    client: TestClient,
+) -> None:
+    chantier_id = creer_chantier(client, ECHEANCE_DEPASSEE)
+
+    chantier = client.get(f"/api/chantiers/{chantier_id}", headers=OUVRIER).json()
+
+    assert chantier["en_retard"] is True
+    assert chantier["jours_restants"] > 0

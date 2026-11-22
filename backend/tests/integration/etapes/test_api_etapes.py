@@ -1,42 +1,18 @@
 """Routes des étapes : parcours complet, droits, 404, 409 et 422."""
 
 from http import HTTPStatus
-from typing import Any
 from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.integration.conftest import CHANTIER_A_CREER, CHEF, OUVRIER
+from tests.integration.conftest import CHEF, OUVRIER
+from tests.integration.etapes.scenario import ajouter_etape, creer_chantier, transitionner
 
 UUID_VERSION_7 = 7
 VERSION_APRES_SIX_TRANSITIONS = 6
 AVANCEMENT_COMPLET = 100
 AVANCEMENT_MOITIE = 50
-
-
-def creer_chantier(client: TestClient) -> str:
-    reponse = client.post("/api/chantiers", json=CHANTIER_A_CREER, headers=CHEF)
-    return str(reponse.json()["id"])
-
-
-def ajouter_etape(client: TestClient, chantier_id: str, titre: str = "Gros œuvre") -> str:
-    reponse = client.post(
-        f"/api/chantiers/{chantier_id}/etapes", json={"titre": titre}, headers=CHEF
-    )
-    assert reponse.status_code == HTTPStatus.CREATED
-    return str(reponse.json()["id"])
-
-
-def transitionner(
-    client: TestClient,
-    etape_id: str,
-    action: str,
-    profil: dict[str, str],
-    commentaire: str | None = None,
-) -> Any:
-    corps = {"action": action, "commentaire": commentaire}
-    return client.post(f"/api/etapes/{etape_id}/transitions", json=corps, headers=profil)
 
 
 def avancement(client: TestClient, chantier_id: str) -> int:

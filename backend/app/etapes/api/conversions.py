@@ -2,10 +2,17 @@
 
 from uuid import UUID
 
-from app.etapes.api.schemas import AjouterEtapeRequete, EtapeReponse, TransitionRequete
+from app.etapes.api.schemas import (
+    ActiviteReponse,
+    AjouterEtapeRequete,
+    EtapeAValiderReponse,
+    EtapeReponse,
+    TransitionRequete,
+)
 from app.etapes.application.ajouter_etape import NouvelleEtape
 from app.etapes.application.changer_statut_etape import ChangementStatut
-from app.etapes.application.vues import EtapeVue
+from app.etapes.application.lister_activite_recente import DemandeActiviteRecente
+from app.etapes.application.vues import ActiviteVue, EtapeAValiderVue, EtapeVue
 
 
 def commande_ajout_depuis(chantier_id: UUID, requete: AjouterEtapeRequete) -> NouvelleEtape:
@@ -28,3 +35,18 @@ def reponse_depuis(vue: EtapeVue) -> EtapeReponse:
     de suite une valeur du domaine que l'API ne déclarerait pas encore.
     """
     return EtapeReponse.model_validate(vue, from_attributes=True)
+
+
+def reponse_a_valider_depuis(vue: EtapeAValiderVue) -> EtapeAValiderReponse:
+    """Convertit la vue d'une étape à valider en réponse JSON."""
+    return EtapeAValiderReponse.model_validate(vue, from_attributes=True)
+
+
+def demande_activite_depuis(limite: int) -> DemandeActiviteRecente:
+    """Convertit le paramètre `limite` en demande ; le domaine en vérifie les bornes."""
+    return DemandeActiviteRecente(limite=limite)
+
+
+def reponse_activite_depuis(vue: ActiviteVue) -> ActiviteReponse:
+    """Convertit une entrée du fil d'activité en réponse JSON."""
+    return ActiviteReponse.model_validate(vue, from_attributes=True)
