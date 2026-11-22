@@ -25,6 +25,19 @@ const envoyerProfil: Middleware = {
   },
 };
 
+/** Message affiché quand la requête n'atteint pas l'API (hors ligne, serveur arrêté). */
+export const MESSAGE_RESEAU = 'Le serveur ne répond pas. Vérifie ta connexion, puis réessaie.';
+
+/**
+ * Remplace l'erreur technique du navigateur (« Failed to fetch », en anglais) par un message
+ * français : les pages affichent le message des erreurs tel quel.
+ */
+const traduireErreurReseau: Middleware = {
+  onError() {
+    return new Error(MESSAGE_RESEAU);
+  },
+};
+
 /**
  * Chemins de l'API sans le préfixe `/api`.
  *
@@ -44,7 +57,7 @@ export type CheminsApi = {
  */
 export function creerClient<Chemins extends object>(): Client<Chemins> {
   const client = createClient<Chemins>({ baseUrl: BASE_API });
-  client.use(envoyerProfil);
+  client.use(envoyerProfil, traduireErreurReseau);
   return client;
 }
 

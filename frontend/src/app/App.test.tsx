@@ -1,24 +1,19 @@
-// Test de l'application assemblée : les fournisseurs et les routes affichent l'accueil.
+// Test de l'application assemblée : les fournisseurs et les routes affichent la liste des chantiers.
 import { render, screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { setupServer } from 'msw/node';
-import { afterAll, beforeAll, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
+
+import { installerServeurApi } from '@/ui/test/serveurApiSimule';
 
 import { App } from './App';
 
-// L'accueil interroge l'API : on la simule pour qu'aucune requête réelle ne parte pendant le test.
-const serveur = setupServer(http.get('/api/health', () => HttpResponse.json({ statut: 'ok' })));
+const serveur = installerServeurApi();
 
-beforeAll(() => {
-  serveur.listen({ onUnhandledFrame: 'error' });
-});
-afterAll(() => {
-  serveur.close();
-});
+it('affiche l’en-tête et la liste des chantiers au démarrage', async () => {
+  serveur.use(http.get('/api/chantiers', () => HttpResponse.json([])));
 
-it("affiche la page d'accueil au démarrage", async () => {
   render(<App />);
 
   expect(screen.getByRole('heading', { level: 1, name: 'Chantier Manager' })).toBeVisible();
-  expect(await screen.findByText('État de l’API : disponible.')).toBeVisible();
+  expect(await screen.findByText('Aucun chantier pour le moment.')).toBeVisible();
 });

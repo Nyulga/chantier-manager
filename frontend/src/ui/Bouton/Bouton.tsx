@@ -14,6 +14,8 @@ type BoutonProps = {
   readonly variante?: VarianteBouton;
   readonly type?: 'button' | 'submit';
   readonly disabled?: boolean;
+  /** Nom lu par les lecteurs d'écran quand plusieurs boutons portent le même libellé visible. */
+  readonly libelleAccessible?: string;
   readonly onClick?: () => void;
 };
 
@@ -40,12 +42,14 @@ export function Bouton({
   variante = 'principal',
   type = 'button',
   disabled = false,
+  libelleAccessible,
   onClick,
 }: BoutonProps) {
   return (
     <button
       type={type}
       disabled={disabled}
+      aria-label={libelleAccessible}
       onClick={onClick}
       className={`${BASE} ${CLASSES_PAR_VARIANTE[variante]}`}
     >

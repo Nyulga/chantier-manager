@@ -53,3 +53,12 @@ it.each(['principal', 'secondaire', 'danger'] as const)(
     await verifierAccessibilite(container);
   },
 );
+
+it('peut porter un nom accessible plus précis que son libellé visible', () => {
+  render(<Bouton libelleAccessible="Démarrer : Fondations">Démarrer</Bouton>);
+
+  // Le libellé visible reste contenu dans le nom accessible (WCAG 2.5.3).
+  expect(screen.getByRole('button', { name: 'Démarrer : Fondations' })).toHaveTextContent(
+    'Démarrer',
+  );
+});

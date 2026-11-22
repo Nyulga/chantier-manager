@@ -1,11 +1,13 @@
 // Test de bout en bout de la page d'accueil, à 360 px et à 1280 px (voir playwright.config.ts).
 import { expect, test } from '@playwright/test';
 
-test("la page d'accueil affiche le titre et l'emplacement de l'état de l'API", async ({ page }) => {
+test("la page d'accueil affiche le titre de l'application et le choix du profil", async ({
+  page,
+}) => {
   await page.goto('/');
 
   await expect(page.getByRole('heading', { level: 1, name: 'Chantier Manager' })).toBeVisible();
-  await expect(page.getByText('État de l’API')).toBeVisible();
+  await expect(page.getByRole('radiogroup', { name: 'Profil' })).toBeVisible();
 });
 
 test("la page d'accueil n'a pas de défilement horizontal", async ({ page }) => {

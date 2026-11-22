@@ -54,3 +54,16 @@ it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
 
   await verifierAccessibilite(container);
 });
+
+it('n’affiche que « z % » quand les nombres d’étapes ne sont pas connus', () => {
+  render(<BarreAvancement pourcentage={40} />);
+
+  expect(screen.getByText('40 %')).toBeVisible();
+  expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '40');
+});
+
+it('n’a aucun défaut d’accessibilité sans nombres d’étapes', async () => {
+  const { container } = render(<BarreAvancement pourcentage={40} />);
+
+  await verifierAccessibilite(container);
+});

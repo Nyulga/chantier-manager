@@ -6,6 +6,8 @@ export { BarreAvancement } from './BarreAvancement/BarreAvancement';
 export { Bouton } from './Bouton/Bouton';
 export { Carte } from './Carte/Carte';
 export { Champ } from './Champ/Champ';
+export { formaterDate } from './format/formaterDate';
+export { formaterMontant } from './format/formaterMontant';
 export { Formulaire } from './Formulaire/Formulaire';
 export { Lien } from './Lien/Lien';
 export { Page } from './Page/Page';
