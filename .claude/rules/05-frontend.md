@@ -14,7 +14,7 @@ Afficher les données de l'API et transmettre les actions de l'utilisateur. **Le
 ```
 src/
 ├── app/                      # assemblage : routes, providers (session, thème, TanStack Query)
-├── api/                      # client généré depuis OpenAPI + son unique adaptateur
+├── api/                      # client généré depuis OpenAPI, son adaptateur, et le code partagé sans React (ADR 0006)
 ├── ui/                       # design system Balise : SEUL endroit qui produit du HTML stylé
 └── features/<fonctionnalite>/
     ├── services/             # hooks TanStack Query : SEULS à appeler src/api
@@ -28,7 +28,7 @@ src/
 | `components` | `ui`, les types de `services` | appeler `api` ou `services` (ils reçoivent tout par leurs props), utiliser du HTML brut ou des classes CSS |
 | `services` | `api` | importer `ui`, `components` ou `pages` |
 | `ui` | Radix, Tailwind (tokens du thème uniquement) | importer `features` ou `api` |
-| `api` | openapi-fetch, les types générés | importer quoi que ce soit d'autre du projet |
+| `api` | openapi-fetch, les types générés, le type `QueryClient` (fonctions d'appel, clés de cache et invalidations partagées, voir l'ADR 0006) | importer quoi que ce soit d'autre du projet, contenir un hook ou un composant |
 | `features/A` | — | importer `features/B` (le code partagé descend dans `ui` ou `api`) |
 
 Ces règles sont **vérifiées par ESLint** (`eslint-plugin-boundaries`, `no-restricted-imports`, `react/forbid-elements`, `react/forbid-dom-props`, `import/no-cycle`), configuré au lot 01.
