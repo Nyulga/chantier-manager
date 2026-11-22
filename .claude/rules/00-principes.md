@@ -77,7 +77,41 @@ Les patterns imposés sont listés dans chaque règle de couche et justifiés da
 - TypeScript : `PascalCase.tsx` pour les composants, `useQuelqueChose.ts` pour les hooks, `camelCase` pour le reste.
 - Un nom dit **ce que fait** la chose, jamais comment elle est faite : `ChantierRepository`, et pas `ChantierDao`.
 
-## 7. Méthode de travail : TDD obligatoire
+## 7. Commentaires : en français, utiles et bien écrits
+
+Le code est commenté **en français**, avec des phrases complètes, correctement orthographiées et ponctuées. Un commentaire s'adresse à un développeur qui découvre le projet : il doit l'aider à comprendre, pas lui faire perdre du temps.
+
+**Ce qui est obligatoire**
+- **Chaque fichier** commence par une courte description de son rôle : une docstring de module en Python, un commentaire d'en-tête en TypeScript.
+- **Chaque classe publique** a une docstring qui explique sa responsabilité. C'est le cas des entités, des objets valeur, des cas d'usage, des ports, des adaptateurs, des composants `ui` et des hooks de service.
+- **Chaque règle métier** est expliquée là où elle est codée, avec sa raison d'être. Exemple : « Un chantier hors du périmètre renvoie `NonTrouve` plutôt qu'`AccesRefuse`, pour ne pas révéler son existence. »
+- **Chaque choix non évident** est justifié : un ordre imposé, un contournement, une contrainte de sécurité, une valeur seuil. On renvoie vers l'ADR ou la section d'`intent.md` concernée quand elle existe.
+- Une **fonction publique** dont le nom et les types ne suffisent pas à comprendre le comportement (effets de bord, erreurs levées, cas limites) a une docstring. En Python, les erreurs levées sont listées dans une section `Lève :`.
+
+**Ce qui est interdit**
+- Paraphraser le code (`# incrémente le compteur`). Le commentaire explique le **pourquoi**, le code montre le **comment**.
+- Les abréviations obscures, le style télégraphique, le franglais inutile (« on check si le user est set »).
+- Les commentaires périmés : modifier le code oblige à mettre à jour son commentaire.
+- Le code commenté laissé en place (voir §4).
+
+**Exemple attendu**
+```python
+class ValiderEtape:
+    """Valide une étape signalée terminée par un ouvrier.
+
+    Seul un chef affecté au chantier peut valider. La validation et l'entrée
+    d'historique sont enregistrées dans la même transaction : on ne doit jamais
+    voir une étape validée sans trace de la personne qui l'a validée.
+
+    Lève :
+        NonTrouve : le chantier n'appartient pas au périmètre de l'acteur.
+        TransitionInterdite : l'étape n'est pas à l'état « Terminée (à valider) ».
+    """
+```
+
+Les docstrings des modules et des classes publiques sont vérifiées par ruff (règles `D100`, `D101`, `D104`). Le lint ne peut pas juger la qualité de la rédaction : elle est vérifiée en relecture, à la fin de chaque tâche (§9).
+
+## 8. Méthode de travail : TDD obligatoire
 
 Pour toute règle métier et tout cas d'usage, on suit le cycle **rouge → vert → refactorisation** :
 1. écrire le test et **le voir échouer** ;
@@ -92,9 +126,9 @@ Ordre de construction d'une fonctionnalité (tranche verticale) :
 5. services frontend, puis composants `ui` manquants, puis pages ;
 6. test de bout en bout (Playwright).
 
-## 8. Fin de tâche
+## 9. Fin de tâche
 
 Avant de déclarer une tâche terminée :
-- **Relecture** du code produit contre cette règle et contre la règle de chaque couche touchée.
+- **Relecture** du code produit contre cette règle et contre la règle de chaque couche touchée, y compris la qualité des commentaires (§7).
 - Lint, typage, contrats d'architecture et tests sont **tous verts en local**.
 - La définition de « terminé » du lot (`docs/plan/README.md`) est respectée.

@@ -165,6 +165,11 @@ Les fichiers ne sont servis que par l'API, après vérification des droits. Les 
   - aucun import circulaire.
 - La désactivation d'une règle de lint, de typage ou de couverture est interdite sans l'accord du propriétaire du projet.
 
+**Commentaires**
+- Le code est commenté **en français**, en phrases claires et bien écrites.
+- Chaque fichier et chaque classe publique décrit son rôle, et chaque règle métier ou choix non évident est expliqué : on écrit le *pourquoi*, pas une paraphrase du code.
+- Détail dans `.claude/rules/00-principes.md` (§7).
+
 **Lint et formatage**
 - Backend : **ruff** (lint et formatage), **bandit** pour l'analyse de sécurité.
 - Frontend : **ESLint** (règles strictes, `typescript-eslint` en mode strict) et **Prettier**.

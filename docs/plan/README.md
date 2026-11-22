@@ -31,7 +31,7 @@ Référence : [`intent.md`](../../intent.md) · Décisions : [`docs/adr/`](../ad
 
 1. Relire `intent.md`, puis le fichier du lot.
 2. Relire [`.claude/rules/00-principes.md`](../../.claude/rules/00-principes.md) et la règle de chaque couche touchée par le lot.
-3. Travailler en TDD, dans l'ordre de construction défini par la règle 00 (§7).
+3. Travailler en TDD, dans l'ordre de construction défini par la règle 00 (§8).
 
 ## Définition de « terminé » (commune à tous les lots)
 

@@ -16,7 +16,7 @@ Disposer d'un dépôt outillé où un squelette backend et frontend démarre, av
   - frontend : ESLint, avec `eslint-plugin-boundaries`, `no-restricted-imports`, `import/no-cycle`, `react/forbid-elements` et `react/forbid-dom-props` hors de `src/ui`, et les valeurs Tailwind arbitraires interdites ;
   - un test prouve, pour chaque type de contrat, qu'une violation fait échouer le contrôle.
 - **Garde-fous anti-spaghetti** (règle 00, §4) :
-  - ruff : `C901`, `PLR0911`, `PLR0912`, `PLR0913`, `PLR0915`, `PLR2004` ;
+  - ruff : `C901`, `PLR0911`, `PLR0912`, `PLR0913`, `PLR0915`, `PLR2004`, et les docstrings obligatoires des modules et des classes publiques (`D100`, `D101`, `D104`) ;
   - ESLint : `complexity`, `max-lines`, `max-lines-per-function`, `max-depth`, `max-params`, `max-nested-callbacks` ;
   - un script qui mesure les lignes par fichier et par fonction en Python ;
   - jscpd (≤ 2 %) ;
