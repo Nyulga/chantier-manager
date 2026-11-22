@@ -34,6 +34,6 @@ chantier-ultra.ddns.net {
 	}
 
 	handle {
-		reverse_proxy chantier-web:80
+		reverse_proxy chantier-web:8080
 	}
 }

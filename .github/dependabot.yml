@@ -1,0 +1,27 @@
+# Mises à jour automatiques : Dependabot ouvre chaque semaine une pull request par écosystème.
+# Les fichiers de verrouillage (uv.lock, pnpm-lock.yaml) restent la référence : on relit la
+# PR et on laisse la CI la valider avant de fusionner. Les actions GitHub sont épinglées par
+# SHA et les images Docker par empreinte : Dependabot met à jour le SHA et le commentaire de version.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /deploy
+    schedule:
+      interval: weekly
+  # Les images citées dans les fichiers compose (par exemple le Caddy de test local).
+  - package-ecosystem: docker-compose
+    directory: /deploy
+    schedule:
+      interval: weekly
