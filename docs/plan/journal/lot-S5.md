@@ -16,7 +16,7 @@ Le lot traite les constats rangés dans les issues `relecture` (#17 à #24, #29,
   - les politiques `peut_voir_*`, au lot 04 ;
   - la couleur de la barre latérale en thème sombre : une décision de design, toujours ouverte.
 
-  Ces points sont suivis dans l'issue de suivi ouverte à la clôture.
+  Ces points sont suivis dans l'issue #39.
 
 ## Étape 1 – Domaine et services (`0b1223a`)
 
@@ -114,7 +114,7 @@ Le lot traite les constats rangés dans les issues `relecture` (#17 à #24, #29,
     - **Rouge** : 503 au lieu de 500 sur une table absente ; trace contenant `[parameters: ... 'titre-confidentiel…']` ; `index … already exists` sur une migration rejouée ; la clé inventée recopiée dans `champ`.
     - **Vert** : `592 passed`, 100 % de couverture.
     - La migration `0002` a été retouchée avant toute fusion dans `main` ou tout déploiement. Aucune migration publiée n'a été modifiée.
-  - Commit frontend (`dev-frontend`) :
+  - `bcd2c51` (`dev-frontend`) :
     - **Livré** : carte `ResumeChantier` unique dans `ui`, alimentée par `resumerChantier` de `src/api` ; `lireIdentifiantChantier` ; nouvelle tentative posée sur tous les hooks de lecture ; `PROFILS` relié au schéma ; e2e plus robustes.
     - **Rouge** : `resumerChantier is not a function`, `PROFILS is not iterable`, 6 hooks qui ne rejouaient pas un 503.
     - **Vert** : `447 passed` (99,76 % des lignes, `src/test` exclu), e2e 36 sur 36, deux fois de suite.
@@ -122,3 +122,6 @@ Le lot traite les constats rangés dans les issues `relecture` (#17 à #24, #29,
 - **Restes connus** :
   - sous Windows, just transmet mal un nom de fichier contenant une apostrophe aux hooks. Le hook échoue alors, sans exécuter de code ;
   - au retour de PostgreSQL, il faudra ajouter les SQLSTATE 08 et 53 à la table des indisponibilités.
+- **Contre-vérifications** : `revue` et `conformite` donnent toutes deux « conforme », sans constat bloquant ni important. Les constats mineurs sont dans #39.
+- **Rattrapage CI** (`940ee47`, `68bee73`) : un test lisait `openapi.json`, qui n'est pas versionné, et un tri d'imports était masqué par le cache local de ruff.
+- **CI** : verte sur `68bee73` (Backend, Frontend avec l'e2e, Hooks git, Sécurité).
