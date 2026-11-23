@@ -78,14 +78,26 @@ hooks:
     uv tool run --from pre-commit==4.7.0 pre-commit install
 
 # Le dépôt est en LF (.gitattributes), mais des fichiers déjà présents avant cette règle sont restés en CRLF
-# dans la copie de travail : ruff format et Prettier les refusent. `git checkout-index` les réécrit depuis
-# l'index. La première ligne échoue, sans rien modifier, s'il reste des modifications non indexées, car
-# elles seraient écrasées : indexe-les d'abord. Les fichiers non suivis ne sont pas touchés.
+# dans la copie de travail : ruff format et Prettier les refusent. `git checkout-index --force` ne suffit
+# pas : il saute tout fichier dont la taille et la date correspondent à l'entrée de l'index, et l'index a
+# enregistré celles du fichier CRLF lors de son extraction ou d'un `git add`. La recette supprime donc
+# d'abord les fichiers concernés (ceux que `git ls-files --eol` donne en `w/crlf` ou `w/mixed`), puis les
+# réécrit depuis l'index, en LF quelle que soit la valeur de `core.autocrlf` (l'attribut `eol=lf` l'emporte).
+# L'option `--index` met aussi à jour la taille et la date notées dans l'index : sans elle, `git status`
+# signalerait ces fichiers comme modifiés alors que leur contenu est identique. Le contenu indexé n'est
+# jamais modifié. Les noms de fichiers passent par des séparateurs nuls (`xargs -0`, `-z`), donc les espaces
+# ne posent pas de problème. La recette échoue, sans rien supprimer, s'il reste des modifications non
+# indexées, car elles seraient écrasées : indexe-les d'abord. Les fichiers non suivis ne sont pas touchés.
 
 # Réécrit en LF les fichiers suivis restés en CRLF dans la copie de travail (Windows).
 normaliser-fins-de-ligne:
+    #!/usr/bin/env sh
+    set -eu
     git diff --quiet
-    git checkout-index --all --force
+    fichiers=$(git -c core.quotepath=off ls-files --eol | grep -E '^i/[a-z-]+ +w/(crlf|mixed) ' | cut -f2-) || true
+    [ -n "$fichiers" ] || exit 0
+    printf '%s\n' "$fichiers" | tr '\n' '\0' | xargs -0 rm -f --
+    printf '%s\n' "$fichiers" | tr '\n' '\0' | git -c core.autocrlf=false checkout-index --force --index -z --stdin
 
 # Lance un test backend ciblé, sans seuil de couverture. Exemple : just test-back -k avancement
 [working-directory: 'backend']
@@ -113,6 +125,9 @@ client:
 # ou un `;` est ainsi traité comme un simple nom, jamais comme du code à exécuter. Ce sont des recettes
 # à shebang (`sh`, présent avec Git pour Windows) : le shell PowerShell du reste du fichier n'aurait pas la même
 # protection.
+# Limite connue sous Windows : just transmet mal aux hooks un nom de fichier qui contient une apostrophe.
+# C'est un défaut de just, sans exécution de code : le hook échoue de façon visible, il ne laisse pas passer
+# le fichier.
 [positional-arguments]
 [working-directory: 'frontend']
 _hook-prettier *fichiers:
