@@ -7,7 +7,7 @@
 
 # --- Étape 1 : installation des dépendances d'exécution avec uv --------------------------
 # python:3.13-slim
-FROM python@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90 AS construction
+FROM python@sha256:46837ed3105db0029b6d656816185c6258e3b39690532fb782428e0a5fd76182 AS construction
 
 # Version d'uv épinglée : une construction doit donner le même résultat d'un jour à l'autre.
 # ghcr.io/astral-sh/uv:0.13.9
@@ -33,7 +33,7 @@ COPY backend/migrations ./migrations
 
 # --- Étape 2 : image finale, minimale ------------------------------------------------------
 # python:3.13-slim
-FROM python@sha256:e48f59cdba69a3cbd9ed2cf0f348d90d45a8d350d98134cf1070bc106ee9ed90
+FROM python@sha256:46837ed3105db0029b6d656816185c6258e3b39690532fb782428e0a5fd76182
 
 # Utilisateur sans privilèges : une faille de l'API ne donne pas les droits root du conteneur.
 # Seul /donnees lui appartient : c'est le seul endroit où il peut écrire.
