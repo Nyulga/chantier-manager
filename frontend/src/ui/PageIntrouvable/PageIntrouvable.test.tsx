@@ -1,0 +1,34 @@
+// Tests de la page 404 : message clair et retour vers le tableau de bord.
+import { screen } from '@testing-library/react';
+import { Route, Routes } from 'react-router';
+import { expect, it } from 'vitest';
+
+import { afficherAvecFournisseurs } from '@/test/afficherAvecFournisseurs';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
+
+import { PageIntrouvable } from './PageIntrouvable';
+
+function afficherPage() {
+  return afficherAvecFournisseurs(
+    <Routes>
+      <Route path="*" element={<PageIntrouvable />} />
+    </Routes>,
+    '/n-importe-quoi',
+  );
+}
+
+it("explique que la page n'existe pas et propose de revenir au tableau de bord", () => {
+  afficherPage();
+
+  expect(screen.getByRole('heading', { level: 1, name: 'Page introuvable' })).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Retour au tableau de bord' })).toHaveAttribute(
+    'href',
+    '/',
+  );
+});
+
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
+  const { container } = afficherPage();
+
+  await verifierAccessibilite(container);
+});

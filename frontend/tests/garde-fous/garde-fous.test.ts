@@ -89,6 +89,16 @@ const CAS_DE_VIOLATION: readonly Cas[] = [
     raison: 'composant qui appelle un service',
   },
   {
+    fichier: `${DEMO}/pages/PageImporteAideDeTest.tsx`,
+    regle: 'boundaries/dependencies',
+    raison: 'fichier de production qui importe src/test',
+  },
+  {
+    fichier: 'src/ui/ImporteValeurApi.test.tsx',
+    regle: 'boundaries/dependencies',
+    raison: 'test de ui qui importe une valeur de src/api',
+  },
+  {
     fichier: `${DEMO}/services/UtiliseAny.ts`,
     regle: '@typescript-eslint/no-explicit-any',
     raison: 'any explicite',
@@ -140,6 +150,9 @@ const FICHIERS_CONFORMES: readonly string[] = [
   `${DEMO}/pages/PageConforme.tsx`,
   `${DEMO}/components/CarteDemo.tsx`,
   `${DEMO}/services/useDemo.ts`,
+  `${DEMO}/pages/PageConforme.test.tsx`,
+  'src/ui/ImporteTypeApi.test.tsx',
+  'src/test/aideDeTest.ts',
   'src/ui/Texte.tsx',
   'src/ui/index.ts',
   'src/api/client.ts',

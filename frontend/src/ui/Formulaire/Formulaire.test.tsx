@@ -4,7 +4,7 @@ import { expect, it, vi } from 'vitest';
 
 import { Bouton } from '../Bouton/Bouton';
 import { Champ } from '../Champ/Champ';
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { Formulaire } from './Formulaire';
 
 const surChangement = () => undefined;
@@ -28,7 +28,7 @@ it('appelle onSubmit même si un champ obligatoire est vide (noValidate)', () =>
   expect(onSubmit).toHaveBeenCalledOnce();
 });
 
-it('empêche le rechargement de la page à l’envoi', () => {
+it("empêche le rechargement de la page à l'envoi", () => {
   afficher(vi.fn());
 
   const bouton = screen.getByRole('button', { name: 'Enregistrer' });
@@ -38,7 +38,7 @@ it('empêche le rechargement de la page à l’envoi', () => {
   expect(evenement.defaultPrevented).toBe(true);
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher(vi.fn());
 
   await verifierAccessibilite(container);

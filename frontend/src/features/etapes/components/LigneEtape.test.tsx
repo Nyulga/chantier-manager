@@ -2,50 +2,57 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 
-import type { Etape } from '../services/useEtapes';
+import { erreurApiDeTest } from '@/test/erreurApiDeTest';
+import { etapeDeTest } from '@/test/etapeDeTest';
+
 import { LigneEtape } from './LigneEtape';
 
-const ETAPE: Etape = {
-  id: 'e1',
-  chantier_id: 'c1',
+const ETAPE = etapeDeTest({
   titre: 'Fondations',
-  ordre: 1,
   statut: 'terminee_a_valider',
-  version: 1,
   actions_permises: ['valider', 'refuser'],
-};
+});
+const ETAPE_VALIDEE = etapeDeTest({ titre: 'Fondations', statut: 'validee', actions_permises: [] });
 
-it('ferme le formulaire de refus quand l’API ne permet plus de refuser', () => {
+it("ferme le formulaire de refus quand l'API ne permet plus de refuser", () => {
   const { rerender } = render(<LigneEtape etape={ETAPE} enCours={false} onAction={vi.fn()} />);
   fireEvent.click(screen.getByRole('button', { name: 'Refuser : Fondations' }));
   expect(screen.getByLabelText('Motif du refus')).toBeVisible();
 
-  rerender(
-    <LigneEtape
-      etape={{ ...ETAPE, statut: 'validee', actions_permises: [] }}
-      enCours={false}
-      onAction={vi.fn()}
-    />,
-  );
+  rerender(<LigneEtape etape={ETAPE_VALIDEE} enCours={false} onAction={vi.fn()} />);
 
   expect(screen.queryByLabelText('Motif du refus')).not.toBeInTheDocument();
 });
 
-it('affiche l’erreur sous le champ du motif quand le refus est ouvert', () => {
-  render(
-    <LigneEtape
-      etape={ETAPE}
-      enCours={false}
-      erreur="Le commentaire du refus est obligatoire."
-      onAction={vi.fn()}
-    />,
-  );
-  expect(screen.getByRole('alert')).toBeVisible();
+it("ne rouvre pas tout seul le formulaire quand l'API permet de nouveau de refuser", () => {
+  const { rerender } = render(<LigneEtape etape={ETAPE} enCours={false} onAction={vi.fn()} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Refuser : Fondations' }));
+  rerender(<LigneEtape etape={ETAPE_VALIDEE} enCours={false} onAction={vi.fn()} />);
+
+  rerender(<LigneEtape etape={ETAPE} enCours={false} onAction={vi.fn()} />);
+
+  expect(screen.getByRole('button', { name: 'Refuser : Fondations' })).toBeVisible();
+  expect(screen.queryByLabelText('Motif du refus')).not.toBeInTheDocument();
+});
+
+it("annonce l'erreur du motif sous le champ, dès l'ouverture du refus", () => {
+  const erreur = erreurApiDeTest('Les données envoyées sont invalides.', [
+    { champ: 'commentaire', message: 'Le commentaire du refus est obligatoire.' },
+  ]);
+  render(<LigneEtape etape={ETAPE} enCours={false} erreur={erreur} onAction={vi.fn()} />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Refuser : Fondations' }));
 
   expect(screen.getByLabelText('Motif du refus')).toHaveAccessibleDescription(
     'Le commentaire du refus est obligatoire.',
   );
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByRole('alert')).toHaveTextContent('Le commentaire du refus est obligatoire.');
+});
+
+it("montre l'erreur dans la carte quand le formulaire de refus n'est pas ouvert", () => {
+  const erreur = erreurApiDeTest('Cette étape a déjà changé de statut.');
+
+  render(<LigneEtape etape={ETAPE} enCours={false} erreur={erreur} onAction={vi.fn()} />);
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Cette étape a déjà changé de statut.');
 });

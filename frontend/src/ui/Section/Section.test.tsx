@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { Section } from './Section';
 
 function afficher() {
@@ -35,7 +35,7 @@ it('rend son titre focalisable par programme quand une référence lui est donn�
   expect(screen.getByRole('heading', { level: 2, name: 'À valider' })).toHaveFocus();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher();
 
   await verifierAccessibilite(container);

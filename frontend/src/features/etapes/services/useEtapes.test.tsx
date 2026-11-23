@@ -1,12 +1,12 @@
 // Tests du hook `useEtapes` : les étapes d'un chantier viennent de l'API, erreurs comprises.
-import { renderHook, waitFor } from '@testing-library/react';
+import { waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { expect, it } from 'vitest';
 
-import { creerClientRequetes, creerEnveloppe } from '@/api/test/enveloppeRequetes';
-import { installerServeurApi } from '@/api/test/serveurApiSimule';
+import { afficherHook } from '@/test/afficherHook';
+import { installerServeurApi } from '@/test/serveurApiSimule';
 
-import { etapeDeTest } from './etapeDeTest';
+import { etapeDeTest } from '@/test/etapeDeTest';
 import { useEtapes } from './useEtapes';
 
 const serveur = installerServeurApi();
@@ -17,16 +17,14 @@ it('renvoie les étapes du chantier', async () => {
     http.get(`/api/chantiers/${etape.chantier_id}/etapes`, () => HttpResponse.json([etape])),
   );
 
-  const { result } = renderHook(() => useEtapes(etape.chantier_id), {
-    wrapper: creerEnveloppe(creerClientRequetes()),
-  });
+  const { result } = afficherHook(() => useEtapes(etape.chantier_id));
 
   await waitFor(() => {
     expect(result.current.data).toEqual([etape]);
   });
 });
 
-it('expose le message de l’API en cas d’erreur', async () => {
+it("expose le message de l'API en cas d'erreur", async () => {
   serveur.use(
     http.get('/api/chantiers/inconnu/etapes', () =>
       HttpResponse.json(
@@ -36,9 +34,7 @@ it('expose le message de l’API en cas d’erreur', async () => {
     ),
   );
 
-  const { result } = renderHook(() => useEtapes('inconnu'), {
-    wrapper: creerEnveloppe(creerClientRequetes()),
-  });
+  const { result } = afficherHook(() => useEtapes('inconnu'));
 
   await waitFor(() => {
     expect(result.current.error?.message).toBe('Chantier introuvable.');

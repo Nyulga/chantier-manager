@@ -39,7 +39,7 @@ test('le chef valide une étape signalée depuis le tableau de bord', async ({ p
   ).toBeVisible();
 });
 
-test('le tableau de bord n’a pas de défilement horizontal ni de défaut d’accessibilité', async ({
+test("le tableau de bord n'a pas de défilement horizontal ni de défaut d'accessibilité", async ({
   page,
 }, info) => {
   // Une étape à valider existe toujours : le bloc jaune, sa pastille et ses rayures sont rendus.

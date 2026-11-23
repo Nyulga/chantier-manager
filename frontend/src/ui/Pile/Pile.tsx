@@ -1,16 +1,15 @@
 // Composant `Pile` du design system Balise : empile des éléments verticalement, avec un espacement.
 import type { ReactNode } from 'react';
 
-type EspacePile = 'petit' | 'moyen' | 'grand';
+type EspacePile = 'moyen' | 'grand';
 
 type PileProps = {
   readonly children: ReactNode;
   readonly espace?: EspacePile;
 };
 
-/** Espacements de l'échelle de Balise : 8 px, 16 px et 24 px. */
+/** Espacements de l'échelle de Balise : 16 px et 24 px. */
 const ESPACE_PAR_TAILLE: Record<EspacePile, string> = {
-  petit: 'gap-2',
   moyen: 'gap-4',
   grand: 'gap-6',
 };

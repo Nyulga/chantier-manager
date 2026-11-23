@@ -4,17 +4,17 @@ import { useState } from 'react';
 import { Alerte, BadgeStatut, Bouton, Carte, Titre } from '@/ui';
 
 import type { ActionEtape, Etape } from '../services/useEtapes';
-import type { DemandeTransition } from '../services/useTransitionEtape';
+import type { DemandeTransition, ErreurApi } from '../services/useTransitionEtape';
 import { FormulaireRefus } from './FormulaireRefus';
 
 type LigneEtapeProps = {
   readonly etape: Etape;
   readonly enCours: boolean;
   /** Erreur de l'API pour cette étape, montrée dans sa carte (visible sans défiler sur mobile). */
-  readonly erreur?: string | undefined;
+  readonly erreur?: ErreurApi | undefined;
   /** `apresSucces` est appelé quand l'API a accepté la demande. */
   readonly onAction: (
-    demande: Omit<DemandeTransition, 'etapeId' | 'chantierId'>,
+    demande: Omit<DemandeTransition, 'etapeId' | 'chantierId' | 'version'>,
     apresSucces: () => void,
   ) => void;
 };
@@ -34,7 +34,13 @@ export function LigneEtape({ etape, enCours, erreur, onAction }: LigneEtapeProps
   const [refusOuvert, setRefusOuvert] = useState(false);
   // Le formulaire ne reste ouvert que tant que l'API permet de refuser : si l'étape a changé
   // entre-temps (autre utilisateur, 409), il disparaît au lieu d'offrir une action devenue interdite.
-  const formulaireRefusVisible = refusOuvert && etape.actions_permises.includes('refuser');
+  const peutRefuser = etape.actions_permises.includes('refuser');
+  const formulaireRefusVisible = refusOuvert && peutRefuser;
+  // L'état est aussi remis à zéro : sans cela, le formulaire se rouvrirait tout seul le jour où
+  // l'API permettrait de nouveau de refuser. Ajuster l'état pendant le rendu évite un rendu de trop.
+  if (refusOuvert && !peutRefuser) {
+    setRefusOuvert(false);
+  }
 
   function choisir(action: ActionEtape): void {
     if (action === 'refuser') {
@@ -75,9 +81,7 @@ export function LigneEtape({ etape, enCours, erreur, onAction }: LigneEtapeProps
           }}
         />
       )}
-      {erreur !== undefined && !formulaireRefusVisible && (
-        <Alerte variante="erreur">{erreur}</Alerte>
-      )}
+      {erreur !== undefined && !formulaireRefusVisible && <Alerte>{erreur.message}</Alerte>}
     </Carte>
   );
 }

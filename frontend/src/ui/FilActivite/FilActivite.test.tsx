@@ -2,7 +2,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { FilActivite } from './FilActivite';
 
 const ENTREES = [
@@ -16,7 +16,7 @@ const ENTREES = [
   {
     id: 'b',
     initiales: 'OU',
-    qui: 'L’ouvrier',
+    qui: "L'ouvrier",
     quoi: 'a démarré « Gros œuvre »',
     contexte: 'Mairie · lundi',
   },
@@ -32,7 +32,7 @@ it('affiche une ligne par événement : qui, quoi, puis le contexte', () => {
   expect(lignes[0]).toHaveTextContent('Mairie · hier');
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = render(<FilActivite libelle="Activité récente" entrees={ENTREES} />);
 
   await verifierAccessibilite(container);

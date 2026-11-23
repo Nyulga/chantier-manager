@@ -1,13 +1,13 @@
 // Table des routes de l'application : chaque adresse est associée à la page d'une fonctionnalité.
 import { Route, Routes } from 'react-router';
 
-import { PageIntrouvable } from '@/features/accueil/pages/PageIntrouvable';
 import { PageDetailChantier } from '@/features/chantiers/pages/PageDetailChantier';
 import { PageListeChantiers } from '@/features/chantiers/pages/PageListeChantiers';
 import { PageNouveauChantier } from '@/features/chantiers/pages/PageNouveauChantier';
-import { PageTableauDeBord } from '@/features/chantiers/pages/PageTableauDeBord';
 import { PageEtapesChantier } from '@/features/etapes/pages/PageEtapesChantier';
 import { LayoutApplication } from '@/features/profil/pages/LayoutApplication';
+import { PageTableauDeBord } from '@/features/tableau-de-bord/pages/PageTableauDeBord';
+import { PageIntrouvable } from '@/ui';
 
 /**
  * Routes de l'application, toutes dans le cadre commun (barre latérale). L'accueil est le tableau

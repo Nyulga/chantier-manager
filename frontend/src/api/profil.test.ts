@@ -8,7 +8,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it('renvoie « chef » quand aucun profil n’est enregistré', () => {
+it("renvoie « chef » quand aucun profil n'est enregistré", () => {
   expect(lireProfil()).toBe('chef');
 });
 
@@ -19,7 +19,7 @@ it('renvoie le profil enregistré', () => {
   expect(localStorage.getItem(CLE_PROFIL)).toBe('ouvrier');
 });
 
-it('ignore une valeur enregistrée qui n’est pas un profil connu', () => {
+it("ignore une valeur enregistrée qui n'est pas un profil connu", () => {
   localStorage.setItem(CLE_PROFIL, 'administrateur');
 
   expect(lireProfil()).toBe('chef');
@@ -43,7 +43,7 @@ it('ne plante pas quand localStorage est inaccessible en écriture', () => {
   }).not.toThrow();
 });
 
-it('prévient les écouteurs quand le profil change, jusqu’à leur désinscription', () => {
+it("prévient les écouteurs quand le profil change, jusqu'à leur désinscription", () => {
   const rappel = vi.fn();
   const arreter = ecouterProfil(rappel);
 

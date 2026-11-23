@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { SelecteurProfil } from './SelecteurProfil';
 
 it('propose Chef et Ouvrier dans un groupe nommé « Profil »', () => {
@@ -28,7 +28,7 @@ it('remonte le profil choisi à onChange', () => {
   expect(onChange).toHaveBeenCalledWith('ouvrier');
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = render(<SelecteurProfil valeur="chef" onChange={vi.fn()} />);
 
   await verifierAccessibilite(container);

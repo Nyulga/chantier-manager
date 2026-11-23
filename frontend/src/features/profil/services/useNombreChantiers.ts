@@ -1,8 +1,7 @@
 // Hook du compteur « Mes chantiers » de la navigation : le nombre de chantiers que l'API renvoie.
 import { useQuery } from '@tanstack/react-query';
 
-import { listerChantiers } from '@/api/chantiers';
-import { clesRequetes } from '@/api/clesRequetes';
+import { optionsListeChantiers } from '@/api/chantiers';
 
 /**
  * Renvoie le nombre de chantiers, ou `undefined` tant que la liste n'est pas chargée (ou si
@@ -12,8 +11,7 @@ import { clesRequetes } from '@/api/clesRequetes';
  */
 export function useNombreChantiers(): number | undefined {
   const { data } = useQuery({
-    queryKey: clesRequetes.listeChantiers(),
-    queryFn: listerChantiers,
+    ...optionsListeChantiers,
     select: (chantiers) => chantiers.length,
   });
 

@@ -3,7 +3,8 @@ import { render, screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { expect, it } from 'vitest';
 
-import { installerServeurApi } from '@/ui/test/serveurApiSimule';
+import { gestionnaireCapacites } from '@/test/capacites';
+import { installerServeurApi } from '@/test/serveurApiSimule';
 
 import { App } from './App';
 
@@ -11,6 +12,7 @@ const serveur = installerServeurApi();
 
 it('affiche la barre latérale et le tableau de bord au démarrage', async () => {
   serveur.use(
+    gestionnaireCapacites,
     http.get('/api/chantiers', () => HttpResponse.json([])),
     http.get('/api/etapes/a-valider', () => HttpResponse.json([])),
     http.get('/api/activite', () => HttpResponse.json([])),

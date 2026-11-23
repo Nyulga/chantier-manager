@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { ZoneTexte } from './ZoneTexte';
 
 const surChangement = () => undefined;
@@ -24,7 +24,7 @@ it('affiche la valeur reçue et remonte la saisie à onChange', () => {
   expect(onChange).toHaveBeenCalledWith('Les joints sont à refaire.');
 });
 
-it('relie le message d’erreur à la zone par aria-describedby', () => {
+it("relie le message d'erreur à la zone par aria-describedby", () => {
   render(
     <ZoneTexte
       libelle="Motif du refus"
@@ -40,13 +40,26 @@ it('relie le message d’erreur à la zone par aria-describedby', () => {
   expect(zone).toBeInvalid();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe, sans erreur', async () => {
+it("annonce l'erreur aux lecteurs d'écran dès qu'elle apparaît (role=alert)", () => {
+  render(
+    <ZoneTexte
+      libelle="Motif du refus"
+      valeur=""
+      onChange={surChangement}
+      erreur="Le motif est obligatoire."
+    />,
+  );
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Le motif est obligatoire.');
+});
+
+it("n'a aucun défaut d'accessibilité détectable par axe, sans erreur", async () => {
   const { container } = render(<ZoneTexte libelle="Motif" valeur="" onChange={surChangement} />);
 
   await verifierAccessibilite(container);
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe, avec une erreur', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe, avec une erreur", async () => {
   const { container } = render(
     <ZoneTexte
       libelle="Motif"

@@ -1,16 +1,14 @@
-// Résumé d'un chantier : la carte du design system, remplie avec les données de l'API.
+// Résumé d'un chantier de la liste : la carte du design system, remplie avec les données de l'API.
 import { CarteChantier, formaterDate, formaterDelai, PuceChantier } from '@/ui';
 
 import type { Chantier } from '../services/useChantiers';
 
 type ResumeChantierProps = {
   readonly chantier: Chantier;
-  /** Niveau du titre : 3 sous une section de page (par défaut), 2 sur une page sans section. */
-  readonly niveauTitre?: 2 | 3 | undefined;
 };
 
 /** Les puces d'état, ou rien quand le chantier n'a ni étape à valider ni retard. */
-function PucesChantier({ chantier }: { readonly chantier: Chantier }) {
+function PucesChantier({ chantier }: ResumeChantierProps) {
   return (
     <>
       {chantier.etapes_a_valider > 0 && (
@@ -23,9 +21,10 @@ function PucesChantier({ chantier }: { readonly chantier: Chantier }) {
 
 /**
  * Tout vient de l'API : avancement, compteurs d'étapes, retard et nombre de jours sont calculés
- * par le serveur (le frontend ne compare aucune date, il met en forme).
+ * par le serveur (le frontend ne compare aucune date, il met en forme). Le titre est de niveau 2 :
+ * la liste n'a pas de section, ses cartes suivent directement le titre de la page.
  */
-export function ResumeChantier({ chantier, niveauTitre }: ResumeChantierProps) {
+export function ResumeChantier({ chantier }: ResumeChantierProps) {
   const { adresse } = chantier;
 
   return (
@@ -43,7 +42,7 @@ export function ResumeChantier({ chantier, niveauTitre }: ResumeChantierProps) {
         enRetard: chantier.en_retard,
       })}
       enRetard={chantier.en_retard}
-      niveauTitre={niveauTitre}
+      niveauTitre={2}
     />
   );
 }

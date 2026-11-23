@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { creerClientApi } from '@/api/client';
 import { clesRequetes } from '@/api/clesRequetes';
-import { erreurApi } from '@/api/erreurApi';
+import { donneesOuErreur } from '@/api/erreurApi';
 
 /**
  * Saisie du formulaire de création, à plat (un champ de formulaire par propriété).
@@ -22,6 +22,9 @@ export type SaisieChantier = {
   readonly budget: string;
 };
 
+/** Type de l'erreur que lève la création, pour les formulaires qui affichent ses erreurs par champ. */
+export type { ErreurApi } from '@/api/erreurApi';
+
 /**
  * Crée un chantier. Le hook met la saisie à la forme de l'API (adresse imbriquée, champs en
  * `snake_case`), pour que les composants ne connaissent pas le format du contrat.
@@ -30,22 +33,19 @@ export function useCreerChantier() {
   const clientRequetes = useQueryClient();
 
   return useMutation({
-    mutationFn: async (saisie: SaisieChantier) => {
-      const { data, error } = await creerClientApi().POST('/chantiers', {
-        body: {
-          nom: saisie.nom,
-          adresse: { voie: saisie.voie, code_postal: saisie.codePostal, ville: saisie.ville },
-          client: saisie.client,
-          date_debut: saisie.dateDebut,
-          echeance: saisie.echeance,
-          budget: saisie.budget,
-        },
-      });
-      if (data === undefined) {
-        throw erreurApi(error);
-      }
-      return data;
-    },
+    mutationFn: async (saisie: SaisieChantier) =>
+      donneesOuErreur(
+        await creerClientApi().POST('/chantiers', {
+          body: {
+            nom: saisie.nom,
+            adresse: { voie: saisie.voie, code_postal: saisie.codePostal, ville: saisie.ville },
+            client: saisie.client,
+            date_debut: saisie.dateDebut,
+            echeance: saisie.echeance,
+            budget: saisie.budget,
+          },
+        }),
+      ),
     onSuccess: async () => {
       await clientRequetes.invalidateQueries({ queryKey: clesRequetes.listeChantiers() });
     },

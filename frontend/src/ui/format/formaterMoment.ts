@@ -39,7 +39,7 @@ export function formaterMoment(momentIso: string, maintenant: Date): string {
     (debutDeJournee(maintenant) - debutDeJournee(moment)) / MILLISECONDES_PAR_JOUR,
   );
   if (joursEcoules === 0) {
-    return `aujourd’hui à ${heure}`;
+    return `aujourd'hui à ${heure}`;
   }
   return joursEcoules === 1 ? `hier à ${heure}` : `le ${dateLocale(moment)} à ${heure}`;
 }

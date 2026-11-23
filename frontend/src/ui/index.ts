@@ -29,6 +29,8 @@ export { Icone } from './Icone/Icone';
 export { Lien } from './Lien/Lien';
 export { LigneAValider } from './LigneAValider/LigneAValider';
 export { MentionBientot } from './MentionBientot/MentionBientot';
+export { PageErreur } from './PageErreur/PageErreur';
+export { PageIntrouvable } from './PageIntrouvable/PageIntrouvable';
 export { PastilleCompteur } from './PastilleCompteur/PastilleCompteur';
 export { Pile } from './Pile/Pile';
 export { PuceChantier } from './PuceChantier/PuceChantier';

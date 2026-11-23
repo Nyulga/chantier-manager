@@ -1,35 +1,36 @@
-// Tests de la page « détail du chantier » : informations, budget visible ou non, 404 et contexte.
+// Tests de la page « détail du chantier » : informations, budget visible ou non, erreurs et page introuvable.
 import { screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { Route, Routes, useOutletContext } from 'react-router';
+import { Route, Routes } from 'react-router';
 import { expect, it } from 'vitest';
 
-import { afficherAvecFournisseurs } from '@/ui/test/afficherAvecFournisseurs';
-import { installerServeurApi } from '@/ui/test/serveurApiSimule';
-import { verifierAccessibilite } from '@/ui/test/verifierAccessibilite';
+import { afficherAvecFournisseurs } from '@/test/afficherAvecFournisseurs';
+import { chantierDeTest } from '@/test/chantierDeTest';
+import { reponseProbleme } from '@/test/reponseProbleme';
+import { installerServeurApi } from '@/test/serveurApiSimule';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 
-import { chantierDeTest } from '../services/chantierDeTest';
-import type { Chantier } from '../services/useChantiers';
 import { PageDetailChantier } from './PageDetailChantier';
 
 const serveur = installerServeurApi();
 
-/** Page enfant factice : montre ce que le détail transmet à la page des étapes. */
-function EtapesFactices() {
-  const contexte = useOutletContext<{ chantierId: string; peutAjouterEtape: boolean }>();
-  return <p>{`Étapes de ${contexte.chantierId} (ajout : ${String(contexte.peutAjouterEtape)})`}</p>;
+/** Chantier tel que l'API le renvoie : le type vient de la fabrique de test. */
+type Chantier = ReturnType<typeof chantierDeTest>;
+
+function afficherAdresse(adresse: string) {
+  return afficherAvecFournisseurs(
+    <Routes>
+      <Route path="/chantiers/:id" element={<PageDetailChantier />}>
+        <Route index element={<p>Étapes du chantier</p>} />
+      </Route>
+    </Routes>,
+    adresse,
+  );
 }
 
 function afficherPage(chantier: Chantier) {
   serveur.use(http.get(`/api/chantiers/${chantier.id}`, () => HttpResponse.json(chantier)));
-  return afficherAvecFournisseurs(
-    <Routes>
-      <Route path="/chantiers/:id" element={<PageDetailChantier />}>
-        <Route index element={<EtapesFactices />} />
-      </Route>
-    </Routes>,
-    `/chantiers/${chantier.id}`,
-  );
+  return afficherAdresse(`/chantiers/${chantier.id}`);
 }
 
 it('affiche les informations du chantier, dont le budget formaté', async () => {
@@ -44,40 +45,53 @@ it('affiche les informations du chantier, dont le budget formaté', async () => 
   expect(screen.getByText(/^Budget : 18\s450,00\s€$/)).toBeVisible();
 });
 
-it('n’affiche pas le budget quand l’API ne le donne pas', async () => {
+it("n'affiche pas le budget quand l'API ne le donne pas", async () => {
   afficherPage(chantierDeTest({ budget: null }));
 
   await screen.findByRole('heading', { level: 1 });
   expect(screen.queryByText(/Budget/)).not.toBeInTheDocument();
 });
 
-it('transmet à la page des étapes l’identifiant et le droit d’ajout venus de l’API', async () => {
-  const chantier = chantierDeTest({ peut_ajouter_etape: false });
-  afficherPage(chantier);
+it('affiche la page des étapes sous les informations, une fois le chantier chargé', async () => {
+  afficherPage(chantierDeTest());
 
-  expect(await screen.findByText(`Étapes de ${chantier.id} (ajout : false)`)).toBeVisible();
+  expect(await screen.findByText('Étapes du chantier')).toBeVisible();
 });
 
-it('affiche le message de l’API quand le chantier n’existe pas', async () => {
+it('annonce le chargement, sans afficher les étapes ni les informations', () => {
+  serveur.use(http.get('/api/chantiers/lent', () => new Promise(() => undefined)));
+
+  afficherAdresse('/chantiers/lent');
+
+  expect(screen.getByText('Chargement du chantier…')).toBeVisible();
+  expect(screen.queryByText('Étapes du chantier')).not.toBeInTheDocument();
+});
+
+it("affiche la page introuvable quand l'API répond 404, par exemple pour un identifiant mal formé", async () => {
+  serveur.use(http.get('/api/chantiers/abc', () => reponseProbleme(404, 'Chantier introuvable.')));
+
+  afficherAdresse('/chantiers/abc');
+
+  expect(await screen.findByRole('heading', { level: 1, name: 'Page introuvable' })).toBeVisible();
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByText('Étapes du chantier')).not.toBeInTheDocument();
+});
+
+it("affiche le message de l'API pour une autre erreur, et propose de revenir à la liste", async () => {
   serveur.use(
-    http.get('/api/chantiers/inconnu', () =>
-      HttpResponse.json(
-        { status: 404, detail: 'Chantier introuvable.' },
-        { status: 404, headers: { 'Content-Type': 'application/problem+json' } },
-      ),
-    ),
-  );
-  afficherAvecFournisseurs(
-    <Routes>
-      <Route path="/chantiers/:id" element={<PageDetailChantier />} />
-    </Routes>,
-    '/chantiers/inconnu',
+    http.get('/api/chantiers/panne', () => reponseProbleme(503, 'Service indisponible.')),
   );
 
-  expect(await screen.findByRole('alert')).toHaveTextContent('Chantier introuvable.');
+  afficherAdresse('/chantiers/panne');
+
+  expect(await screen.findByRole('alert')).toHaveTextContent('Service indisponible.');
+  expect(screen.getByRole('link', { name: 'Retour aux chantiers' })).toHaveAttribute(
+    'href',
+    '/chantiers',
+  );
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficherPage(chantierDeTest());
   await screen.findByRole('heading', { level: 1 });
 

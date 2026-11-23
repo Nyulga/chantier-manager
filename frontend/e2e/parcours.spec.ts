@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 
 import { ajouterEtape, choisirProfil, creerChantier } from './aides';
 
-test('le chef et l’ouvrier font avancer un chantier jusqu’à 50 %', async ({ page }, info) => {
+test("le chef et l'ouvrier font avancer un chantier jusqu'à 50 %", async ({ page }, info) => {
   // Un nom par projet : les deux tailles d'écran partagent la même base.
   const nom = `Chantier ${info.project.name}`;
 

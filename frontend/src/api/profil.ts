@@ -1,9 +1,10 @@
 // Profil courant du squelette : il n'y a pas encore d'authentification, l'utilisateur choisit
 // s'il agit en « chef » ou en « ouvrier ». Le choix est gardé dans localStorage et envoyé à l'API
 // dans l'en-tête `X-Profil` (voir `client.ts`). C'est l'API qui en tire les droits, jamais le frontend.
+import type { components } from './schema';
 
-/** Profils que l'API reconnaît. */
-export type Profil = 'chef' | 'ouvrier';
+/** Profils que l'API reconnaît : les rôles du schéma généré, pour ne jamais diverger de lui. */
+export type Profil = components['schemas']['Role'];
 
 /** Profil utilisé tant que l'utilisateur n'en a pas choisi un autre (ou si localStorage est inutilisable). */
 export const PROFIL_PAR_DEFAUT: Profil = 'chef';

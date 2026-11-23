@@ -6,12 +6,19 @@ import { transitionnerEtape } from '@/api/transitions';
 
 import type { ActionEtape } from './useEtapes';
 
-/** Demande de transition : le commentaire n'est utile qu'au refus, où l'API l'exige (422 sinon). */
+/** Type de l'erreur que lève la transition, pour le formulaire de refus qui affiche son champ. */
+export type { ErreurApi } from '@/api/erreurApi';
+
+/**
+ * Demande de transition. Le commentaire n'est utile qu'au refus, où l'API l'exige (422 sinon).
+ * La `version` est celle de l'étape affichée : l'API refuse (409) si l'étape a changé depuis.
+ */
 export type DemandeTransition = {
   readonly etapeId: string;
   /** Chantier de l'étape : il sert à relire ses données même quand l'API répond par une erreur. */
   readonly chantierId: string;
   readonly action: ActionEtape;
+  readonly version: number;
   readonly commentaire?: string;
 };
 
@@ -25,8 +32,8 @@ export function useTransitionEtape() {
   const clientRequetes = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ etapeId, action, commentaire }: DemandeTransition) =>
-      transitionnerEtape({ etapeId, action, commentaire }),
+    mutationFn: ({ etapeId, action, version, commentaire }: DemandeTransition) =>
+      transitionnerEtape({ etapeId, action, version, commentaire }),
     onSettled: (_etape, _erreur, demande) =>
       rafraichirApresTransition(clientRequetes, demande.chantierId),
   });

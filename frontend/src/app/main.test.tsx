@@ -3,7 +3,8 @@ import { screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { afterEach, expect, it, vi } from 'vitest';
 
-import { installerServeurApi } from '@/ui/test/serveurApiSimule';
+import { gestionnaireCapacites } from '@/test/capacites';
+import { installerServeurApi } from '@/test/serveurApiSimule';
 
 const serveur = installerServeurApi();
 
@@ -15,6 +16,7 @@ afterEach(() => {
 it("monte l'application dans l'élément racine de la page", async () => {
   // Le tableau de bord interroge l'API au montage : on la simule pour ne jamais sortir sur le réseau.
   serveur.use(
+    gestionnaireCapacites,
     http.get('/api/chantiers', () => HttpResponse.json([])),
     http.get('/api/etapes/a-valider', () => HttpResponse.json([])),
     http.get('/api/activite', () => HttpResponse.json([])),

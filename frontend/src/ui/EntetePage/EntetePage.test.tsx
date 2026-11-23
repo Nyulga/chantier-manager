@@ -2,7 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { EntetePage } from './EntetePage';
 
 function afficher() {
@@ -27,7 +27,7 @@ it('affiche un titre seul, sans surtitre ni actions', () => {
   expect(screen.getByRole('heading', { level: 1, name: 'Chantiers' })).toBeVisible();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher();
 
   await verifierAccessibilite(container);

@@ -5,7 +5,7 @@ import { expect, it } from 'vitest';
 
 import { Alerte } from '../Alerte/Alerte';
 import { LigneAValider } from '../LigneAValider/LigneAValider';
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { BlocAValider } from './BlocAValider';
 
 function afficher() {
@@ -13,8 +13,8 @@ function afficher() {
     <BlocAValider
       titre="À valider"
       compteur={2}
-      sousTitre="Étapes signalées terminées par tes ouvriers"
-      alerte={<Alerte variante="erreur">Impossible de valider « Faïence ».</Alerte>}
+      sousTitre="Étapes signalées terminées"
+      alerte={<Alerte>Impossible de valider « Faïence ».</Alerte>}
     >
       <LigneAValider
         titre="Pose des meubles"
@@ -37,7 +37,7 @@ it('est une région nommée « À valider », avec son compteur et son sous-titr
 
   const region = screen.getByRole('region', { name: 'À valider' });
   expect(within(region).getByText('2')).toBeVisible();
-  expect(within(region).getByText('Étapes signalées terminées par tes ouvriers')).toBeVisible();
+  expect(within(region).getByText('Étapes signalées terminées')).toBeVisible();
 });
 
 it('liste les étapes avec leur contexte, leur signalement et leurs actions', () => {
@@ -52,7 +52,7 @@ it('liste les étapes avec leur contexte, leur signalement et leurs actions', ()
   expect(seconde).toHaveTextContent('Faïence');
 });
 
-it('affiche l’alerte au niveau du bloc, hors des lignes', () => {
+it("affiche l'alerte au niveau du bloc, hors des lignes", () => {
   afficher();
 
   const alerte = screen.getByRole('alert');
@@ -76,7 +76,17 @@ it('rend son titre focalisable par programme quand une référence lui est donn�
   expect(screen.getByRole('heading', { level: 2, name: 'À valider' })).toHaveFocus();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it('affiche « + » après le compteur quand la liste est coupée', () => {
+  render(
+    <BlocAValider titre="À valider" compteur={50} compteurAuMoins sousTitre="Sous-titre">
+      <LigneAValider titre="Pose" contexte="Cuisine" signalement="Hier" actions={null} />
+    </BlocAValider>,
+  );
+
+  expect(screen.getByText('50+')).toBeVisible();
+});
+
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher();
 
   await verifierAccessibilite(container);

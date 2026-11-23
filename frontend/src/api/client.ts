@@ -3,6 +3,7 @@
 // seuls les hooks de `services` appellent ce client.
 import createClient, { type Client, type Middleware } from 'openapi-fetch';
 
+import { ErreurApi } from './erreurApi';
 import { lireProfil } from './profil';
 import type { paths } from './schema';
 
@@ -29,12 +30,13 @@ const envoyerProfil: Middleware = {
 export const MESSAGE_RESEAU = 'Le serveur ne répond pas. Vérifie ta connexion, puis réessaie.';
 
 /**
- * Remplace l'erreur technique du navigateur (« Failed to fetch », en anglais) par un message
- * français : les pages affichent le message des erreurs tel quel.
+ * Remplace l'erreur technique du navigateur (« Failed to fetch », en anglais) par une erreur au
+ * message français : les pages affichent le message des erreurs tel quel. C'est une `ErreurApi`
+ * sans statut, comme toute autre erreur des requêtes.
  */
 const traduireErreurReseau: Middleware = {
   onError() {
-    return new Error(MESSAGE_RESEAU);
+    return new ErreurApi(MESSAGE_RESEAU);
   },
 };
 
