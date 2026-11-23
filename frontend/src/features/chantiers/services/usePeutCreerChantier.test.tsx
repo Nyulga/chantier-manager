@@ -2,9 +2,10 @@
 import { waitFor } from '@testing-library/react';
 import { afterEach, expect, it } from 'vitest';
 
-import { gestionnaireCapacites } from '@/test/capacites';
+import { CAPACITES_CHEF, gestionnaireCapacites } from '@/test/capacites';
 import { afficherHook } from '@/test/afficherHook';
 import { installerServeurApi } from '@/test/serveurApiSimule';
+import { testerReessai } from '@/test/testerReessai';
 
 import { usePeutCreerChantier } from './usePeutCreerChantier';
 
@@ -26,4 +27,11 @@ it.each([
   await waitFor(() => {
     expect(result.current.data).toBe(droit);
   });
+});
+
+testerReessai({
+  serveur,
+  chemin: '/api/moi',
+  corps: CAPACITES_CHEF,
+  utiliser: usePeutCreerChantier,
 });

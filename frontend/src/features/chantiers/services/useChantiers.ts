@@ -2,12 +2,11 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { optionsListeChantiers } from '@/api/chantiers';
-import type { components } from '@/api/schema';
 
-/** Chantier tel que l'API le renvoie : budget `null` pour un ouvrier, avancement déjà calculé. */
-export type Chantier = components['schemas']['ChantierReponse'];
+/** Chantier de la liste, réduit à ce que sa carte affiche (le budget n'en fait pas partie). */
+export type { ChantierDeListe } from '@/api/chantiers';
 
-/** Liste les chantiers que l'API renvoie ; elle décide aussi de la visibilité du budget. */
+/** Liste les chantiers que l'API renvoie ; elle décide aussi du périmètre de l'acteur. */
 export function useChantiers() {
   return useQuery(optionsListeChantiers);
 }

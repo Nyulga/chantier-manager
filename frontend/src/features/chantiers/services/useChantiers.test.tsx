@@ -7,6 +7,8 @@ import { afficherHook } from '@/test/afficherHook';
 import { installerServeurApi } from '@/test/serveurApiSimule';
 
 import { chantierDeTest } from '@/test/chantierDeTest';
+import { testerReessai } from '@/test/testerReessai';
+
 import { useChantiers } from './useChantiers';
 
 const serveur = installerServeurApi();
@@ -15,14 +17,16 @@ afterEach(() => {
   localStorage.clear();
 });
 
-it("renvoie les chantiers de l'API", async () => {
+it("renvoie les chantiers de l'API, sous la forme que la carte affiche", async () => {
   const chantier = chantierDeTest();
   serveur.use(http.get('/api/chantiers', () => HttpResponse.json([chantier])));
 
   const { result } = afficherHook(() => useChantiers());
 
   await waitFor(() => {
-    expect(result.current.data).toEqual([chantier]);
+    expect(result.current.data).toMatchObject([
+      { id: chantier.id, nom: chantier.nom, adresse: '12 rue des Lilas, 69003 Lyon' },
+    ]);
   });
 });
 
@@ -59,4 +63,11 @@ it("expose le détail en français d'une erreur de l'API", async () => {
   await waitFor(() => {
     expect(result.current.error?.message).toBe('Profil inconnu.');
   });
+});
+
+testerReessai({
+  serveur,
+  chemin: '/api/chantiers',
+  corps: [],
+  utiliser: useChantiers,
 });

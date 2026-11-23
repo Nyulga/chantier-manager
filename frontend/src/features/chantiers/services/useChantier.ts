@@ -5,6 +5,9 @@ import { clesRequetes } from '@/api/clesRequetes';
 import { lireChantier } from '@/api/chantiers';
 import { reessayerRequete } from '@/api/reessai';
 
+/** Chantier tel que l'API le renvoie : budget `null` pour un ouvrier, avancement déjà calculé. */
+export type { Chantier } from '@/api/chantiers';
+
 /** Consulte un chantier. Un chantier inconnu donne une erreur 404 de l'API (`error.introuvable`). */
 export function useChantier(id: string) {
   return useQuery({

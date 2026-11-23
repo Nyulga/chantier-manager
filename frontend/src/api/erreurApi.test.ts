@@ -113,3 +113,19 @@ it("garde le détail dans l'alerte globale quand l'erreur ne désigne aucun cham
 
   expect(conflit.messageGlobal(['titre'])).toBe('Cette étape a déjà changé de statut.');
 });
+
+it("envoie dans l'alerte globale une erreur sans champ (clé inattendue à la racine du corps)", () => {
+  const inattendue = erreurApi(
+    {
+      detail: 'Requête invalide.',
+      erreurs: [
+        { champ: '', message: "Ce champ n'est pas attendu." },
+        { champ: 'nom', message: 'Le nom est requis.' },
+      ],
+    },
+    422,
+  );
+
+  expect(inattendue.messageGlobal(['nom'])).toBe("Ce champ n'est pas attendu.");
+  expect(inattendue.messageDuChamp('nom')).toBe('Le nom est requis.');
+});

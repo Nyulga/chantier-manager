@@ -3,12 +3,12 @@ import { screen, within } from '@testing-library/react';
 import { expect, it } from 'vitest';
 
 import { afficherAvecFournisseurs } from '@/test/afficherAvecFournisseurs';
-import { chantierDeTest } from '@/test/chantierDeTest';
+import { resumeChantierDeTest } from '@/test/resumeChantierDeTest';
 import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 
 import { SectionMesChantiers } from './SectionMesChantiers';
 
-const chantier = chantierDeTest;
+const chantier = resumeChantierDeTest;
 
 function afficher(props: Parameters<typeof SectionMesChantiers>[0]) {
   return afficherAvecFournisseurs(<SectionMesChantiers {...props} />);
@@ -31,7 +31,7 @@ it('affiche au plus quatre cartes et un lien vers tous les chantiers', () => {
 it('affiche les puces « à valider » et « en retard » avec le délai en toutes lettres', () => {
   afficher({
     chantiers: [
-      chantier({ etapes_a_valider: 2, en_retard: true, jours_restants: 4, echeance: '2027-01-15' }),
+      chantier({ etapesAValider: 2, enRetard: true, joursRestants: 4, echeance: '2027-01-15' }),
     ],
   });
 

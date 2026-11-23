@@ -7,6 +7,7 @@ import { activiteDeTest } from '@/test/activiteDeTest';
 import { reponseProbleme } from '@/test/reponseProbleme';
 import { afficherHook } from '@/test/afficherHook';
 import { installerServeurApi } from '@/test/serveurApiSimule';
+import { testerReessai } from '@/test/testerReessai';
 
 import { useActiviteRecente } from './useActiviteRecente';
 
@@ -52,4 +53,11 @@ it("expose le détail en français d'une erreur de l'API", async () => {
   await waitFor(() => {
     expect(result.current.error?.message).toBe('Service indisponible.');
   });
+});
+
+testerReessai({
+  serveur,
+  chemin: '/api/activite',
+  corps: [],
+  utiliser: useActiviteRecente,
 });

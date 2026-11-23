@@ -2,10 +2,9 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { optionsListeChantiers } from '@/api/chantiers';
-import type { components } from '@/api/schema';
 
-/** Chantier tel que l'API le renvoie : avancement et compteurs déjà calculés. */
-export type Chantier = components['schemas']['ChantierReponse'];
+/** Chantier de la liste, réduit à ce que sa carte affiche : avancement et compteurs viennent de l'API. */
+export type { ChantierDeListe } from '@/api/chantiers';
 
 /**
  * Liste les chantiers que l'API renvoie à l'acteur. Elle partage sa clé de cache avec la liste de

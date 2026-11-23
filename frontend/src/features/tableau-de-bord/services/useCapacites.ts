@@ -5,6 +5,7 @@ import { useSyncExternalStore } from 'react';
 import { lireCapacites } from '@/api/capacites';
 import { clesRequetes } from '@/api/clesRequetes';
 import { ecouterProfil, lireProfil } from '@/api/profil';
+import { reessayerRequete } from '@/api/reessai';
 
 /**
  * Lit `GET /api/moi` : le lien « Nouveau chantier » et la section « À valider » en dépendent,
@@ -17,6 +18,7 @@ export function useCapacites() {
 
   return useQuery({
     queryKey: clesRequetes.capacites(profil),
+    retry: reessayerRequete,
     queryFn: lireCapacites,
   });
 }

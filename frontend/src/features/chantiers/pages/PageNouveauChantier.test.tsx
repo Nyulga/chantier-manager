@@ -140,7 +140,7 @@ it("n'affiche pas le formulaire à un ouvrier : une information et un lien de re
   localStorage.setItem('chantier-manager.profil', 'ouvrier');
   afficherPage();
 
-  expect(await screen.findByText('Seul un chef peut créer un chantier.')).toBeVisible();
+  expect(await screen.findByText('Ton profil ne permet pas de créer un chantier.')).toBeVisible();
   expect(screen.queryByLabelText('Nom du chantier')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Créer le chantier' })).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Retour aux chantiers' })).toHaveAttribute(

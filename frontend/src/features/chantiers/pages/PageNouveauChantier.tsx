@@ -24,7 +24,7 @@ export function PageNouveauChantier() {
       <Titre niveau={1}>Nouveau chantier</Titre>
       {peutCreer.isPending && <Texte variante="secondaire">Chargement…</Texte>}
       {peutCreer.isError && <Alerte>{peutCreer.error.message}</Alerte>}
-      {peutCreer.data === false && <Texte>Seul un chef peut créer un chantier.</Texte>}
+      {peutCreer.data === false && <Texte>Ton profil ne permet pas de créer un chantier.</Texte>}
       {peutCreer.data === true && (
         <FormulaireChantier
           enCours={creation.isPending}

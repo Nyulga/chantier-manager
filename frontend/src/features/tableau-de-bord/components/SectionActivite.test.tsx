@@ -4,12 +4,12 @@ import { expect, it } from 'vitest';
 
 import { activiteDeTest } from '@/test/activiteDeTest';
 import { afficherAvecFournisseurs } from '@/test/afficherAvecFournisseurs';
-import { chantierDeTest } from '@/test/chantierDeTest';
+import { resumeChantierDeTest } from '@/test/resumeChantierDeTest';
 import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 
 import { SectionActivite } from './SectionActivite';
 
-const CHANTIER = chantierDeTest({ nom: 'Rénovation cuisine' });
+const CHANTIER = resumeChantierDeTest({ nom: 'Rénovation cuisine' });
 const ENTREE = activiteDeTest({
   chantier_id: CHANTIER.id,
   date: new Date(2026, 10, 21, 17, 42).toISOString(),

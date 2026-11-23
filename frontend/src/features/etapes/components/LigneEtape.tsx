@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Alerte, BadgeStatut, Bouton, Carte, Titre } from '@/ui';
 
 import type { ActionEtape, Etape } from '../services/useEtapes';
-import type { DemandeTransition, ErreurApi } from '../services/useTransitionEtape';
+import type { DemandeTransitionEtape, ErreurApi } from '../services/useTransitionEtape';
 import { FormulaireRefus } from './FormulaireRefus';
 
 type LigneEtapeProps = {
@@ -14,7 +14,7 @@ type LigneEtapeProps = {
   readonly erreur?: ErreurApi | undefined;
   /** `apresSucces` est appelé quand l'API a accepté la demande. */
   readonly onAction: (
-    demande: Omit<DemandeTransition, 'etapeId' | 'chantierId' | 'version'>,
+    demande: Omit<DemandeTransitionEtape, 'etapeId' | 'chantierId' | 'version'>,
     apresSucces: () => void,
   ) => void;
 };
@@ -47,6 +47,7 @@ export function LigneEtape({ etape, enCours, erreur, onAction }: LigneEtapeProps
       setRefusOuvert(true);
       return;
     }
+    // Ces actions n'ouvrent aucun formulaire : il n'y a rien à refermer après le succès.
     onAction({ action }, () => undefined);
   }
 

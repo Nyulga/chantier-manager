@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { expect, it } from 'vitest';
 
 import { reponseProbleme } from '@/test/reponseProbleme';
-import { ETAPE, ETAPE_SUIVANTE, preparerTableauDeBord } from '@/test/tableauDeBord';
+import { ETAPE, ETAPE_SUIVANTE, preparerTableauDeBord } from '@/test/preparerPageTableauDeBord';
 
 const { serveur, simuler, afficherPage } = preparerTableauDeBord();
 

@@ -25,7 +25,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.d.ts'],
+      // `src/test` contient les aides des tests (serveur simulé, fabriques) : du code de test, pas de production.
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.d.ts', 'src/test/**'],
       reporter: ['text', 'html'],
       thresholds: {
         lines: SEUIL_COUVERTURE,

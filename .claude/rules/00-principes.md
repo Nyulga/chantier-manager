@@ -47,8 +47,10 @@ Ces limites sont **vérifiées automatiquement** (lint, pre-commit et CI, config
 | Branches / `return` / instructions par fonction | ≤ 8 / ≤ 4 / ≤ 25 (ruff `PLR0912`, `PLR0911`, `PLR0915`) | — |
 | Paramètres par fonction | ≤ 5 (ruff `PLR0913`) | ≤ 3 (ESLint `max-params`) ; un composant reçoit un seul objet `props` |
 | Profondeur d'imbrication | ≤ 3 | ≤ 3 (ESLint `max-depth`, `max-nested-callbacks`) |
-| Code dupliqué (jscpd) | ≤ 2 % | ≤ 2 % |
+| Code dupliqué (jscpd) | ≤ 2 % | ≤ 2 % (tests : ≤ 6 %, voir ci-dessous) |
 | Imports circulaires | interdits (import-linter) | interdits (`import/no-cycle`) |
+
+**Dérogation sur la duplication, accordée par le propriétaire au lot S5** : les tests TypeScript (`*.test.ts(x)`) ont un seuil séparé de 6 %. Ils répètent volontairement leur mise en place (*arrange*), pour rester lisibles sans aller chercher des aides cachées. Ce seuil empêche seulement que la situation empire. Les tests Python, le code de production et `src/test` restent à 2 %.
 
 En plus :
 - **Pas de valeur magique** : les constantes métier ont un nom (`DUREE_INVITATION = timedelta(hours=72)`).

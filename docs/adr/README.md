@@ -11,3 +11,4 @@ Chaque décision structurante est consignée ici : son contexte, la décision pr
 | [0005](0005-design-patterns-et-garde-fous.md) | Design patterns, SOLID et garde-fous contre le code spaghetti | Accepté |
 | [0006](0006-code-partage-entre-fonctionnalites-frontend.md) | Code partagé entre fonctionnalités du frontend : `src/api` | Accepté |
 | [0007](0007-sqlite-pendant-le-squelette.md) | SQLite pendant le squelette | Accepté |
+| [0008](0008-capacites-valeurs-publiques-et-contrat-d-erreur.md) | Capacités de l'acteur, valeurs publiques et contrat d'erreur | Accepté |

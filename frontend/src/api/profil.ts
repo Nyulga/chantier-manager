@@ -15,8 +15,14 @@ export const CLE_PROFIL = 'chantier-manager.profil';
 /** Événement interne qui prévient les composants du même onglet ; `storage` couvre les autres onglets. */
 const EVENEMENT_PROFIL = 'chantier-manager:profil';
 
+/**
+ * Les profils connus, en valeurs : `satisfies` refuse un profil que le schéma ne déclare pas, et
+ * un test échoue si un rôle du schéma manque ici (un profil absent serait pris pour une valeur inconnue).
+ */
+export const PROFILS = ['chef', 'ouvrier'] as const satisfies readonly Profil[];
+
 function estProfil(valeur: string | null): valeur is Profil {
-  return valeur === 'chef' || valeur === 'ouvrier';
+  return PROFILS.some((profil) => profil === valeur);
 }
 
 /**

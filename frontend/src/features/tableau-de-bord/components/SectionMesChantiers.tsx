@@ -1,12 +1,11 @@
 // Section « Mes chantiers » du tableau de bord : les premières cartes et le lien vers la liste complète.
-import { Alerte, Grille, Lien, Section, Texte } from '@/ui';
+import { Alerte, Grille, Lien, ResumeChantier, Section, Texte } from '@/ui';
 
-import type { Chantier } from '../services/useChantiers';
-import { ResumeChantier } from './ResumeChantier';
+import type { ChantierDeListe } from '../services/useChantiers';
 
 type SectionMesChantiersProps = {
   /** `undefined` tant que la liste n'est pas chargée. */
-  readonly chantiers: readonly Chantier[] | undefined;
+  readonly chantiers: readonly ChantierDeListe[] | undefined;
   readonly erreur?: string | undefined;
 };
 
@@ -54,7 +53,7 @@ export function SectionMesChantiers({ chantiers, erreur }: SectionMesChantiersPr
     >
       <Grille>
         {chantiers.slice(0, NOMBRE_CARTES_MAX).map((chantier) => (
-          <ResumeChantier key={chantier.id} chantier={chantier} />
+          <ResumeChantier key={chantier.id} {...chantier} vers={`/chantiers/${chantier.id}`} />
         ))}
       </Grille>
     </Section>

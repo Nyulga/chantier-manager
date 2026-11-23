@@ -1,13 +1,13 @@
 // Zone « À valider » du tableau de bord : lit les étapes à valider et branche leur validation.
 import { SectionAValider } from '../components/SectionAValider';
-import type { Chantier } from '../services/useChantiers';
+import type { ChantierDeListe } from '../services/useChantiers';
 import { useEtapesAValider } from '../services/useEtapesAValider';
 import { useValiderEtape } from '../services/useValiderEtape';
 
 type ZoneAValiderProps = {
   /** Vrai si l'API annonce le droit de lister les étapes à valider (`/api/moi`). */
   readonly autorisee: boolean;
-  readonly chantiers: readonly Chantier[] | undefined;
+  readonly chantiers: readonly ChantierDeListe[] | undefined;
   readonly maintenant: Date;
 };
 

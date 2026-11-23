@@ -1,4 +1,4 @@
-// Contexte partagé par les tests du tableau de bord : API simulée, date figée et affichage de la page.
+// Prépare les tests de la page du tableau de bord : API simulée, date figée et affichage de la page.
 import { http, HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router';
 import { afterEach, beforeEach, vi } from 'vitest';

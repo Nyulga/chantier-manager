@@ -30,6 +30,7 @@
 | **S2 – Chantiers et étapes** | Domaine `Chantier`, `Etape` (table des transitions), `HistoriqueEtape`, `Avancement` ; cas d'usage ; noyau partagé minimal (UoW, horloge, identifiants, erreurs) ; repositories SQL et migrations ; API ; écrans liste, création, détail, étapes et validation, avec le sélecteur de profil ; e2e | `dev-metier` (Opus, élevé), `dev-donnees`, `dev-api`, `dev-frontend` | S1 |
 | **S3 – Mise en ligne** | Images de production, `docker-compose.prod.yml`, Caddy existant du serveur (HTTPS, en-têtes, limite de taille) ; pare-feu, fail2ban et sauvegarde chiffrée en phase 2 | `dev-socle` (Opus, élevé) | S2 |
 | **S4 – Tableau de bord** | Page d'accueil de la maquette Balise : « À valider », cartes de chantier avec compteurs et délai, activité récente ; Équipe, Invitation et Recherche affichées « Bientôt » (issue #28, journal `journal/lot-S4.md`) | `dev-metier`, `dev-donnees`, `dev-frontend` | S2 |
+| **S5 – Corrections de relecture** | Constats des issues #17 à #24, #29, #30 et #32 : verrou de version, unicité de l'ordre, erreurs RFC 9457 et 422 par champ, capacités via `/api/moi`, jscpd et pre-commit (issue #38, journal `journal/lot-S5.md`) | `dev-metier`, `dev-donnees`, `dev-frontend`, `dev-socle` | S4 |
 
 Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `conformite` et `securite`, puis PR proposée.
 
@@ -56,7 +57,7 @@ Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `
 - **Le lot S2 est resserré** :
   - **inclus** : créer un chantier, lister les chantiers avec leur avancement, consulter le détail d'un chantier, ajouter des étapes, les faire avancer, les valider ou les refuser avec un commentaire, et choisir son profil. L'historique est enregistré à chaque transition ;
   - **reporté** : la modification et l'archivage d'un chantier, la modification, la suppression et le réordonnancement des étapes, et l'affichage de l'historique.
-- **CI** : lint, typage, contrats d'architecture et tests ; depuis S4, aussi le job Sécurité (gitleaks, pip-audit, pnpm audit, Trivy).
+- **CI** : lint, typage, contrats d'architecture et tests ; depuis S4, aussi le job Sécurité (gitleaks, pip-audit, pnpm audit, Trivy) ; depuis S5, la duplication (jscpd) et le job Hooks git (pre-commit).
 
 Critères du premier socle : ceux de la section ci-dessus, **sauf** la modification d'un chantier, la gestion avancée des étapes (modifier, réordonner, supprimer), et l'affichage de l'historique. La mise en ligne en HTTPS reste exigée ; le mot de passe d'accès a finalement été écarté pour la démonstration.
 
@@ -68,4 +69,5 @@ Critères du premier socle : ceux de la section ci-dessus, **sauf** la modificat
 | S2 | 4 à 6 h |
 | S3 | 2 à 3 h, plus ce qui dépend de l'utilisateur (nom de domaine, accès à la box et au serveur) |
 | S4 | environ 2 h 30, vérifications et corrections comprises |
+| S5 | environ 3 h, vérifications et corrections comprises |
 | **Total** | **environ 1 à 1,5 jour de travail** |

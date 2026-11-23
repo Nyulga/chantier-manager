@@ -3,8 +3,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
 /**
- * Crée un cache TanStack Query pour un test, sans nouvelle tentative par défaut (et sans délai quand un hook impose les siennes) : une erreur de l'API
- * apparaît tout de suite, et aucun résultat ne fuite d'un test à l'autre.
+ * Crée un cache TanStack Query pour un test, sans nouvelle tentative par défaut : une erreur de l'API
+ * apparaît tout de suite, et aucun résultat ne fuite d'un test à l'autre. Un hook qui pose sa propre
+ * règle (`reessayerRequete`) rejoue quand même, mais sans attendre : le délai est nul.
  */
 export function creerClientRequetes(): QueryClient {
   return new QueryClient({ defaultOptions: { queries: { retry: false, retryDelay: 0 } } });

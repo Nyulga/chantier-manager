@@ -35,15 +35,22 @@ it("envoie le titre à l'API et renvoie l'étape créée", async () => {
   expect(corps).toEqual({ titre: 'Fondations' });
 });
 
-it("relit l'avancement du chantier après l'ajout : une étape de plus fait baisser le pourcentage", async () => {
+const CONFLIT = "Une autre personne vient d'ajouter une étape : réessaie.";
+
+it.each([
+  ["après l'ajout : une étape de plus fait baisser le pourcentage", 50, false],
+  ["aussi après un conflit (409) : l'autre ajout doit apparaître", 75, true],
+])("relit l'avancement du chantier %s", async (_cas, avancementApres, conflit) => {
   let avancement = 100;
   serveur.use(
     http.get(`/api/chantiers/${CHANTIER}`, () =>
       HttpResponse.json(chantierDeTest({ id: CHANTIER, avancement })),
     ),
     http.post(`/api/chantiers/${CHANTIER}/etapes`, () => {
-      avancement = 50;
-      return HttpResponse.json(etapeDeTest(), { status: 201 });
+      avancement = avancementApres;
+      return conflit
+        ? reponseProbleme(409, CONFLIT)
+        : HttpResponse.json(etapeDeTest(), { status: 201 });
     }),
   );
   const { result } = afficherHook(() => ({
@@ -59,7 +66,7 @@ it("relit l'avancement du chantier après l'ajout : une étape de plus fait bais
   });
 
   await waitFor(() => {
-    expect(result.current.resume.data?.avancement).toBe(50);
+    expect(result.current.resume.data?.avancement).toBe(avancementApres);
   });
 });
 
@@ -86,11 +93,7 @@ it("expose le message de l'API et le champ en cause quand l'ajout est refusé (4
 });
 
 it("expose le message de l'API quand l'ajout entre en conflit (409)", async () => {
-  serveur.use(
-    http.post(`/api/chantiers/${CHANTIER}/etapes`, () =>
-      reponseProbleme(409, "Une autre personne vient d'ajouter une étape : réessaie."),
-    ),
-  );
+  serveur.use(http.post(`/api/chantiers/${CHANTIER}/etapes`, () => reponseProbleme(409, CONFLIT)));
   const { result } = afficherHook(() => useAjouterEtape(CHANTIER));
 
   act(() => {
@@ -98,36 +101,6 @@ it("expose le message de l'API quand l'ajout entre en conflit (409)", async () =
   });
 
   await waitFor(() => {
-    expect(result.current.error?.message).toBe(
-      "Une autre personne vient d'ajouter une étape : réessaie.",
-    );
-  });
-});
-
-it("relit le chantier aussi après un conflit (409) : l'autre ajout doit apparaître", async () => {
-  let avancement = 100;
-  serveur.use(
-    http.get(`/api/chantiers/${CHANTIER}`, () =>
-      HttpResponse.json(chantierDeTest({ id: CHANTIER, avancement })),
-    ),
-    http.post(`/api/chantiers/${CHANTIER}/etapes`, () => {
-      avancement = 75;
-      return reponseProbleme(409, "Une autre personne vient d'ajouter une étape : réessaie.");
-    }),
-  );
-  const { result } = afficherHook(() => ({
-    resume: useAvancementChantier(CHANTIER),
-    ajout: useAjouterEtape(CHANTIER),
-  }));
-  await waitFor(() => {
-    expect(result.current.resume.data?.avancement).toBe(100);
-  });
-
-  act(() => {
-    result.current.ajout.mutate('Fondations');
-  });
-
-  await waitFor(() => {
-    expect(result.current.resume.data?.avancement).toBe(75);
+    expect(result.current.error?.message).toBe(CONFLIT);
   });
 });

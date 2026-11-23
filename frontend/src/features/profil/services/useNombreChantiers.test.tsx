@@ -5,6 +5,7 @@ import { expect, it } from 'vitest';
 
 import { afficherHook } from '@/test/afficherHook';
 import { installerServeurApi } from '@/test/serveurApiSimule';
+import { testerReessai } from '@/test/testerReessai';
 
 import { useNombreChantiers } from './useNombreChantiers';
 
@@ -24,12 +25,12 @@ it("compte les chantiers que l'API renvoie", async () => {
   });
 });
 
-it("ne renvoie rien quand l'API échoue : la navigation n'affiche alors aucun compteur", async () => {
+it("ne renvoie rien quand l'API refuse la liste : la navigation n'affiche alors aucun compteur", async () => {
   let appels = 0;
   serveur.use(
     http.get('/api/chantiers', () => {
       appels += 1;
-      return HttpResponse.json({}, { status: 500 });
+      return HttpResponse.json({}, { status: 403 });
     }),
   );
 
@@ -39,4 +40,11 @@ it("ne renvoie rien quand l'API échoue : la navigation n'affiche alors aucun co
     expect(appels).toBe(1);
   });
   expect(result.current).toBeUndefined();
+});
+
+testerReessai({
+  serveur,
+  chemin: '/api/chantiers',
+  corps: [],
+  utiliser: useNombreChantiers,
 });

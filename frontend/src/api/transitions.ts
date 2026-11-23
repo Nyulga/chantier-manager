@@ -11,7 +11,7 @@ export type ActionTransition = components['schemas']['TransitionRequete']['actio
  * est celle de l'étape que l'écran affichait : si l'étape a changé depuis, l'API répond 409
  * plutôt que de décider sur un état périmé.
  */
-export type DemandeApiTransition = {
+export type DemandeTransition = {
   readonly etapeId: string;
   readonly action: ActionTransition;
   readonly version: number;
@@ -27,7 +27,7 @@ export async function transitionnerEtape({
   action,
   version,
   commentaire,
-}: DemandeApiTransition) {
+}: DemandeTransition) {
   return donneesOuErreur(
     await creerClientApi().POST('/etapes/{etape_id}/transitions', {
       params: { path: { etape_id: etapeId } },

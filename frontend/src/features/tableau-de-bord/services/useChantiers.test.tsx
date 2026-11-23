@@ -1,23 +1,14 @@
-// Tests du hook `useChantiers` du tableau de bord : la liste vient de l'API, qui décide du périmètre.
-import { waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
-import { expect, it } from 'vitest';
-
-import { chantierDeTest } from '@/test/chantierDeTest';
-import { afficherHook } from '@/test/afficherHook';
+// Tests du hook `useChantiers` du tableau de bord : il lit la même liste que celui des chantiers (testé avec lui), avec la même règle de nouvelle tentative.
 import { installerServeurApi } from '@/test/serveurApiSimule';
+import { testerReessai } from '@/test/testerReessai';
 
 import { useChantiers } from './useChantiers';
 
 const serveur = installerServeurApi();
 
-it("renvoie les chantiers de l'API", async () => {
-  const chantier = chantierDeTest();
-  serveur.use(http.get('/api/chantiers', () => HttpResponse.json([chantier])));
-
-  const { result } = afficherHook(() => useChantiers());
-
-  await waitFor(() => {
-    expect(result.current.data).toEqual([chantier]);
-  });
+testerReessai({
+  serveur,
+  chemin: '/api/chantiers',
+  corps: [],
+  utiliser: useChantiers,
 });

@@ -1,16 +1,10 @@
-// Aides de test : cache de requêtes neuf et affichage de routes.
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// Aide de test : affiche des routes dans un cache de requêtes neuf.
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { MemoryRouter } from 'react-router';
 
-/**
- * Crée un cache TanStack Query pour un test, sans nouvelle tentative par défaut (et sans délai quand un hook impose les siennes) : une erreur de l'API
- * apparaît tout de suite, et aucun résultat ne fuite d'un test à l'autre.
- */
-export function creerClientRequetes(): QueryClient {
-  return new QueryClient({ defaultOptions: { queries: { retry: false, retryDelay: 0 } } });
-}
+import { creerClientRequetes } from './enveloppeRequetes';
 
 /**
  * Affiche `routes` à l'adresse `adresse`, comme le font `Providers` et `BrowserRouter` en

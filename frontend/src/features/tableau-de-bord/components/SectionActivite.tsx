@@ -2,7 +2,7 @@
 import { Alerte, FilActivite, formaterMoment, Section, Texte } from '@/ui';
 
 import type { EntreeActivite } from '../services/useActiviteRecente';
-import type { Chantier } from '../services/useChantiers';
+import type { ChantierDeListe } from '../services/useChantiers';
 import { libelleActivite } from './libelleActivite';
 import { nomDuChantier } from './nomDuChantier';
 
@@ -10,7 +10,7 @@ type SectionActiviteProps = {
   /** `undefined` tant que le fil n'est pas chargé. */
   readonly entrees: readonly EntreeActivite[] | undefined;
   readonly erreur?: string | undefined;
-  readonly chantiers: readonly Chantier[] | undefined;
+  readonly chantiers: readonly ChantierDeListe[] | undefined;
   /** Rôle de l'utilisateur courant : ses propres actions s'écrivent « Tu as… ». `undefined` tant que l'API ne l'a pas donné. */
   readonly profil: EntreeActivite['role'] | undefined;
   readonly maintenant: Date;

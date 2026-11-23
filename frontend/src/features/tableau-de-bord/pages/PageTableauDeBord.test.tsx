@@ -5,7 +5,7 @@ import { expect, it } from 'vitest';
 
 import { activiteDeTest } from '@/test/activiteDeTest';
 import { reponseProbleme } from '@/test/reponseProbleme';
-import { CHANTIER, ETAPE, preparerTableauDeBord } from '@/test/tableauDeBord';
+import { CHANTIER, ETAPE, preparerTableauDeBord } from '@/test/preparerPageTableauDeBord';
 import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 
 const { serveur, simuler, afficherPage } = preparerTableauDeBord();

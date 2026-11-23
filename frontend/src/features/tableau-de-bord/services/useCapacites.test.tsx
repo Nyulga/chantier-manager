@@ -8,6 +8,7 @@ import { CAPACITES_CHEF, CAPACITES_OUVRIER, gestionnaireCapacites } from '@/test
 import { reponseProbleme } from '@/test/reponseProbleme';
 import { afficherHook } from '@/test/afficherHook';
 import { installerServeurApi } from '@/test/serveurApiSimule';
+import { testerReessai } from '@/test/testerReessai';
 
 import { useCapacites } from './useCapacites';
 
@@ -79,4 +80,11 @@ it("expose le message de l'API quand elle refuse", async () => {
   await waitFor(() => {
     expect(result.current.error?.message).toBe('Profil inconnu.');
   });
+});
+
+testerReessai({
+  serveur,
+  chemin: '/api/moi',
+  corps: CAPACITES_CHEF,
+  utiliser: useCapacites,
 });

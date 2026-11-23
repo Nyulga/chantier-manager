@@ -2,7 +2,7 @@
 import { Texte } from '@/ui';
 
 import type { Etape } from '../services/useEtapes';
-import type { DemandeTransition, ErreurApi } from '../services/useTransitionEtape';
+import type { DemandeTransitionEtape, ErreurApi } from '../services/useTransitionEtape';
 import { LigneEtape } from './LigneEtape';
 
 type ListeEtapesProps = {
@@ -10,7 +10,7 @@ type ListeEtapesProps = {
   readonly enCours: boolean;
   /** Erreur de la dernière demande, avec l'étape concernée : seule sa carte l'affiche. */
   readonly erreur?: { readonly etapeId: string; readonly erreur: ErreurApi } | undefined;
-  readonly onAction: (demande: DemandeTransition, apresSucces: () => void) => void;
+  readonly onAction: (demande: DemandeTransitionEtape, apresSucces: () => void) => void;
 };
 
 /** Affiche les étapes dans l'ordre reçu de l'API ; chaque ligne montre ses actions permises. */

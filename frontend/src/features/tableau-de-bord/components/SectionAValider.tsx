@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 
 import { Alerte, BlocAValider, Section, Texte } from '@/ui';
 
-import type { Chantier } from '../services/useChantiers';
+import type { ChantierDeListe } from '../services/useChantiers';
 import type { EtapeAValider } from '../services/useEtapesAValider';
 import { LigneEtapeAValider } from './LigneEtapeAValider';
 import { nomDuChantier } from './nomDuChantier';
@@ -15,7 +15,7 @@ type SectionAValiderProps = {
   /** Vrai quand l'API a coupé la liste à son plafond : le compteur affiche alors « 50+ ». */
   readonly tronquee: boolean;
   readonly erreurChargement?: string | undefined;
-  readonly chantiers: readonly Chantier[] | undefined;
+  readonly chantiers: readonly ChantierDeListe[] | undefined;
   readonly maintenant: Date;
   readonly enCours: boolean;
   /**

@@ -1,7 +1,15 @@
 // Tests du profil courant : lecture et écriture dans localStorage, avec repli sur « chef ».
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { CLE_PROFIL, ecouterProfil, enregistrerProfil, lireProfil } from './profil';
+import openapi from '../../openapi.json';
+import {
+  CLE_PROFIL,
+  ecouterProfil,
+  enregistrerProfil,
+  lireProfil,
+  PROFILS,
+  type Profil,
+} from './profil';
 
 afterEach(() => {
   localStorage.clear();
@@ -62,4 +70,18 @@ it('prévient aussi les écouteurs quand un autre onglet modifie le profil', () 
   arreter();
 
   expect(rappel).toHaveBeenCalledOnce();
+});
+
+it("reconnaît chaque rôle que le schéma OpenAPI déclare : un rôle ajouté à l'API ne doit pas être ignoré", () => {
+  const rolesDuSchema = openapi.components.schemas.Role.enum;
+
+  expect([...PROFILS].sort()).toEqual([...rolesDuSchema].sort());
+  for (const role of rolesDuSchema) {
+    localStorage.setItem(CLE_PROFIL, role);
+    expect(lireProfil()).toBe(role);
+  }
+});
+
+it('liste exactement les profils du type généré (vérifié à la compilation)', () => {
+  expectTypeOf<(typeof PROFILS)[number]>().toEqualTypeOf<Profil>();
 });

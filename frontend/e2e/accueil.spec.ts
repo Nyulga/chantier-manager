@@ -13,6 +13,9 @@ test("la page d'accueil affiche le tableau de bord, le logo et le choix du profi
 
 test("la page d'accueil n'a pas de défilement horizontal", async ({ page }) => {
   await page.goto('/');
+  // Les cartes et le fil d'activité changent la hauteur et la largeur de la page : on mesure après leur arrivée.
+  await expect(page.getByText(/^Chargement/)).toHaveCount(0);
+  await page.evaluate(() => document.fonts.ready);
 
   const debordement = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

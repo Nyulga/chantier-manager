@@ -1,10 +1,10 @@
 // Zone « Activité récente » du tableau de bord : lit le fil d'activité et le donne à sa section.
 import { SectionActivite } from '../components/SectionActivite';
 import { useActiviteRecente } from '../services/useActiviteRecente';
-import type { Chantier } from '../services/useChantiers';
+import type { ChantierDeListe } from '../services/useChantiers';
 
 type ZoneActiviteProps = {
-  readonly chantiers: readonly Chantier[] | undefined;
+  readonly chantiers: readonly ChantierDeListe[] | undefined;
   /** Rôle de l'acteur, donné par l'API ; `undefined` tant qu'il n'est pas connu. */
   readonly role: Parameters<typeof SectionActivite>[0]['profil'];
   /** Erreur de lecture du rôle : elle remplace le fil, qui ne peut pas s'écrire sans lui. */

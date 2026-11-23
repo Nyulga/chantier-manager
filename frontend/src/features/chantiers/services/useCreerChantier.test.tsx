@@ -75,26 +75,11 @@ it('relit la liste des chantiers après la création : le nouveau chantier y fig
   });
 
   await waitFor(() => {
-    expect(result.current.chantiers.data).toEqual([cree]);
+    expect(result.current.chantiers.data).toMatchObject([{ id: cree.id, nom: cree.nom }]);
   });
 });
 
-it("expose le message de l'API quand la création est refusée", async () => {
-  serveur.use(
-    http.post('/api/chantiers', () => reponseProbleme(403, 'Seul un chef peut créer un chantier.')),
-  );
-  const { result } = afficherHook(() => useCreerChantier());
-
-  act(() => {
-    result.current.mutate(SAISIE);
-  });
-
-  await waitFor(() => {
-    expect(result.current.error?.message).toBe('Seul un chef peut créer un chantier.');
-  });
-});
-
-it("expose les erreurs par champ de l'API, avec le champ pointé de l'adresse", async () => {
+it("expose le message de l'API et ses erreurs par champ, avec le champ pointé de l'adresse", async () => {
   serveur.use(
     http.post('/api/chantiers', () =>
       reponseProbleme(422, 'Les données envoyées sont invalides.', [
@@ -109,8 +94,9 @@ it("expose les erreurs par champ de l'API, avec le champ pointé de l'adresse", 
   });
 
   await waitFor(() => {
-    expect(result.current.error?.erreurs).toEqual([
-      { champ: 'adresse.code_postal', message: 'Le code postal est trop long.' },
-    ]);
+    expect(result.current.error?.message).toBe('Les données envoyées sont invalides.');
   });
+  expect(result.current.error?.erreurs).toEqual([
+    { champ: 'adresse.code_postal', message: 'Le code postal est trop long.' },
+  ]);
 });

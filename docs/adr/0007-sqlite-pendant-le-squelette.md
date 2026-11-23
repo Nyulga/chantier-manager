@@ -20,6 +20,8 @@ Pendant le squelette :
   - changer l'URL de connexion ;
   - ajouter le conteneur PostgreSQL ;
   - jouer les suites de contrat et de migration sur PostgreSQL (#30) ;
+  - réinstaller `psycopg`, retiré au lot S5 parce qu'il n'était pas utilisé ;
+  - remettre la condition `dialect.name == "sqlite"` autour du `PRAGMA foreign_keys` de `creer_moteur`, avec son test, retirés au lot S5 en même temps que le pilote ;
   - reprendre les données de la démo, ou repartir d'une base vide.
 - **Points à revérifier à ce moment-là** : l'ordre `NULLS FIRST`, le tri des UUID et des dates avec fuseau, et les types `Numeric`. Ils sont écrits de façon portable, mais testés seulement sur SQLite.
 - **Limite connue** : SQLite n'accepte qu'un seul écrivain à la fois. L'API tourne avec un seul worker, ce qui suffit pour une démonstration.

@@ -72,11 +72,12 @@ test("un ouvrier voit le tableau de bord sans section « À valider », et n'int
     localStorage.setItem('chantier-manager.profil', 'ouvrier');
   });
 
-  const reponseDroits = page.waitForResponse('**/api/moi');
   await page.goto('/');
-  await reponseDroits;
 
   await expect(page.getByRole('heading', { level: 1, name: 'Tableau de bord' })).toBeVisible();
+  // Les droits (`/api/moi`) et les listes sont arrivés quand plus aucun « Chargement… » n'est affiché :
+  // sans cette attente, `toHaveCount(0)` réussirait aussi avant que la section ait pu apparaître.
+  await expect(page.getByText(/^Chargement/)).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'À valider' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Nouveau chantier' })).toHaveCount(0);
   await expect(page.getByRole('heading', { level: 2, name: 'Mes chantiers' })).toBeVisible();
@@ -92,7 +93,7 @@ test("un ouvrier qui ouvre la création d'un chantier lit une information, pas u
 
   await page.goto('/chantiers/nouveau');
 
-  await expect(page.getByText('Seul un chef peut créer un chantier.')).toBeVisible();
+  await expect(page.getByText('Ton profil ne permet pas de créer un chantier.')).toBeVisible();
   await expect(page.getByLabel('Nom du chantier')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Retour aux chantiers' })).toBeVisible();
 });

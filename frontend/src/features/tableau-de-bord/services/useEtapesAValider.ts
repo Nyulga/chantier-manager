@@ -2,16 +2,12 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { clesRequetes } from '@/api/clesRequetes';
-import { creerClientApi } from '@/api/client';
-import { donneesOuErreur } from '@/api/erreurApi';
+import { listerEtapesAValider } from '@/api/etapesAValider';
 import { reessayerRequete } from '@/api/reessai';
 import type { components } from '@/api/schema';
 
 /** Étape qui attend une décision, avec la date de son dernier signalement. */
 export type EtapeAValider = components['schemas']['EtapeAValiderReponse'];
-
-/** En-tête par lequel l'API dit que la liste a été coupée à son plafond. */
-const EN_TETE_LISTE_TRONQUEE = 'X-Liste-Tronquee';
 
 /**
  * Liste les étapes à valider, de la plus ancienne à la plus récente (ordre de l'API), et dit si
@@ -26,12 +22,6 @@ export function useEtapesAValider(autorisee: boolean) {
     enabled: autorisee,
     // Un refus de l'API (403, 422…) n'est pas rejoué : la réponse serait la même.
     retry: reessayerRequete,
-    queryFn: async () => {
-      const resultat = await creerClientApi().GET('/etapes/a-valider');
-      return {
-        etapes: donneesOuErreur(resultat),
-        tronquee: resultat.response.headers.get(EN_TETE_LISTE_TRONQUEE) === 'true',
-      };
-    },
+    queryFn: listerEtapesAValider,
   });
 }
