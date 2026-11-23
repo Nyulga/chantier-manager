@@ -16,6 +16,8 @@ CODES_INDISPONIBILITE_SQLITE = frozenset(
     {
         sqlite3.SQLITE_BUSY,
         sqlite3.SQLITE_LOCKED,
+        # Un volume pas encore monté ou des droits passagers relèvent d'une indisponibilité.
+        # Un chemin mal configuré reste diagnostiquable : la cause complète est journalisée.
         sqlite3.SQLITE_CANTOPEN,
         sqlite3.SQLITE_IOERR,
         sqlite3.SQLITE_FULL,
