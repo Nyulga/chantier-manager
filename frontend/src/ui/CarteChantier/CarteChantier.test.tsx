@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { expect, it } from 'vitest';
 
 import { PuceChantier } from '../PuceChantier/PuceChantier';
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { CarteChantier } from './CarteChantier';
 
 function afficher(enRetard = false) {
@@ -38,7 +38,7 @@ it('affiche le nom comme titre et comme lien vers le chantier', () => {
   );
 });
 
-it('affiche le titre au niveau demandé, pour respecter l’ordre des titres de la page', () => {
+it("affiche le titre au niveau demandé, pour respecter l'ordre des titres de la page", () => {
   render(
     <MemoryRouter>
       <CarteChantier
@@ -59,7 +59,7 @@ it('affiche le titre au niveau demandé, pour respecter l’ordre des titres de 
   expect(screen.getByRole('heading', { level: 2, name: 'Chantier' })).toBeVisible();
 });
 
-it('affiche l’adresse, la puce, l’avancement, l’échéance et le délai', () => {
+it("affiche l'adresse, la puce, l'avancement, l'échéance et le délai", () => {
   afficher();
 
   expect(screen.getByText('12 rue des Tanneurs, 69007 Lyon')).toBeVisible();
@@ -78,7 +78,7 @@ it('écrit le retard en toutes lettres', () => {
   expect(screen.getByText('En retard de 4 jours')).toBeVisible();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher();
 
   await verifierAccessibilite(container);

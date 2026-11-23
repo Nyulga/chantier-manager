@@ -9,9 +9,9 @@ import { formaterMoment } from './formaterMoment';
  */
 const MAINTENANT = new Date(2026, 10, 22, 10, 0);
 
-it('écrit « aujourd’hui à HH:MM » pour un moment du jour', () => {
+it("écrit « aujourd'hui à HH:MM » pour un moment du jour", () => {
   expect(formaterMoment(new Date(2026, 10, 22, 8, 5).toISOString(), MAINTENANT)).toBe(
-    'aujourd’hui à 08:05',
+    "aujourd'hui à 08:05",
   );
 });
 
@@ -21,12 +21,12 @@ it('écrit « hier à HH:MM » pour un moment de la veille, même tard le soir',
   );
 });
 
-it('écrit la date complète au-delà d’hier', () => {
+it("écrit la date complète au-delà d'hier", () => {
   expect(formaterMoment(new Date(2026, 10, 20, 17, 42).toISOString(), MAINTENANT)).toBe(
     'le 20/11/2026 à 17:42',
   );
 });
 
-it('renvoie le texte tel quel quand ce n’est pas une date valide', () => {
+it("renvoie le texte tel quel quand ce n'est pas une date valide", () => {
   expect(formaterMoment('bientôt', MAINTENANT)).toBe('bientôt');
 });

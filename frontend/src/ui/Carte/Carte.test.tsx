@@ -2,7 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { Carte } from './Carte';
 
 it('affiche son contenu', () => {
@@ -11,7 +11,7 @@ it('affiche son contenu', () => {
   expect(screen.getByText('Villa Les Pins')).toBeVisible();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = render(<Carte>Villa Les Pins</Carte>);
 
   await verifierAccessibilite(container);

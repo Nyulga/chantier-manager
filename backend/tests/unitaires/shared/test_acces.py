@@ -1,3 +1,5 @@
+"""Garde d'accès commune : un refus de politique devient `AccesRefuseError`."""
+
 import pytest
 
 from app.shared.application.acces import exiger_acces

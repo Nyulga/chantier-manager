@@ -4,7 +4,7 @@ Référence : [`intent.md`](../../intent.md) · Décisions : [`docs/adr/`](../ad
 
 ## Phase 1 : squelette (en cours)
 
-On livre d'abord le **[squelette](squelette.md)** (lots S1, S2 et S3, puis S4 pour le tableau de bord de la maquette) : chantiers, étapes, validation et avancement, sans authentification et en ligne comme démonstration publique, sans mot de passe. Les lots 01 à 09 ci-dessous forment la phase 2 : chacun repart de ce que le squelette a déjà livré.
+On livre d'abord le **[squelette](squelette.md)** (lots S1, S2 et S3, puis S4 pour le tableau de bord de la maquette et S5 pour les corrections de relecture) : chantiers, étapes, validation et avancement, sans authentification et en ligne comme démonstration publique, sans mot de passe. Les lots 01 à 09 ci-dessous forment la phase 2 : chacun repart de ce que le squelette a déjà livré.
 
 ## Principe
 

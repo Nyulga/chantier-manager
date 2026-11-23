@@ -28,6 +28,7 @@ class AjouterEtape:
         NonTrouveError : le chantier n'existe pas.
         AccesRefuseError : l'acteur n'a pas le droit d'ajouter une étape.
         ValeurInvalideError : le titre est vide.
+        ConflitVersionError : une autre étape a pris le même rang entre-temps.
     """
 
     def __init__(

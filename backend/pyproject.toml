@@ -6,7 +6,6 @@ requires-python = ">=3.13"
 dependencies = [
     "alembic>=1.20.1",
     "fastapi>=0.165.0",
-    "psycopg[binary]>=3.3.9",
     "pydantic-settings>=2.16.3",
     "sqlalchemy>=2",
     "tzdata>=2026.6",
@@ -151,6 +150,8 @@ forbidden_modules = [
 # Seules l'infrastructure et la composition root parlent à la base. Les imports
 # indirects sont permis : app.main passe légitimement par app.composition. La
 # fuite par une infrastructure est fermée par le contrat « infrastructure-reservee ».
+# `psycopg` n'est plus installé pendant le squelette (SQLite, ADR 0007), mais il reste
+# listé comme garde : au retour de PostgreSQL, le contrat l'interdira sans qu'on y pense.
 [[tool.importlinter.contracts]]
 id = "base-reservee"
 name = "Seuls infrastructure et composition importent sqlalchemy et psycopg"

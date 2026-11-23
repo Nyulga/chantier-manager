@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { expect, it } from 'vitest';
 
 import { ElementNavigation } from '../ElementNavigation/ElementNavigation';
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { BarreLaterale } from './BarreLaterale';
 
 function afficher() {
@@ -31,7 +31,7 @@ it('affiche le logo, la navigation principale et le pied', () => {
   expect(screen.getByText('Pied de barre')).toBeVisible();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher();
 
   await verifierAccessibilite(container);

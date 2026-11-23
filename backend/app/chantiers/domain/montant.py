@@ -9,21 +9,30 @@ from decimal import Decimal
 
 from app.shared.domain.erreurs import ValeurInvalideError
 
-DEVISE = "EUR"
-CENTIME = Decimal("0.01")
-# Plus grande valeur que la colonne NUMERIC(12,2) peut enregistrer (ADR 0002).
-MONTANT_MAX = Decimal("9999999999.99")
+# Champ de saisie que désignent les erreurs du montant : le budget du chantier.
+CHAMP = "budget"
+# Forme de la colonne NUMERIC(12,2) (ADR 0002) : 12 chiffres en tout, dont 2 décimales. Le
+# schéma d'API et la colonne lisent ces deux valeurs, pour que les trois bornes concordent.
+CHIFFRES_MONTANT_MAX = 12
+DECIMALES_MONTANT = 2
+CENTIME = Decimal(1).scaleb(-DECIMALES_MONTANT)
+# Plus grande valeur que la colonne peut enregistrer : 9999999999.99.
+MONTANT_MAX = Decimal(10**CHIFFRES_MONTANT_MAX - 1).scaleb(-DECIMALES_MONTANT)
 
 
 @dataclass(frozen=True, slots=True)
 class Montant:
-    """Somme d'argent positive ou nulle, au centime près, exprimée en euros (`DEVISE`).
+    """Somme d'argent positive ou nulle, au centime près, exprimée en euros.
+
+    Le montant n'est utilisé que pour le budget d'un chantier : ses erreurs
+    désignent donc le champ `budget`, tel que l'api l'expose.
 
     La précision est bornée au centime parce que la base stocke les montants en
     `NUMERIC(12,2)` (ADR 0002) : une valeur plus précise serait arrondie sans bruit
     à l'enregistrement, et le montant relu ne serait plus celui qui a été saisi.
-    La valeur est stockée au format du centime (`1E3` devient `1000.00`) : la vue
-    renvoyée juste après la création est alors identique à celle relue en base.
+    La valeur est stockée au format du centime (`1E3` devient `1000.00`, et `-0`
+    devient `0.00`) : la vue renvoyée juste après la création est alors identique
+    à celle relue en base.
     """
 
     valeur: Decimal
@@ -38,15 +47,20 @@ class Montant:
         # Le test de finitude passe en premier : comparer NaN à zéro lèverait une
         # erreur technique de `decimal` au lieu d'une erreur métier.
         if not self.valeur.is_finite():
-            raise ValeurInvalideError("Le montant doit être un nombre.")
+            raise ValeurInvalideError("Le montant doit être un nombre.", CHAMP)
         if self.valeur < 0:
-            raise ValeurInvalideError("Le montant ne peut pas être négatif.")
+            raise ValeurInvalideError("Le montant ne peut pas être négatif.", CHAMP)
         # Le plafond est vérifié avant l'arrondi au centime, qui lèverait une erreur
         # technique de `decimal` sur une valeur trop grande.
         if self.valeur > MONTANT_MAX:
-            raise ValeurInvalideError("Le montant dépasse la valeur maximale enregistrable.")
+            raise ValeurInvalideError("Le montant dépasse la valeur maximale enregistrable.", CHAMP)
         au_centime = self.valeur.quantize(CENTIME)
         if self.valeur != au_centime:
-            raise ValeurInvalideError("Le montant ne peut pas être plus précis que le centime.")
+            raise ValeurInvalideError(
+                "Le montant ne peut pas être plus précis que le centime.", CHAMP
+            )
+        # `Decimal` distingue le zéro négatif : `-0` passerait le contrôle du signe
+        # et serait renvoyé `-0.00` à la création, puis `0.00` une fois relu en base.
+        # La valeur étant positive ou nulle, sa valeur absolue ne change qu'un `-0`.
         # L'objet est figé : seule cette écriture, à la construction, normalise la valeur.
-        object.__setattr__(self, "valeur", au_centime)
+        object.__setattr__(self, "valeur", au_centime.copy_abs())

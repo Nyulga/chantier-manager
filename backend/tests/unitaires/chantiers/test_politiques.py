@@ -1,3 +1,5 @@
+"""Politiques d'accès de chantiers : matrice des rôles et des actions."""
+
 from collections.abc import Callable
 
 import pytest

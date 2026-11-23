@@ -11,6 +11,7 @@ import { useProfil } from '../services/useProfil';
  * Cadre de chaque écran : la barre latérale puis la page de la route courante (`Outlet`), dans le
  * seul élément `main` de l'écran. Chaque page apporte son titre de niveau 1. Le choix du profil
  * est au bas de la barre, à la place de l'utilisateur connecté : le squelette n'a pas de comptes.
+ * Changer de profil recrée la page : ses alertes et ses saisies appartenaient à l'ancien profil.
  */
 export function LayoutApplication() {
   const { profil, changerProfil } = useProfil();
@@ -25,7 +26,8 @@ export function LayoutApplication() {
         />
       }
     >
-      <Outlet />
+      {/* La clé remet à zéro l'état local de la page (alertes d'actions ratées, formulaires ouverts) quand le profil change. */}
+      <Outlet key={profil} />
     </CadreApplication>
   );
 }

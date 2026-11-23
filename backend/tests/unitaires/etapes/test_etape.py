@@ -1,3 +1,5 @@
+"""Entité `Etape` : création, transitions, verrou de version, bornes et tri des signalements."""
+
 from uuid import UUID
 
 import pytest
@@ -5,7 +7,11 @@ import pytest
 from app.etapes.domain.cycle import ActionEtape, StatutEtape
 from app.etapes.domain.etape import Etape, HistoriqueEtape, ordre_suivant, trier_par_signalement
 from app.shared.domain.acteur import Acteur, Role
-from app.shared.domain.erreurs import TransitionInterditeError, ValeurInvalideError
+from app.shared.domain.erreurs import (
+    ConflitVersionError,
+    TransitionInterditeError,
+    ValeurInvalideError,
+)
 from tests.unitaires.etapes.fabriques import (
     ID_CHANTIER,
     INSTANT,
@@ -39,6 +45,17 @@ def test_une_nouvelle_etape_est_a_faire_en_version_1_sans_historique() -> None:
 def test_une_etape_sans_titre_est_refusee(titre: str) -> None:
     with pytest.raises(ValeurInvalideError):
         Etape.creer(UUID(int=7), ID_CHANTIER, titre, ordre=1)
+
+
+def test_un_titre_de_200_caracteres_est_accepte() -> None:
+    etape = Etape.creer(UUID(int=7), ID_CHANTIER, "t" * 200, ordre=1)
+
+    assert etape.titre == "t" * 200
+
+
+def test_un_titre_de_plus_de_200_caracteres_est_refuse() -> None:
+    with pytest.raises(ValeurInvalideError):
+        Etape.creer(UUID(int=7), ID_CHANTIER, "t" * 201, ordre=1)
 
 
 def test_une_transition_change_le_statut_trace_l_historique_et_incremente_la_version() -> None:
@@ -80,6 +97,49 @@ def test_un_refus_sans_commentaire_est_refuse_et_ne_change_rien(commentaire: str
         1,
         [],
     )
+
+
+@pytest.mark.parametrize(
+    ("statut", "action", "acteur"),
+    [
+        (StatutEtape.A_FAIRE, ActionEtape.DEMARRER, OUVRIER),
+        (StatutEtape.TERMINEE_A_VALIDER, ActionEtape.REFUSER, CHEF),
+    ],
+)
+def test_un_commentaire_de_plus_de_1000_caracteres_est_refuse_et_ne_change_rien(
+    statut: StatutEtape, action: ActionEtape, acteur: Acteur
+) -> None:
+    etape = une_etape(statut)
+
+    with pytest.raises(ValeurInvalideError):
+        etape.appliquer(action, acteur, INSTANT, "c" * 1001)
+
+    assert (etape.statut, etape.version, etape.historique) == (statut, 1, [])
+
+
+def test_un_commentaire_facultatif_de_1000_caracteres_est_garde() -> None:
+    etape = une_etape()
+
+    etape.appliquer(ActionEtape.DEMARRER, OUVRIER, INSTANT, "c" * 1000)
+
+    assert etape.historique[-1].commentaire == "c" * 1000
+
+
+@pytest.mark.parametrize("version_attendue", [None, 1])
+def test_une_version_attendue_absente_ou_a_jour_est_acceptee(version_attendue: int | None) -> None:
+    etape = une_etape()
+
+    etape.verifier_version(version_attendue)
+
+    assert etape.version == 1
+
+
+@pytest.mark.parametrize("version_attendue", [0, 2])
+def test_une_version_attendue_perimee_leve_un_conflit(version_attendue: int) -> None:
+    etape = une_etape()
+
+    with pytest.raises(ConflitVersionError):
+        etape.verifier_version(version_attendue)
 
 
 def test_une_transition_interdite_ne_change_rien() -> None:
@@ -154,3 +214,21 @@ def test_une_etape_sans_signalement_connu_passe_en_tete_du_tri() -> None:
     triees = trier_par_signalement([signalee, autre_sans_trace, sans_trace])
 
     assert [etape.id for etape in triees] == [sans_trace.id, autre_sans_trace.id, signalee.id]
+
+
+@pytest.mark.parametrize("titre", ["  ", "t" * 201])
+def test_un_titre_refuse_designe_le_champ_titre(titre: str) -> None:
+    with pytest.raises(ValeurInvalideError) as erreur:
+        Etape.creer(UUID(int=7), ID_CHANTIER, titre, ordre=1)
+
+    assert erreur.value.champ == "titre"
+
+
+@pytest.mark.parametrize("commentaire", [None, "c" * 1001])
+def test_un_commentaire_refuse_designe_le_champ_commentaire(commentaire: str | None) -> None:
+    etape = une_etape(StatutEtape.TERMINEE_A_VALIDER)
+
+    with pytest.raises(ValeurInvalideError) as erreur:
+        etape.appliquer(ActionEtape.REFUSER, CHEF, INSTANT, commentaire)
+
+    assert erreur.value.champ == "commentaire"

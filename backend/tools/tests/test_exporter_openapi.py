@@ -1,3 +1,5 @@
+"""Outil d'export du schéma OpenAPI, source des types du frontend."""
+
 import json
 import runpy
 import sys

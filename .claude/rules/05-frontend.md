@@ -16,6 +16,7 @@ src/
 ├── app/                      # assemblage : routes, providers (session, thème, TanStack Query)
 ├── api/                      # client généré depuis OpenAPI, son adaptateur, et le code partagé sans React (ADR 0006)
 ├── ui/                       # design system Balise : SEUL endroit qui produit du HTML stylé
+├── test/                     # aides et données de test partagées : importables par les seuls fichiers *.test.*
 └── features/<fonctionnalite>/
     ├── services/             # hooks TanStack Query : SEULS à appeler src/api
     ├── components/           # composants propres à la fonctionnalité, faits de composants ui
@@ -28,7 +29,7 @@ src/
 | `components` | `ui`, les types de `services` | appeler `api` ou `services` (ils reçoivent tout par leurs props), utiliser du HTML brut ou des classes CSS |
 | `services` | `api` | importer `ui`, `components` ou `pages` |
 | `ui` | Radix, Tailwind (tokens du thème uniquement) | importer `features` ou `api` |
-| `api` | openapi-fetch, les types générés, le type `QueryClient` (fonctions d'appel, clés de cache et invalidations partagées, voir l'ADR 0006) | importer quoi que ce soit d'autre du projet, contenir un hook ou un composant |
+| `api` | openapi-fetch, les types générés, les types de TanStack Query (fonctions d'appel, options de requête, clés de cache, invalidations, erreur `ErreurApi` et capacités partagées, voir l'ADR 0006) | importer quoi que ce soit d'autre du projet, contenir un hook ou un composant |
 | `features/A` | — | importer `features/B` (le code partagé descend dans `ui` ou `api`) |
 
 Ces règles sont **vérifiées par ESLint** (`eslint-plugin-boundaries`, `no-restricted-imports`, `react/forbid-elements`, `react/forbid-dom-props`, `import/no-cycle`), configuré au lot 01.

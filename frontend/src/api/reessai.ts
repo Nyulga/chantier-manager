@@ -1,14 +1,22 @@
-// Règle de nouvelle tentative des requêtes de lecture, commune à toute l'application.
-import { AccesRefuseError } from './erreurApi';
+// Règle de nouvelle tentative des requêtes de lecture, posée hook par hook (`retry: reessayerRequete`) :
+// un hook qui l'oublie retombe sur la valeur par défaut de TanStack Query, qui rejoue même un 403 ou un 404.
+import type { ErreurApi } from './erreurApi';
 
 /** Nombre de tentatives de plus après un échec : c'est la valeur par défaut de TanStack Query. */
 const NOMBRE_MAX_REESSAIS = 3;
 
+/** Premier statut HTTP d'une erreur du client, et premier d'une erreur du serveur. */
+const PREMIER_STATUT_CLIENT = 400;
+const PREMIER_STATUT_SERVEUR = 500;
+
 /**
- * Dit si une requête en échec doit être rejouée. Un refus 403 ne l'est jamais : l'API répondra
- * la même chose, et chaque essai ferait attendre l'écran qui doit masquer la section refusée.
- * Les autres échecs (réseau coupé, panne passagère) sont rejoués, comme par défaut.
+ * Dit si une requête en échec doit être rejouée. Une réponse de l'API qui refuse (403, 404, 422…)
+ * ne l'est jamais : elle répondrait la même chose, et chaque essai ferait attendre l'écran qui
+ * doit afficher l'erreur ou la page introuvable. Les pannes (réseau coupé, 5xx) sont rejouées.
  */
-export function reessayerRequete(echecs: number, erreur: Error): boolean {
-  return !(erreur instanceof AccesRefuseError) && echecs < NOMBRE_MAX_REESSAIS;
+export function reessayerRequete(echecs: number, erreur: ErreurApi): boolean {
+  const { statut } = erreur;
+  const reponseDefinitive =
+    statut !== undefined && statut >= PREMIER_STATUT_CLIENT && statut < PREMIER_STATUT_SERVEUR;
+  return !reponseDefinitive && echecs < NOMBRE_MAX_REESSAIS;
 }

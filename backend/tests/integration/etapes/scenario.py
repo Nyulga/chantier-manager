@@ -32,6 +32,20 @@ def transitionner(
     return client.post(f"/api/etapes/{etape_id}/transitions", json=corps, headers=profil)
 
 
+def transitionner_a_la_version(
+    client: TestClient, etape_id: str, action: str, profil: dict[str, str], version: int
+) -> Any:
+    """Demande une transition en indiquant la version de l'étape que l'écran affichait."""
+    corps = {"action": action, "version": version}
+    return client.post(f"/api/etapes/{etape_id}/transitions", json=corps, headers=profil)
+
+
+def valider_etape(client: TestClient, etape_id: str) -> None:
+    """Mène une étape à « Validée » : l'ouvrier la démarre et la signale, le chef la valide."""
+    signaler_terminee(client, etape_id)
+    transitionner(client, etape_id, "valider", CHEF)
+
+
 def signaler_terminee(client: TestClient, etape_id: str) -> None:
     """Fait démarrer puis signaler terminée une étape, comme le ferait un ouvrier."""
     transitionner(client, etape_id, "demarrer", OUVRIER)

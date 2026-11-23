@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { expect, it, vi } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { Champ } from './Champ';
 
 const surChangement = () => undefined;
@@ -30,7 +30,7 @@ it('affiche la valeur reçue et remonte la saisie à onChange', () => {
   expect(onChange).toHaveBeenCalledWith('Villa Les Pins');
 });
 
-it('relie le message d’erreur au champ par aria-describedby', () => {
+it("relie le message d'erreur au champ par aria-describedby", () => {
   render(
     <Champ
       libelle="Échéance"
@@ -46,7 +46,18 @@ it('relie le message d’erreur au champ par aria-describedby', () => {
   expect(champ).toBeInvalid();
 });
 
-it('n’a ni description ni état invalide quand il n’y a pas d’erreur', () => {
+it("annonce l'erreur aux lecteurs d'écran dès qu'elle apparaît (role=alert)", () => {
+  const { rerender } = render(<Champ libelle="Nom" valeur="" onChange={surChangement} />);
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+  rerender(
+    <Champ libelle="Nom" valeur="" onChange={surChangement} erreur="Le nom est obligatoire." />,
+  );
+
+  expect(screen.getByRole('alert')).toHaveTextContent('Le nom est obligatoire.');
+});
+
+it("n'a ni description ni état invalide quand il n'y a pas d'erreur", () => {
   render(<Champ libelle="Échéance" valeur="" onChange={surChangement} />);
 
   const champ = screen.getByLabelText('Échéance');
@@ -61,13 +72,13 @@ it('signale un champ obligatoire', () => {
   expect(screen.getByLabelText('Nom')).toBeRequired();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe, sans erreur', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe, sans erreur", async () => {
   const { container } = render(<Champ libelle="Nom" valeur="" onChange={surChangement} />);
 
   await verifierAccessibilite(container);
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe, avec une erreur', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe, avec une erreur", async () => {
   const { container } = render(
     <Champ libelle="Nom" valeur="" onChange={surChangement} erreur="Ce champ est obligatoire." />,
   );

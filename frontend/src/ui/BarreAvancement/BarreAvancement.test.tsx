@@ -2,7 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { BarreAvancement } from './BarreAvancement';
 
 it('expose une barre de progression avec sa valeur en pourcentage', () => {
@@ -47,7 +47,7 @@ it('accepte un libellé accessible propre à la barre', () => {
   expect(screen.getByRole('progressbar', { name: 'Avancement de la villa' })).toBeVisible();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = render(
     <BarreAvancement pourcentage={50} etapesValidees={1} etapesTotal={2} />,
   );
@@ -55,14 +55,14 @@ it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
   await verifierAccessibilite(container);
 });
 
-it('n’affiche que « z % » quand les nombres d’étapes ne sont pas connus', () => {
+it("n'affiche que « z % » quand les nombres d'étapes ne sont pas connus", () => {
   render(<BarreAvancement pourcentage={40} />);
 
   expect(screen.getByText('40 %')).toBeVisible();
   expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '40');
 });
 
-it('n’a aucun défaut d’accessibilité sans nombres d’étapes', async () => {
+it("n'a aucun défaut d'accessibilité sans nombres d'étapes", async () => {
   const { container } = render(<BarreAvancement pourcentage={40} />);
 
   await verifierAccessibilite(container);

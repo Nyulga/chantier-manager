@@ -14,7 +14,14 @@ Le squelette avait déjà ouvert la voie avec `api/clesRequetes.ts` et `api/prof
 `src/api` peut contenir, en plus du client généré et de son adaptateur :
 - des **fonctions d'appel partagées**, nommées par ressource (`api/chantiers.ts`, `api/transitions.ts`). Ce sont de simples appels au client, sans React ;
 - les **clés de cache** de TanStack Query (`api/clesRequetes.ts`) ;
-- des **fonctions d'invalidation** partagées (`api/rafraichissement.ts`). Elles reçoivent le `QueryClient` en paramètre et n'utilisent que son type.
+- des **fonctions d'invalidation** partagées (`api/rafraichissement.ts`). Elles reçoivent le `QueryClient` en paramètre et n'utilisent que son type ;
+- les **aides propres au client**, sans React non plus : la traduction d'une réponse d'erreur en erreur affichable (`api/erreurApi.ts`), la règle de nouvelle tentative des requêtes (`api/reessai.ts`) et le profil courant (`api/profil.ts`). Ce dernier lit et écrit `localStorage` et écoute `window` : ces accès au navigateur restent confinés à `src/api`, et le reste du frontend passe par ses fonctions ;
+- les **options de requête partagées** (clé et fonction d'appel réunies, par exemple `optionsListeChantiers`), et la lecture des en-têtes de réponse (`X-Liste-Tronquee`, `api/etapesAValider.ts`) ;
+- la classe `ErreurApi`, qui expose le message global et le message de chaque champ d'un 422 (ADR 0008), et `donneesOuErreur`. `erreurApi.ts` déclare `ErreurApi` comme type d'erreur par défaut de TanStack Query (`declare module '@tanstack/react-query'`), ce qui ne lie `src/api` qu'aux types de la bibliothèque ;
+- les appels de capacités (`api/capacites.ts`, `GET /api/moi`) ;
+- les conversions d'une réponse en données d'affichage, sans règle métier : `resumerChantier` (`api/chantiers.ts`), qui aplatit l'adresse pour la carte de résumé, et `lireIdentifiantChantier` (`api/identifiantChantier.ts`), qui valide l'identifiant lu dans l'adresse de la page.
+
+Les aides et données de test partagées vivent dans `src/test`, importable par les seuls fichiers `*.test.*` (règle `boundaries`).
 
 Ce qui reste interdit dans `src/api` :
 - les hooks React (`useQuery`, `useMutation`, `use…`) et les composants : ils restent dans les `services` de chaque fonctionnalité ;

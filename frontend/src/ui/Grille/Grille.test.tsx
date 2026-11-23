@@ -2,7 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { Grille } from './Grille';
 
 function afficher() {
@@ -20,7 +20,7 @@ it('range chaque enfant dans un élément de liste', () => {
   expect(screen.getAllByRole('listitem')).toHaveLength(2);
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher();
 
   await verifierAccessibilite(container);

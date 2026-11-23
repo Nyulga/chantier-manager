@@ -2,7 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { BadgeStatut, type StatutEtape } from './BadgeStatut';
 
 const LIBELLES: readonly (readonly [StatutEtape, string])[] = [
@@ -19,7 +19,7 @@ it.each(LIBELLES)('affiche le statut %s en toutes lettres : « %s »', (statut, 
 });
 
 it.each(LIBELLES)(
-  'le statut %s n’a aucun défaut d’accessibilité détectable par axe',
+  "le statut %s n'a aucun défaut d'accessibilité détectable par axe",
   async (statut) => {
     const { container } = render(<BadgeStatut statut={statut} />);
 

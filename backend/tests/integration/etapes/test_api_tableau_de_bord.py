@@ -16,7 +16,7 @@ from tests.integration.etapes.scenario import (
 )
 
 LIMITE_PAR_DEFAUT = 10
-# Le plafond de la liste « À valider » fixé par le domaine (`LIMITE_A_VALIDER`).
+# Le plafond de la liste « À valider » fixé par la couche application (`LIMITE_A_VALIDER`).
 LIMITE_A_VALIDER = 50
 VERSION_APRES_SIGNALEMENT = 3
 ETAPES_POUR_DEPASSER_LA_LIMITE = 6
@@ -45,6 +45,14 @@ def etapes_signalees_dans_l_ordre(client: TestClient, nombre: int) -> list[str]:
     for etape_id in etapes:
         signaler_terminee(client, etape_id)
     return etapes
+
+
+def signaler_des_etapes_pour_depasser_la_limite(client: TestClient) -> None:
+    """Crée assez d'étapes signalées terminées pour que le fil d'activité dépasse sa limite."""
+    chantier_id = creer_chantier(client)
+    etapes = [ajouter_etape(client, chantier_id) for _ in range(ETAPES_POUR_DEPASSER_LA_LIMITE)]
+    for etape_id in etapes:
+        signaler_terminee(client, etape_id)
 
 
 def test_sans_etape_signalee_la_liste_a_valider_est_vide(client: TestClient) -> None:
@@ -145,9 +153,7 @@ def test_l_activite_est_vide_sans_transition(client: TestClient) -> None:
 
 
 def test_la_limite_par_defaut_du_fil_d_activite_est_celle_du_domaine(client: TestClient) -> None:
-    chantier_id = creer_chantier(client)
-    for _ in range(ETAPES_POUR_DEPASSER_LA_LIMITE):
-        signaler_terminee(client, ajouter_etape(client, chantier_id))
+    signaler_des_etapes_pour_depasser_la_limite(client)
 
     assert len(activite(client)) == LIMITE_PAR_DEFAUT
 
@@ -219,3 +225,29 @@ def test_un_chantier_a_l_echeance_depassee_est_en_retard_de_plusieurs_jours(
 
     assert chantier["en_retard"] is True
     assert chantier["jours_restants"] > 0
+
+
+def test_une_liste_a_valider_complete_n_est_pas_signalee_tronquee(client: TestClient) -> None:
+    etapes_signalees_dans_l_ordre(client, LIMITE_A_VALIDER)
+
+    reponse = client.get("/api/etapes/a-valider", headers=CHEF)
+
+    assert len(reponse.json()) == LIMITE_A_VALIDER
+    assert reponse.headers["X-Liste-Tronquee"] == "false"
+
+
+def test_une_liste_a_valider_coupee_au_plafond_est_signalee_tronquee(client: TestClient) -> None:
+    etapes_signalees_dans_l_ordre(client, LIMITE_A_VALIDER + 1)
+
+    reponse = client.get("/api/etapes/a-valider", headers=CHEF)
+
+    assert len(reponse.json()) == LIMITE_A_VALIDER
+    assert reponse.headers["X-Liste-Tronquee"] == "true"
+
+
+def test_l_en_tete_de_troncature_est_documente_dans_openapi(client: TestClient) -> None:
+    schema = client.get("/api/openapi.json").json()
+
+    en_tetes = schema["paths"]["/api/etapes/a-valider"]["get"]["responses"]["200"]["headers"]
+
+    assert en_tetes["X-Liste-Tronquee"]["schema"]["enum"] == ["true", "false"]

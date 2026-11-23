@@ -131,6 +131,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/moi": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Annonce ce que l'acteur courant peut faire */
+        get: operations["consulter_api_moi_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -139,7 +156,8 @@ export interface components {
          * ActiviteReponse
          * @description Une entrée du fil d'activité : un changement de statut d'une étape.
          *
-         *     `role` est le profil qui a agi. `commentaire` n'est renseigné que pour un refus.
+         *     `role` est le profil qui a agi. `commentaire` est facultatif sur toute
+         *     transition, et toujours renseigné pour un refus, où il est obligatoire.
          */
         ActiviteReponse: {
             /**
@@ -169,11 +187,7 @@ export interface components {
              * @enum {string}
              */
             nouveau_statut: "a_faire" | "en_cours" | "terminee_a_valider" | "validee";
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "chef" | "ouvrier";
+            role: components["schemas"]["Role"];
             /** Titre Etape */
             titre_etape: string;
         };
@@ -208,6 +222,20 @@ export interface components {
         AjouterEtapeRequete: {
             /** Titre */
             titre: string;
+        };
+        /**
+         * CapacitesReponse
+         * @description Ce que l'acteur peut faire, d'après son profil : l'écran n'en déduit rien lui-même.
+         *
+         *     `peut_creer_chantier` commande le lien « Nouveau chantier », et
+         *     `peut_lister_etapes_a_valider` le bloc « À valider » du tableau de bord.
+         */
+        CapacitesReponse: {
+            /** Peut Creer Chantier */
+            peut_creer_chantier: boolean;
+            /** Peut Lister Etapes A Valider */
+            peut_lister_etapes_a_valider: boolean;
+            role: components["schemas"]["Role"];
         };
         /**
          * ChantierReponse
@@ -294,6 +322,19 @@ export interface components {
             nom: string;
         };
         /**
+         * ErreurChampReponse
+         * @description Une erreur de saisie attachée à un champ, que l'écran affiche sous ce champ.
+         *
+         *     `champ` est le chemin du champ dans le corps de la requête (`nom`, `adresse.voie`),
+         *     ou le nom du paramètre de requête (`limite`). `message` est une phrase en français.
+         */
+        ErreurChampReponse: {
+            /** Champ */
+            champ: string;
+            /** Message */
+            message: string;
+        };
+        /**
          * EtapeAValiderReponse
          * @description Étape qui attend la décision d'un chef, telle qu'elle figure dans « À valider ».
          *
@@ -354,6 +395,43 @@ export interface components {
             version: number;
         };
         /**
+         * ProblemeReponse
+         * @description Corps de toute réponse d'erreur, au format « problem details » (RFC 9457).
+         *
+         *     `title` est le libellé court du statut et `detail` le message à afficher, en
+         *     français, sans aucun détail interne. Le type est toujours `about:blank` : le
+         *     statut HTTP dit déjà tout ce que le client a besoin de savoir.
+         */
+        ProblemeReponse: {
+            /** Detail */
+            detail: string;
+            /** Status */
+            status: number;
+            /** Title */
+            title: string;
+            /** Type */
+            type: string;
+        };
+        /**
+         * ProblemeValidationReponse
+         * @description Réponse 422 : le problème, et la liste des champs en cause.
+         *
+         *     `erreurs` est vide quand l'erreur ne porte pas sur un champ précis, par exemple
+         *     une échéance qui précède le début ; seul `detail` la décrit alors.
+         */
+        ProblemeValidationReponse: {
+            /** Detail */
+            detail: string;
+            /** Erreurs */
+            erreurs: components["schemas"]["ErreurChampReponse"][];
+            /** Status */
+            status: number;
+            /** Title */
+            title: string;
+            /** Type */
+            type: string;
+        };
+        /**
          * ReponseSante
          * @description Réponse de la route de santé : indique que l'API répond.
          *
@@ -369,8 +447,18 @@ export interface components {
             statut: "ok";
         };
         /**
+         * Role
+         * @description Rôle d'un utilisateur, qui détermine ce qu'il a le droit de faire.
+         * @enum {string}
+         */
+        Role: "chef" | "ouvrier";
+        /**
          * TransitionRequete
-         * @description Corps d'un changement de statut ; le commentaire est obligatoire pour `refuser`.
+         * @description Corps d'un changement de statut ; le commentaire est facultatif, sauf pour `refuser`.
+         *
+         *     `version` est la version de l'étape que l'écran affichait. Si l'étape a changé depuis,
+         *     l'action est refusée (409) plutôt que décidée sur un état périmé. Sans version, l'action
+         *     s'applique à l'étape telle qu'elle est.
          */
         TransitionRequete: {
             /**
@@ -380,6 +468,8 @@ export interface components {
             action: "demarrer" | "signaler_terminee" | "valider" | "refuser";
             /** Commentaire */
             commentaire?: string | null;
+            /** Version */
+            version?: number | null;
         };
     };
     responses: never;
@@ -397,7 +487,7 @@ export interface operations {
                 limite?: number;
             };
             header?: {
-                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                /** @description Profil choisi dans l'interface : « chef » ou « ouvrier ». */
                 "x-profil"?: string | null;
             };
             path?: never;
@@ -419,35 +509,36 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-            /** @description Chantier ou étape introuvable. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
-                content?: never;
             };
-            /** @description Transition impossible depuis l'état actuel. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Données invalides. */
+            /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Service momentanément indisponible : réessayer plus tard. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
         };
     };
@@ -455,7 +546,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                /** @description Profil choisi dans l'interface : « chef » ou « ouvrier ». */
                 "x-profil"?: string | null;
             };
             path?: never;
@@ -477,28 +568,45 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Chantier introuvable. */
+            /** @description Ressource introuvable, hors du périmètre ou identifiant mal formé. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Données invalides. */
+            /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Service momentanément indisponible : réessayer plus tard. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
         };
     };
@@ -506,7 +614,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                /** @description Profil choisi dans l'interface : « chef » ou « ouvrier ». */
                 "x-profil"?: string | null;
             };
             path?: never;
@@ -532,28 +640,45 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Chantier introuvable. */
+            /** @description Ressource introuvable, hors du périmètre ou identifiant mal formé. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Données invalides. */
+            /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Service momentanément indisponible : réessayer plus tard. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
         };
     };
@@ -561,7 +686,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                /** @description Profil choisi dans l'interface : « chef » ou « ouvrier ». */
                 "x-profil"?: string | null;
             };
             path: {
@@ -585,28 +710,45 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Chantier introuvable. */
+            /** @description Ressource introuvable, hors du périmètre ou identifiant mal formé. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Données invalides. */
+            /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Service momentanément indisponible : réessayer plus tard. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
         };
     };
@@ -614,7 +756,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                /** @description Profil choisi dans l'interface : « chef » ou « ouvrier ». */
                 "x-profil"?: string | null;
             };
             path: {
@@ -638,35 +780,54 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Chantier ou étape introuvable. */
+            /** @description Ressource introuvable, hors du périmètre ou identifiant mal formé. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Transition impossible depuis l'état actuel. */
+            /** @description Action impossible dans l'état actuel, ou ressource modifiée entre-temps. */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Données invalides. */
+            /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Service momentanément indisponible : réessayer plus tard. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
         };
     };
@@ -674,7 +835,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                /** @description Profil choisi dans l'interface : « chef » ou « ouvrier ». */
                 "x-profil"?: string | null;
             };
             path: {
@@ -702,35 +863,54 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Chantier ou étape introuvable. */
+            /** @description Ressource introuvable, hors du périmètre ou identifiant mal formé. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Transition impossible depuis l'état actuel. */
+            /** @description Action impossible dans l'état actuel, ou ressource modifiée entre-temps. */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Données invalides. */
+            /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Service momentanément indisponible : réessayer plus tard. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
         };
     };
@@ -738,7 +918,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                /** @description Profil choisi dans l'interface : « chef » ou « ouvrier ». */
                 "x-profil"?: string | null;
             };
             path?: never;
@@ -746,9 +926,11 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description Les étapes à valider, de la plus anciennement signalée à la plus récente. */
             200: {
                 headers: {
+                    /** @description `true` si d'autres étapes attendent une décision sans figurer dans la liste, coupée à son plafond : l'écran affiche alors un total approché. */
+                    "X-Liste-Tronquee"?: "true" | "false";
                     [name: string]: unknown;
                 };
                 content: {
@@ -760,35 +942,36 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-            /** @description Chantier ou étape introuvable. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
-                content?: never;
             };
-            /** @description Transition impossible depuis l'état actuel. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Données invalides. */
+            /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Service momentanément indisponible : réessayer plus tard. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
         };
     };
@@ -796,7 +979,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                /** @description Profil choisi dans l'interface : `chef` ou `ouvrier`. */
+                /** @description Profil choisi dans l'interface : « chef » ou « ouvrier ». */
                 "x-profil"?: string | null;
             };
             path: {
@@ -824,35 +1007,54 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Chantier ou étape introuvable. */
+            /** @description Ressource introuvable, hors du périmètre ou identifiant mal formé. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Transition impossible depuis l'état actuel. */
+            /** @description Action impossible dans l'état actuel, ou ressource modifiée entre-temps. */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
-            /** @description Données invalides. */
+            /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Service momentanément indisponible : réessayer plus tard. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
             };
         };
     };
@@ -872,6 +1074,56 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReponseSante"];
+                };
+            };
+        };
+    };
+    consulter_api_moi_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Profil choisi dans l'interface : « chef » ou « ouvrier ». */
+                "x-profil"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapacitesReponse"];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
+            /** @description Données invalides : `erreurs` désigne les champs en cause. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Service momentanément indisponible : réessayer plus tard. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
         };

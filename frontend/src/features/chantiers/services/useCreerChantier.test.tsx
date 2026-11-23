@@ -1,12 +1,14 @@
-// Tests du hook `useCreerChantier` : le corps envoyé, l'invalidation de la liste et les erreurs.
-import { act, renderHook, waitFor } from '@testing-library/react';
+// Tests du hook `useCreerChantier` : le corps envoyé, la relecture de la liste et les erreurs.
+import { act, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { expect, it, vi } from 'vitest';
+import { expect, it } from 'vitest';
 
-import { creerClientRequetes, creerEnveloppe } from '@/api/test/enveloppeRequetes';
-import { installerServeurApi } from '@/api/test/serveurApiSimule';
+import { reponseProbleme } from '@/test/reponseProbleme';
+import { afficherHook } from '@/test/afficherHook';
+import { installerServeurApi } from '@/test/serveurApiSimule';
 
-import { chantierDeTest } from './chantierDeTest';
+import { chantierDeTest } from '@/test/chantierDeTest';
+import { useChantiers } from './useChantiers';
 import { useCreerChantier, type SaisieChantier } from './useCreerChantier';
 
 const serveur = installerServeurApi();
@@ -22,7 +24,7 @@ const SAISIE: SaisieChantier = {
   budget: '18450.00',
 };
 
-it('envoie le chantier à l’API sous la forme attendue et renvoie le chantier créé', async () => {
+it("envoie le chantier à l'API sous la forme attendue et renvoie le chantier créé", async () => {
   const cree = chantierDeTest();
   let corps: unknown = null;
   serveur.use(
@@ -31,9 +33,7 @@ it('envoie le chantier à l’API sous la forme attendue et renvoie le chantier 
       return HttpResponse.json(cree, { status: 201 });
     }),
   );
-  const { result } = renderHook(() => useCreerChantier(), {
-    wrapper: creerEnveloppe(creerClientRequetes()),
-  });
+  const { result } = afficherHook(() => useCreerChantier());
 
   act(() => {
     result.current.mutate(SAISIE);
@@ -52,41 +52,51 @@ it('envoie le chantier à l’API sous la forme attendue et renvoie le chantier 
   });
 });
 
-it('invalide la liste des chantiers après la création', async () => {
+it('relit la liste des chantiers après la création : le nouveau chantier y figure', async () => {
+  const cree = chantierDeTest();
+  let liste: unknown[] = [];
   serveur.use(
-    http.post('/api/chantiers', () => HttpResponse.json(chantierDeTest(), { status: 201 })),
+    http.get('/api/chantiers', () => HttpResponse.json(liste)),
+    http.post('/api/chantiers', () => {
+      liste = [cree];
+      return HttpResponse.json(cree, { status: 201 });
+    }),
   );
-  const client = creerClientRequetes();
-  const invalider = vi.spyOn(client, 'invalidateQueries');
-  const { result } = renderHook(() => useCreerChantier(), { wrapper: creerEnveloppe(client) });
+  const { result } = afficherHook(() => ({
+    chantiers: useChantiers(),
+    creation: useCreerChantier(),
+  }));
+  await waitFor(() => {
+    expect(result.current.chantiers.data).toEqual([]);
+  });
 
   act(() => {
-    result.current.mutate(SAISIE);
+    result.current.creation.mutate(SAISIE);
   });
 
   await waitFor(() => {
-    expect(invalider).toHaveBeenCalledWith({ queryKey: ['chantiers', 'liste'] });
+    expect(result.current.chantiers.data).toMatchObject([{ id: cree.id, nom: cree.nom }]);
   });
 });
 
-it('expose le message de l’API quand la création est refusée', async () => {
+it("expose le message de l'API et ses erreurs par champ, avec le champ pointé de l'adresse", async () => {
   serveur.use(
     http.post('/api/chantiers', () =>
-      HttpResponse.json(
-        { status: 403, detail: 'Seul un chef peut créer un chantier.' },
-        { status: 403, headers: { 'Content-Type': 'application/problem+json' } },
-      ),
+      reponseProbleme(422, 'Les données envoyées sont invalides.', [
+        { champ: 'adresse.code_postal', message: 'Le code postal est trop long.' },
+      ]),
     ),
   );
-  const { result } = renderHook(() => useCreerChantier(), {
-    wrapper: creerEnveloppe(creerClientRequetes()),
-  });
+  const { result } = afficherHook(() => useCreerChantier());
 
   act(() => {
     result.current.mutate(SAISIE);
   });
 
   await waitFor(() => {
-    expect(result.current.error?.message).toBe('Seul un chef peut créer un chantier.');
+    expect(result.current.error?.message).toBe('Les données envoyées sont invalides.');
   });
+  expect(result.current.error?.erreurs).toEqual([
+    { champ: 'adresse.code_postal', message: 'Le code postal est trop long.' },
+  ]);
 });

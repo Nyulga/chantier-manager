@@ -9,6 +9,8 @@ type BlocAValiderProps = {
   readonly titre: string;
   /** Nombre d'étapes à valider, tel que l'API le donne. */
   readonly compteur: number;
+  /** Vrai quand `compteur` est un minimum : l'API a coupé la liste à son plafond. */
+  readonly compteurAuMoins?: boolean;
   readonly sousTitre: string;
   /** Rend le titre focalisable par programme : voir `Titre`. */
   readonly refTitre?: Ref<HTMLHeadingElement>;
@@ -28,6 +30,7 @@ type BlocAValiderProps = {
 export function BlocAValider({
   titre,
   compteur,
+  compteurAuMoins = false,
   sousTitre,
   refTitre,
   alerte,
@@ -48,7 +51,7 @@ export function BlocAValider({
               {titre}
             </Titre>
           </div>
-          <PastilleCompteur valeur={compteur} />
+          <PastilleCompteur valeur={compteur} auMoins={compteurAuMoins} />
         </div>
         <p className="text-secondaire text-muted">{sousTitre}</p>
       </div>

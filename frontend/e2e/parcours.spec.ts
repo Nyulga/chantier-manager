@@ -4,9 +4,10 @@ import { expect, test } from '@playwright/test';
 
 import { ajouterEtape, choisirProfil, creerChantier } from './aides';
 
-test('le chef et l’ouvrier font avancer un chantier jusqu’à 50 %', async ({ page }, info) => {
-  // Un nom par projet : les deux tailles d'écran partagent la même base.
-  const nom = `Chantier ${info.project.name}`;
+test("le chef et l'ouvrier font avancer un chantier jusqu'à 50 %", async ({ page }, info) => {
+  // Un nom unique par projet et par essai : les deux tailles d'écran partagent la même base, et la
+  // nouvelle tentative de la CI rejouerait le test avec un nom déjà pris.
+  const nom = `Chantier ${info.project.name} ${Date.now().toString(36)}`;
 
   await creerChantier(page, nom);
   await expect(page.getByText(/Budget : 18\s450,00\s€/)).toBeVisible();

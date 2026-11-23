@@ -19,7 +19,7 @@ class EtapeVue:
     """Étape vue par un acteur, avec les actions qu'il peut faire maintenant.
 
     `actions_permises` vient directement de la table des transitions : le frontend
-    n'affiche que ces boutons, sans recalculer le cycle. `version` permettra de
+    n'affiche que ces boutons, sans recalculer le cycle. `version` permet de
     détecter deux modifications simultanées (intent.md, §2.3).
     """
 
@@ -51,6 +51,18 @@ class EtapeAValiderVue:
 
 
 @dataclass(frozen=True)
+class ListeAValiderVue:
+    """La liste « À valider », et l'indication qu'elle a été coupée au plafond.
+
+    `tronquee` est vrai quand d'autres étapes attendent la décision d'un chef que la
+    liste ne contient pas : l'écran peut alors afficher « 50+ » plutôt qu'un total faux.
+    """
+
+    etapes: tuple[EtapeAValiderVue, ...]
+    tronquee: bool
+
+
+@dataclass(frozen=True)
 class ActiviteVue:
     """Une entrée du fil d'activité : un changement de statut d'une étape.
 
@@ -66,6 +78,20 @@ class ActiviteVue:
     nouveau_statut: str
     date: datetime
     commentaire: str | None
+
+
+@dataclass(frozen=True)
+class CapacitesVue:
+    """Ce que l'acteur peut faire, indépendamment d'un chantier ou d'une étape précis.
+
+    `role` est le profil de l'acteur (`"chef"` ou `"ouvrier"`), pour l'affichage.
+    Les deux booléens sont calculés par les politiques du domaine : le frontend
+    n'affiche le lien de création et le bloc « À valider » que s'ils sont vrais.
+    """
+
+    role: str
+    peut_creer_chantier: bool
+    peut_lister_etapes_a_valider: bool
 
 
 @dataclass(frozen=True)

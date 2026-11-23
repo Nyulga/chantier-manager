@@ -1,14 +1,21 @@
 // Tests du profil courant : lecture et écriture dans localStorage, avec repli sur « chef ».
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, expect, expectTypeOf, it, vi } from 'vitest';
 
-import { CLE_PROFIL, ecouterProfil, enregistrerProfil, lireProfil } from './profil';
+import {
+  CLE_PROFIL,
+  ecouterProfil,
+  enregistrerProfil,
+  lireProfil,
+  PROFILS,
+  type Profil,
+} from './profil';
 
 afterEach(() => {
   localStorage.clear();
   vi.restoreAllMocks();
 });
 
-it('renvoie « chef » quand aucun profil n’est enregistré', () => {
+it("renvoie « chef » quand aucun profil n'est enregistré", () => {
   expect(lireProfil()).toBe('chef');
 });
 
@@ -19,7 +26,7 @@ it('renvoie le profil enregistré', () => {
   expect(localStorage.getItem(CLE_PROFIL)).toBe('ouvrier');
 });
 
-it('ignore une valeur enregistrée qui n’est pas un profil connu', () => {
+it("ignore une valeur enregistrée qui n'est pas un profil connu", () => {
   localStorage.setItem(CLE_PROFIL, 'administrateur');
 
   expect(lireProfil()).toBe('chef');
@@ -43,7 +50,7 @@ it('ne plante pas quand localStorage est inaccessible en écriture', () => {
   }).not.toThrow();
 });
 
-it('prévient les écouteurs quand le profil change, jusqu’à leur désinscription', () => {
+it("prévient les écouteurs quand le profil change, jusqu'à leur désinscription", () => {
   const rappel = vi.fn();
   const arreter = ecouterProfil(rappel);
 
@@ -62,4 +69,16 @@ it('prévient aussi les écouteurs quand un autre onglet modifie le profil', () 
   arreter();
 
   expect(rappel).toHaveBeenCalledOnce();
+});
+
+// Le type généré `Profil` vient du schéma OpenAPI : le test de type ci-dessous échoue à la
+// compilation si un rôle de l'API manque à `PROFILS`, sans lire `openapi.json`, qui n'est pas versionné.
+it.each(PROFILS)('reconnaît le profil enregistré « %s »', (profil) => {
+  localStorage.setItem(CLE_PROFIL, profil);
+
+  expect(lireProfil()).toBe(profil);
+});
+
+it('liste exactement les profils du type généré (vérifié à la compilation)', () => {
+  expectTypeOf<(typeof PROFILS)[number]>().toEqualTypeOf<Profil>();
 });

@@ -22,8 +22,8 @@ class Horloge(Protocol):
         """Renvoie la date du jour à Paris, et non en UTC.
 
         C'est la date que vivent les utilisateurs : elle sert aux règles comptées en
-        jours, comme le délai d'un chantier. La date UTC retarderait d'un jour entre
-        minuit et 1 h (2 h en été), heure de Paris.
+        jours, comme le délai qui reste avant une échéance. La date UTC retarderait
+        d'un jour entre minuit et 1 h (2 h en été), heure de Paris.
         """
         ...
 

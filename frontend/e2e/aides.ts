@@ -24,8 +24,8 @@ export async function creerChantier(page: Page, nom: string) {
 
 /** Ajoute une étape au chantier ouvert et attend qu'elle apparaisse dans la liste. */
 export async function ajouterEtape(page: Page, titre: string) {
-  await page.getByLabel('Titre de l’étape').fill(titre);
-  await page.getByRole('button', { name: 'Ajouter l’étape' }).click();
+  await page.getByLabel("Titre de l'étape").fill(titre);
+  await page.getByRole('button', { name: "Ajouter l'étape" }).click();
   await expect(page.getByRole('heading', { level: 3, name: titre })).toBeVisible();
 }
 

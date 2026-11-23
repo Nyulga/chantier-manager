@@ -1,3 +1,5 @@
+"""Cas d'usage `ChangerStatutEtape` : transitions, refus, verrou de version et annulation."""
+
 from uuid import UUID
 
 import pytest
@@ -6,7 +8,12 @@ from app.etapes.application.changer_statut_etape import ChangementStatut
 from app.etapes.domain.cycle import StatutEtape
 from app.etapes.domain.etape import HistoriqueEtape
 from app.shared.domain.acteur import Acteur, Role
-from app.shared.domain.erreurs import NonTrouveError, TransitionInterditeError, ValeurInvalideError
+from app.shared.domain.erreurs import (
+    ConflitVersionError,
+    NonTrouveError,
+    TransitionInterditeError,
+    ValeurInvalideError,
+)
 from tests.unitaires.etapes.contexte import Contexte
 from tests.unitaires.etapes.fabriques import INSTANT, id_etape, une_etape
 
@@ -55,6 +62,30 @@ def test_un_chef_refuse_une_etape_avec_un_commentaire() -> None:
     assert contexte.uow.etapes.obtenir(ETAPE).historique[-1].commentaire == "Joints à reprendre."
 
 
+def test_une_version_attendue_a_jour_laisse_passer_la_transition() -> None:
+    contexte = un_contexte(StatutEtape.TERMINEE_A_VALIDER)
+
+    vue = contexte.changer_statut().executer(
+        ChangementStatut(ETAPE, "valider", version_attendue=1), CHEF
+    )
+
+    assert (vue.statut, vue.version, contexte.uow.validations) == ("validee", 2, 1)
+
+
+def test_une_seconde_action_sur_la_version_deja_modifiee_est_rejetee() -> None:
+    contexte = un_contexte(StatutEtape.TERMINEE_A_VALIDER)
+    cas_usage = contexte.changer_statut()
+    cas_usage.executer(ChangementStatut(ETAPE, "valider", version_attendue=1), CHEF)
+
+    with pytest.raises(ConflitVersionError):
+        cas_usage.executer(
+            ChangementStatut(ETAPE, "refuser", "Trop tard.", version_attendue=1), CHEF
+        )
+
+    etape = contexte.uow.etapes.obtenir(ETAPE)
+    assert (etape.statut, etape.version, len(etape.historique)) == (StatutEtape.VALIDEE, 2, 1)
+
+
 @pytest.mark.parametrize(
     ("commande", "acteur", "erreur"),
     [
@@ -65,6 +96,11 @@ def test_un_chef_refuse_une_etape_avec_un_commentaire() -> None:
         (ChangementStatut(ETAPE, "refuser", " "), CHEF, ValeurInvalideError),
         (ChangementStatut(ETAPE, "archiver"), CHEF, ValeurInvalideError),
         (ChangementStatut(UUID(int=999), "valider"), CHEF, NonTrouveError),
+        (ChangementStatut(ETAPE, "valider", version_attendue=2), CHEF, ConflitVersionError),
+        (ChangementStatut(ETAPE, "valider", version_attendue=0), CHEF, ConflitVersionError),
+        # Une version périmée l'emporte sur une transition interdite : l'acteur a agi
+        # sur un état qui n'existe plus, c'est ce qu'il doit apprendre en premier.
+        (ChangementStatut(ETAPE, "demarrer", version_attendue=2), CHEF, ConflitVersionError),
     ],
 )
 def test_un_changement_refuse_ne_modifie_rien(

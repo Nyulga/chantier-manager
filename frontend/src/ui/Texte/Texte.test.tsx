@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { Texte } from './Texte';
 
 it('affiche son contenu avec la variante courante par défaut', () => {
@@ -12,7 +12,7 @@ it('affiche son contenu avec la variante courante par défaut', () => {
   expect(screen.getByText('Bienvenue sur le chantier')).toBeVisible();
 });
 
-it.each(['courant', 'secondaire', 'etiquette', 'donnee'] as const)(
+it.each(['courant', 'secondaire'] as const)(
   'affiche son contenu avec la variante %s',
   (variante) => {
     render(<Texte variante={variante}>CH-2026-014</Texte>);

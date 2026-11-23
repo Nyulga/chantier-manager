@@ -12,6 +12,7 @@ Traduire une requête HTTP en appel d'un cas d'usage, puis traduire le résultat
 
 ## Autorisé
 - La couche `application` du même module : ses cas d'usage, ses commandes et ses vues.
+- `application/valeurs_publiques.py` du même module : les seules constantes de saisie (bornes) et les types de valeur immuables (`Role`) que le domaine republie pour les schémas. Ce fichier ne contient jamais d'entité, de règle ni de fonction (ADR 0008).
 - `app.shared.api` (gestion des erreurs, dépendances d'authentification, sécurité).
 - FastAPI et Pydantic.
 

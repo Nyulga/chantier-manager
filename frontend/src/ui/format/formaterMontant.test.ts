@@ -18,6 +18,6 @@ it('ne perd pas de précision sur un grand montant', () => {
   expect(normaliser(formaterMontant('12345678901234567.89'))).toBe('12 345 678 901 234 567,89 €');
 });
 
-it('rend tel quel un texte qui n’est pas un montant décimal', () => {
+it("rend tel quel un texte qui n'est pas un montant décimal", () => {
   expect(formaterMontant('sur devis')).toBe('sur devis');
 });

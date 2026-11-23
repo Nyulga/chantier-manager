@@ -1,7 +1,7 @@
 """Routes des chantiers : traduisent HTTP en appels de cas d'usage, sans logique métier."""
 
 from http import HTTPStatus
-from typing import Annotated, Any, Protocol
+from typing import Annotated, Protocol
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -12,18 +12,20 @@ from app.chantiers.application.consulter_chantier import ConsulterChantier
 from app.chantiers.application.creer_chantier import CreerChantier
 from app.chantiers.application.lister_chantiers import ListerChantiers
 from app.shared.api.acteur import ActeurCourant
+from app.shared.api.documentation_erreurs import erreurs_documentees
 
 # Les erreurs possibles, documentées dans OpenAPI pour le client généré. Leur corps
 # est celui de la traduction centrale (RFC 9457).
-ERREURS: dict[int | str, dict[str, Any]] = {
-    HTTPStatus.BAD_REQUEST: {"description": "Profil `X-Profil` absent ou inconnu."},
-    HTTPStatus.FORBIDDEN: {"description": "Action réservée à un chef."},
-    HTTPStatus.NOT_FOUND: {"description": "Chantier introuvable."},
-    HTTPStatus.UNPROCESSABLE_ENTITY: {"description": "Données invalides."},
-}
+ERREURS = erreurs_documentees(
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.FORBIDDEN,
+    HTTPStatus.NOT_FOUND,
+    HTTPStatus.UNPROCESSABLE_ENTITY,
+    HTTPStatus.SERVICE_UNAVAILABLE,
+)
 
 
-class FournisseursChantiers(Protocol):
+class CasUsagesChantiers(Protocol):
     """Ce que les routes demandent à la composition root : des cas d'usage prêts à l'emploi.
 
     Les routes ne connaissent ni l'infrastructure ni la composition : celle-ci leur
@@ -43,31 +45,51 @@ class FournisseursChantiers(Protocol):
         ...
 
 
-def creer_routeur(fournisseurs: FournisseursChantiers) -> APIRouter:
+def creer_routeur(cas_usages: CasUsagesChantiers) -> APIRouter:
     """Crée le routeur des chantiers, branché sur les cas d'usage fournis."""
     routeur = APIRouter(prefix="/chantiers", tags=["chantiers"], responses=ERREURS)
+    _declarer_creation(routeur, cas_usages)
+    _declarer_lectures(routeur, cas_usages)
+    return routeur
 
-    @routeur.post("", status_code=HTTPStatus.CREATED, summary="Crée un chantier")
+
+def _declarer_creation(routeur: APIRouter, cas_usages: CasUsagesChantiers) -> None:
+    @routeur.post(
+        "",
+        status_code=HTTPStatus.CREATED,
+        response_model=ChantierReponse,
+        summary="Crée un chantier",
+    )
     def creer(
         requete: CreerChantierRequete,
         acteur: ActeurCourant,
-        cas_usage: Annotated[CreerChantier, Depends(fournisseurs.creer_chantier)],
+        cas_usage: Annotated[CreerChantier, Depends(cas_usages.creer_chantier)],
     ) -> ChantierReponse:
         return reponse_depuis(cas_usage.executer(commande_depuis(requete), acteur))
 
-    @routeur.get("", summary="Liste les chantiers, avec leur avancement")
+
+def _declarer_lectures(routeur: APIRouter, cas_usages: CasUsagesChantiers) -> None:
+    @routeur.get(
+        "",
+        status_code=HTTPStatus.OK,
+        response_model=list[ChantierReponse],
+        summary="Liste les chantiers, avec leur avancement",
+    )
     def lister(
         acteur: ActeurCourant,
-        cas_usage: Annotated[ListerChantiers, Depends(fournisseurs.lister_chantiers)],
+        cas_usage: Annotated[ListerChantiers, Depends(cas_usages.lister_chantiers)],
     ) -> list[ChantierReponse]:
         return [reponse_depuis(vue) for vue in cas_usage.executer(acteur)]
 
-    @routeur.get("/{chantier_id}", summary="Consulte un chantier")
+    @routeur.get(
+        "/{chantier_id}",
+        status_code=HTTPStatus.OK,
+        response_model=ChantierReponse,
+        summary="Consulte un chantier",
+    )
     def consulter(
         chantier_id: UUID,
         acteur: ActeurCourant,
-        cas_usage: Annotated[ConsulterChantier, Depends(fournisseurs.consulter_chantier)],
+        cas_usage: Annotated[ConsulterChantier, Depends(cas_usages.consulter_chantier)],
     ) -> ChantierReponse:
         return reponse_depuis(cas_usage.executer(chantier_id, acteur))
-
-    return routeur

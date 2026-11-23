@@ -11,8 +11,9 @@ def _activer_cles_etrangeres(
 ) -> None:
     """Active les clés étrangères de SQLite, qu'il ignore par défaut.
 
-    Sans cela, une étape pourrait référencer un chantier inexistant en SQLite alors
-    que PostgreSQL le refuserait : les deux bases doivent se comporter pareil.
+    Sans cela, une ligne pourrait référencer une ligne inexistante d'une autre table
+    en SQLite, alors que PostgreSQL le refuserait : les deux bases doivent se
+    comporter pareil.
     """
     curseur = connexion.cursor()
     curseur.execute("PRAGMA foreign_keys=ON")
@@ -23,11 +24,17 @@ def creer_moteur(url_base: str) -> Engine:
     """Crée le moteur synchrone de la base désignée par l'URL (ADR 0002).
 
     La connexion n'est ouverte qu'à la première requête : créer un moteur ne touche
-    pas la base.
+    pas la base. Le réglage des clés étrangères est propre à SQLite, la seule base
+    prise en charge pendant le squelette (ADR 0007) : au retour de PostgreSQL, il
+    faudra le réserver à SQLite (`moteur.dialect.name == "sqlite"`), car PostgreSQL
+    ne comprend pas `PRAGMA`.
+
+    `hide_parameters=True` : les messages d'erreur de SQLAlchemy citent d'ordinaire les
+    valeurs de la requête, donc des données personnelles. Elles se retrouveraient dans
+    le journal du serveur à la moindre erreur d'intégrité (intent.md, §3.2).
     """
-    moteur = create_engine(url_base)
-    if moteur.dialect.name == "sqlite":
-        event.listen(moteur, "connect", _activer_cles_etrangeres)
+    moteur = create_engine(url_base, hide_parameters=True)
+    event.listen(moteur, "connect", _activer_cles_etrangeres)
     return moteur
 
 
@@ -35,9 +42,9 @@ def creer_usine_sessions(moteur: Engine) -> sessionmaker[Session]:
     """Crée l'usine de sessions des Unit of Work.
 
     `expire_on_commit=False` : après la validation, les objets restent lisibles.
-    Plusieurs cas d'usage, comme `CreerChantier`, construisent en effet leur vue
-    après être sortis de la transaction, une fois la session fermée. Sans cette
-    option, la validation expirerait les attributs des objets, et les relire sur
-    une session fermée lèverait une erreur.
+    Plusieurs cas d'usage construisent en effet leur vue après être sortis de la
+    transaction, une fois la session fermée. Sans cette option, la validation
+    expirerait les attributs des objets, et les relire sur une session fermée
+    lèverait une erreur.
     """
     return sessionmaker(bind=moteur, expire_on_commit=False)

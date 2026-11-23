@@ -33,7 +33,11 @@ export function attributsErreur(identifiant: string, erreur: string | undefined)
   return { 'aria-invalid': true, 'aria-describedby': identifiantErreur(identifiant) } as const;
 }
 
-/** Libellé toujours visible au-dessus du contrôle ; l'erreur s'affiche en dessous, en `danger`. */
+/**
+ * Libellé toujours visible au-dessus du contrôle ; l'erreur s'affiche en dessous, en `danger`.
+ * Elle est une région « alert » : un lecteur d'écran l'annonce dès qu'elle apparaît, sans que
+ * l'utilisateur ait à la chercher (WCAG 4.1.3, messages d'état).
+ */
 export function EnveloppeChamp({ identifiant, libelle, erreur, children }: EnveloppeChampProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -42,7 +46,7 @@ export function EnveloppeChamp({ identifiant, libelle, erreur, children }: Envel
       </label>
       {children}
       {erreur !== undefined && (
-        <p id={identifiantErreur(identifiant)} className="text-secondaire text-danger">
+        <p id={identifiantErreur(identifiant)} role="alert" className="text-secondaire text-danger">
           {erreur}
         </p>
       )}

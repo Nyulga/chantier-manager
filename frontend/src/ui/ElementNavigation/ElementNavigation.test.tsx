@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { ElementNavigation } from './ElementNavigation';
 import { ElementNavigationBientot } from './ElementNavigationBientot';
 
@@ -33,7 +33,7 @@ it('marque la page courante avec aria-current="page"', () => {
   expect(screen.getByRole('link', { name: /Mes chantiers/ })).not.toHaveAttribute('aria-current');
 });
 
-it('reste actif sur les pages enfants quand la correspondance n’est pas exacte', () => {
+it("reste actif sur les pages enfants quand la correspondance n'est pas exacte", () => {
   afficher('/chantiers/42');
 
   expect(screen.getByRole('link', { name: /Mes chantiers/ })).toHaveAttribute(
@@ -52,7 +52,7 @@ it('affiche le compteur dans le nom du lien', () => {
   );
 });
 
-it('affiche l’élément « Bientôt » sans lien, avec sa mention visible', () => {
+it("affiche l'élément « Bientôt » sans lien, avec sa mention visible", () => {
   afficher('/');
 
   expect(screen.queryByRole('link', { name: /Équipe/ })).not.toBeInTheDocument();
@@ -60,7 +60,7 @@ it('affiche l’élément « Bientôt » sans lien, avec sa mention visible', ()
   expect(screen.getByText('Bientôt')).toBeVisible();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher('/');
 
   await verifierAccessibilite(container);

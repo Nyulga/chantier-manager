@@ -1,3 +1,5 @@
+"""Fakes mémoire de shared : horloge fixe, identifiants prévisibles et Unit of Work."""
+
 from datetime import UTC, date, datetime
 from uuid import UUID
 

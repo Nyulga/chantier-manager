@@ -14,6 +14,8 @@ const ELEMENTS = [
   { type: 'app', pattern: 'src/app', partialMatch: false },
   { type: 'api', pattern: 'src/api', partialMatch: false },
   { type: 'ui', pattern: 'src/ui', partialMatch: false },
+  // Aides et données de test (serveur simulé, fabriques) : réservées aux fichiers de test.
+  { type: 'aides-test', pattern: 'src/test', partialMatch: false },
   ...['pages', 'components', 'services'].map((sousCouche) => ({
     type: sousCouche,
     pattern: `src/features/*/${sousCouche}`,
@@ -21,6 +23,10 @@ const ELEMENTS = [
     partialMatch: false,
   })),
 ];
+
+/** Catégorie des fichiers de test : ils peuvent utiliser `src/test`, ce que le code de production ne peut pas. */
+const CATEGORIE_TEST = 'test';
+const FICHIERS_DE_TEST = [{ pattern: 'src/**/*.test.{ts,tsx}', category: CATEGORIE_TEST }];
 
 /** Sélecteur d'un élément de la même fonctionnalité que le fichier qui importe. */
 const memeFonctionnalite = (type) => ({
@@ -32,6 +38,21 @@ const memeFonctionnalite = (type) => ({
  * y compris `features/A` vers `features/B` : le code partagé descend dans `ui` ou `api`.
  */
 const POLITIQUES_DEPENDANCES = [
+  {
+    from: { file: { categories: CATEGORIE_TEST } },
+    allow: [
+      { to: { element: { type: 'aides-test' } } },
+      // Un test peut vérifier une correspondance de types (par exemple `StatutEtape` et le schéma
+      // généré), mais n'appelle jamais `src/api` ni ne traverse les couches avec des valeurs.
+      { to: { element: { type: ['api', 'ui'] } }, dependency: { kind: 'type' } },
+    ],
+  },
+  {
+    from: { element: { type: 'aides-test' } },
+    allow: {
+      to: { element: { type: ['api', 'ui', 'services', 'components', 'pages'] } },
+    },
+  },
   { from: { element: { type: 'app' } }, allow: { to: { element: { type: ['pages', 'ui'] } } } },
   {
     from: { element: { type: 'pages' } },
@@ -57,7 +78,11 @@ function blocBoundaries({ racine }) {
   return {
     files: FICHIERS_SOURCE,
     plugins: { boundaries },
-    settings: { 'boundaries/elements': ELEMENTS, 'boundaries/root-path': racine },
+    settings: {
+      'boundaries/elements': ELEMENTS,
+      'boundaries/files': FICHIERS_DE_TEST,
+      'boundaries/root-path': racine,
+    },
     rules: {
       'boundaries/dependencies': [
         'error',

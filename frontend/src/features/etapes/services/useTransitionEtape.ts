@@ -2,18 +2,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { rafraichirApresTransition } from '@/api/rafraichissement';
-import { transitionnerEtape } from '@/api/transitions';
+import { type DemandeTransition, transitionnerEtape } from '@/api/transitions';
 
-import type { ActionEtape } from './useEtapes';
+/** Type de l'erreur que lève la transition, pour le formulaire de refus qui affiche son champ. */
+export type { ErreurApi } from '@/api/erreurApi';
 
-/** Demande de transition : le commentaire n'est utile qu'au refus, où l'API l'exige (422 sinon). */
-export type DemandeTransition = {
-  readonly etapeId: string;
-  /** Chantier de l'étape : il sert à relire ses données même quand l'API répond par une erreur. */
-  readonly chantierId: string;
-  readonly action: ActionEtape;
-  readonly commentaire?: string;
-};
+/**
+ * Demande de transition de l'API, avec le chantier de l'étape : il sert à relire ses données même
+ * quand l'API répond par une erreur.
+ */
+export type DemandeTransitionEtape = DemandeTransition & { readonly chantierId: string };
 
 /**
  * Fait changer une étape de statut. C'est l'API qui décide si la transition est permise : le hook
@@ -25,8 +23,8 @@ export function useTransitionEtape() {
   const clientRequetes = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ etapeId, action, commentaire }: DemandeTransition) =>
-      transitionnerEtape({ etapeId, action, commentaire }),
+    mutationFn: ({ etapeId, action, version, commentaire }: DemandeTransitionEtape) =>
+      transitionnerEtape({ etapeId, action, version, commentaire }),
     onSettled: (_etape, _erreur, demande) =>
       rafraichirApresTransition(clientRequetes, demande.chantierId),
   });

@@ -1,13 +1,15 @@
 """Contrat du port `EtapeRepository` : joué sur le fake mémoire et sur SQL."""
 
+from uuid import UUID
+
 import pytest
 
 from app.etapes.application.ports import UnitOfWorkEtapes
 from app.etapes.domain.cycle import ActionEtape, StatutEtape
-from app.etapes.domain.etape import Etape
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import NonTrouveError
 from tests.contrats.conftest import AUTRE_CHANTIER
+from tests.contrats.enregistrement_etapes import enregistrer
 from tests.unitaires.etapes.fabriques import (
     ID_CHANTIER,
     INSTANT,
@@ -21,13 +23,6 @@ OUVRIER = Acteur(Role.OUVRIER)
 VERSION_APRES_UNE_TRANSITION = 2
 # Assez large pour ne rien couper : les tests de la limite en passent une plus petite.
 LIMITE = 10
-
-
-def enregistrer(uow: UnitOfWorkEtapes, *etapes: Etape) -> None:
-    with uow:
-        for etape in etapes:
-            uow.etapes.ajouter(etape)
-        uow.valider()
 
 
 def test_une_etape_valide_est_relue_identique_dans_une_autre_transaction(
@@ -67,14 +62,23 @@ def test_une_transition_validee_est_relue_avec_son_historique_et_sa_version(
     ]
 
 
+def appliquer_dans_des_transactions_successives(
+    uow: UnitOfWorkEtapes, etape_id: UUID, actions: tuple[ActionEtape, ...]
+) -> None:
+    """Applique chaque action dans sa propre transaction, comme des requêtes distinctes."""
+    for action in actions:
+        with uow:
+            uow.etapes.obtenir(etape_id).appliquer(action, OUVRIER, INSTANT)
+            uow.valider()
+
+
 def test_l_historique_est_relu_dans_l_ordre_des_transitions(uow_etapes: UnitOfWorkEtapes) -> None:
     etape = une_etape()
     enregistrer(uow_etapes, etape)
 
-    for action in (ActionEtape.DEMARRER, ActionEtape.SIGNALER_TERMINEE):
-        with uow_etapes:
-            uow_etapes.etapes.obtenir(etape.id).appliquer(action, OUVRIER, INSTANT)
-            uow_etapes.valider()
+    appliquer_dans_des_transactions_successives(
+        uow_etapes, etape.id, (ActionEtape.DEMARRER, ActionEtape.SIGNALER_TERMINEE)
+    )
     with uow_etapes:
         relue = uow_etapes.etapes.obtenir(etape.id)
 

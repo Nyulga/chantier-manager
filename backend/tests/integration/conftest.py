@@ -2,6 +2,7 @@
 
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,7 +14,7 @@ from tests.conftest import url_sqlite
 CHEF = {"X-Profil": "chef"}
 OUVRIER = {"X-Profil": "ouvrier"}
 
-CHANTIER_A_CREER = {
+CHANTIER_A_CREER: dict[str, Any] = {
     "nom": "Rénovation école",
     "adresse": {"voie": "12 rue des Lilas", "code_postal": "69001", "ville": "Lyon"},
     "client": "Mairie fictive",

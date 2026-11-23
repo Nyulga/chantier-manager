@@ -1,18 +1,21 @@
-// Tests du hook `useAjouterEtape` : le corps envoyé, les invalidations et les erreurs.
-import { act, renderHook, waitFor } from '@testing-library/react';
+// Tests du hook `useAjouterEtape` : le corps envoyé, la relecture du chantier et les erreurs.
+import { act, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { expect, it, vi } from 'vitest';
+import { expect, it } from 'vitest';
 
-import { creerClientRequetes, creerEnveloppe } from '@/api/test/enveloppeRequetes';
-import { installerServeurApi } from '@/api/test/serveurApiSimule';
+import { chantierDeTest } from '@/test/chantierDeTest';
+import { etapeDeTest } from '@/test/etapeDeTest';
+import { reponseProbleme } from '@/test/reponseProbleme';
+import { afficherHook } from '@/test/afficherHook';
+import { installerServeurApi } from '@/test/serveurApiSimule';
 
-import { etapeDeTest } from './etapeDeTest';
 import { useAjouterEtape } from './useAjouterEtape';
+import { useAvancementChantier } from './useAvancementChantier';
 
 const serveur = installerServeurApi();
 const CHANTIER = '0198f1a0-0000-7000-8000-000000000001';
 
-it('envoie le titre à l’API et renvoie l’étape créée', async () => {
+it("envoie le titre à l'API et renvoie l'étape créée", async () => {
   let corps: unknown = null;
   serveur.use(
     http.post(`/api/chantiers/${CHANTIER}/etapes`, async ({ request }) => {
@@ -20,9 +23,7 @@ it('envoie le titre à l’API et renvoie l’étape créée', async () => {
       return HttpResponse.json(etapeDeTest(), { status: 201 });
     }),
   );
-  const { result } = renderHook(() => useAjouterEtape(CHANTIER), {
-    wrapper: creerEnveloppe(creerClientRequetes()),
-  });
+  const { result } = afficherHook(() => useAjouterEtape(CHANTIER));
 
   act(() => {
     result.current.mutate('Fondations');
@@ -34,47 +35,72 @@ it('envoie le titre à l’API et renvoie l’étape créée', async () => {
   expect(corps).toEqual({ titre: 'Fondations' });
 });
 
-it('invalide la liste et le chantier (avancement), dont les étapes dépendent par leur clé', async () => {
+const CONFLIT = "Une autre personne vient d'ajouter une étape : réessaie.";
+
+it.each([
+  ["après l'ajout : une étape de plus fait baisser le pourcentage", 50, false],
+  ["aussi après un conflit (409) : l'autre ajout doit apparaître", 75, true],
+])("relit l'avancement du chantier %s", async (_cas, avancementApres, conflit) => {
+  let avancement = 100;
   serveur.use(
-    http.post(`/api/chantiers/${CHANTIER}/etapes`, () =>
-      HttpResponse.json(etapeDeTest(), { status: 201 }),
+    http.get(`/api/chantiers/${CHANTIER}`, () =>
+      HttpResponse.json(chantierDeTest({ id: CHANTIER, avancement })),
     ),
+    http.post(`/api/chantiers/${CHANTIER}/etapes`, () => {
+      avancement = avancementApres;
+      return conflit
+        ? reponseProbleme(409, CONFLIT)
+        : HttpResponse.json(etapeDeTest(), { status: 201 });
+    }),
   );
-  const client = creerClientRequetes();
-  const invalider = vi.spyOn(client, 'invalidateQueries');
-  const { result } = renderHook(() => useAjouterEtape(CHANTIER), {
-    wrapper: creerEnveloppe(client),
+  const { result } = afficherHook(() => ({
+    resume: useAvancementChantier(CHANTIER),
+    ajout: useAjouterEtape(CHANTIER),
+  }));
+  await waitFor(() => {
+    expect(result.current.resume.data?.avancement).toBe(100);
   });
 
   act(() => {
-    result.current.mutate('Fondations');
+    result.current.ajout.mutate('Fondations');
   });
 
   await waitFor(() => {
-    expect(invalider).toHaveBeenCalledTimes(2);
+    expect(result.current.resume.data?.avancement).toBe(avancementApres);
   });
-  expect(invalider).toHaveBeenCalledWith({ queryKey: ['chantiers', 'liste'] });
-  expect(invalider).toHaveBeenCalledWith({ queryKey: ['chantiers', 'detail', CHANTIER] });
 });
 
-it('expose le message de l’API quand l’ajout est refusé', async () => {
+it("expose le message de l'API et le champ en cause quand l'ajout est refusé (422)", async () => {
   serveur.use(
     http.post(`/api/chantiers/${CHANTIER}/etapes`, () =>
-      HttpResponse.json(
-        { status: 403, detail: 'Seul un chef peut ajouter une étape.' },
-        { status: 403, headers: { 'Content-Type': 'application/problem+json' } },
-      ),
+      reponseProbleme(422, 'Les données envoyées sont invalides.', [
+        { champ: 'titre', message: 'Le titre est trop long.' },
+      ]),
     ),
   );
-  const { result } = renderHook(() => useAjouterEtape(CHANTIER), {
-    wrapper: creerEnveloppe(creerClientRequetes()),
-  });
+  const { result } = afficherHook(() => useAjouterEtape(CHANTIER));
 
   act(() => {
     result.current.mutate('Fondations');
   });
 
   await waitFor(() => {
-    expect(result.current.error?.message).toBe('Seul un chef peut ajouter une étape.');
+    expect(result.current.error?.message).toBe('Les données envoyées sont invalides.');
+  });
+  expect(result.current.error?.erreurs).toEqual([
+    { champ: 'titre', message: 'Le titre est trop long.' },
+  ]);
+});
+
+it("expose le message de l'API quand l'ajout entre en conflit (409)", async () => {
+  serveur.use(http.post(`/api/chantiers/${CHANTIER}/etapes`, () => reponseProbleme(409, CONFLIT)));
+  const { result } = afficherHook(() => useAjouterEtape(CHANTIER));
+
+  act(() => {
+    result.current.mutate('Fondations');
+  });
+
+  await waitFor(() => {
+    expect(result.current.error?.message).toBe(CONFLIT);
   });
 });

@@ -2,7 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { ChampRecherche } from './ChampRecherche';
 
 function afficher() {
@@ -21,7 +21,7 @@ it('affiche la mention « Bientôt »', () => {
   expect(screen.getByText('Bientôt')).toBeVisible();
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher();
 
   await verifierAccessibilite(container);

@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { Lien } from './Lien';
 
 function afficher() {
@@ -14,7 +14,7 @@ function afficher() {
   );
 }
 
-it('affiche un lien vers l’adresse demandée', () => {
+it("affiche un lien vers l'adresse demandée", () => {
   afficher();
 
   expect(screen.getByRole('link', { name: 'Voir le chantier' })).toHaveAttribute(
@@ -23,14 +23,14 @@ it('affiche un lien vers l’adresse demandée', () => {
   );
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher();
 
   await verifierAccessibilite(container);
 });
 
 it.each(['principal', 'secondaire'] as const)(
-  'reste un lien quand il a l’apparence d’un bouton %s',
+  "reste un lien quand il a l'apparence d'un bouton %s",
   (variante) => {
     render(
       <MemoryRouter>

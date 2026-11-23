@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { createRef } from 'react';
 import { expect, it } from 'vitest';
 
-import { verifierAccessibilite } from '../test/verifierAccessibilite';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 import { LigneAValider } from './LigneAValider';
 
 function afficher(reference = createRef<HTMLLIElement>()) {
@@ -20,7 +20,7 @@ function afficher(reference = createRef<HTMLLIElement>()) {
   );
 }
 
-it('affiche le titre, le chantier, le signalement et les actions de l’étape', () => {
+it("affiche le titre, le chantier, le signalement et les actions de l'étape", () => {
   afficher();
 
   const ligne = screen.getByRole('listitem');
@@ -30,7 +30,7 @@ it('affiche le titre, le chantier, le signalement et les actions de l’étape',
   expect(ligne).toContainElement(screen.getByRole('button', { name: 'Valider' }));
 });
 
-it('peut recevoir le focus par programme sans entrer dans l’ordre de tabulation', () => {
+it("peut recevoir le focus par programme sans entrer dans l'ordre de tabulation", () => {
   const reference = createRef<HTMLLIElement>();
   afficher(reference);
 
@@ -40,7 +40,7 @@ it('peut recevoir le focus par programme sans entrer dans l’ordre de tabulatio
   expect(screen.getByRole('listitem')).toHaveAttribute('tabindex', '-1');
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficher();
 
   await verifierAccessibilite(container);

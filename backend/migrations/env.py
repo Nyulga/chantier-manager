@@ -13,8 +13,11 @@ cible = metadonnees()
 
 def executer_migrations(connexion: Connection) -> None:
     """Applique les migrations sur une connexion ouverte."""
-    # `render_as_batch` : SQLite ne sait pas modifier une colonne sur place, les
-    # futures migrations le feront par recréation de la table.
+    # `render_as_batch` : SQLite ne sait pas modifier une colonne sur place, ni ajouter
+    # une contrainte. Le mode batch recrée alors la table, et la suppression de l'ancienne
+    # supprime en cascade les lignes des tables qui la référencent avec `ON DELETE CASCADE`
+    # (l'historique des étapes) : avant d'écrire une migration batch sur une table
+    # référencée, il faut désactiver les clés étrangères, ou préférer un index (0002).
     context.configure(connection=connexion, target_metadata=cible, render_as_batch=True)
     with context.begin_transaction():
         context.run_migrations()

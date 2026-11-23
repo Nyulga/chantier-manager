@@ -12,6 +12,13 @@ from uuid import UUID
 from app.chantiers.domain.adresse import Adresse
 from app.chantiers.domain.montant import Montant
 from app.shared.domain.erreurs import ValeurInvalideError
+from app.shared.domain.longueur import exiger_longueur_max
+
+# Bornes de saisie du nom et du client : assez larges pour tout intitulé réel,
+# elles empêchent qu'un texte démesuré soit enregistré puis affiché sur chaque
+# carte. L'api et les colonnes de la base s'y réfèrent.
+LONGUEUR_NOM_MAX = 200
+LONGUEUR_CLIENT_MAX = 200
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,18 +41,22 @@ class FicheChantier:
         """Refuse une fiche qui viole un invariant du chantier.
 
         Lève :
-            ValeurInvalideError : le nom ou le client est vide, ou l'échéance précède
-                la date de début.
+            ValeurInvalideError : le nom ou le client est vide ou trop long, ou
+                l'échéance précède la date de début.
         """
         if not self.nom.strip():
-            raise ValeurInvalideError("Le nom du chantier est obligatoire.")
+            raise ValeurInvalideError("Le nom du chantier est obligatoire.", "nom")
+        exiger_longueur_max(self.nom, LONGUEUR_NOM_MAX, "Le nom du chantier", "nom")
         # Un chantier se fait toujours pour un client : sans lui, la fiche est inexploitable.
         if not self.client.strip():
-            raise ValeurInvalideError("Le client du chantier est obligatoire.")
+            raise ValeurInvalideError("Le client du chantier est obligatoire.", "client")
+        exiger_longueur_max(self.client, LONGUEUR_CLIENT_MAX, "Le client du chantier", "client")
         # Une échéance le jour même du début reste possible : c'est le cas d'un
         # chantier d'une seule journée.
         if self.echeance < self.date_debut:
-            raise ValeurInvalideError("L'échéance ne peut pas précéder la date de début.")
+            raise ValeurInvalideError(
+                "L'échéance ne peut pas précéder la date de début.", "echeance"
+            )
 
 
 @dataclass

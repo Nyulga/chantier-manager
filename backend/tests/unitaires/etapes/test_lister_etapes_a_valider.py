@@ -1,10 +1,12 @@
+"""Cas d'usage `ListerEtapesAValider` : réservé au chef, trié et plafonné."""
+
 from uuid import UUID
 
 import pytest
 
+from app.etapes.application.plafonds import LIMITE_A_VALIDER
 from app.etapes.application.vues import EtapeAValiderVue
 from app.etapes.domain.cycle import StatutEtape
-from app.etapes.domain.etape import LIMITE_A_VALIDER
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import AccesRefuseError
 from tests.unitaires.etapes.contexte import Contexte
@@ -48,14 +50,21 @@ def un_contexte_avec_une_etape_de_trop_a_valider() -> Contexte:
     return contexte
 
 
+def un_contexte_avec_juste_le_plafond_d_etapes_a_valider() -> Contexte:
+    contexte = Contexte()
+    for ordre in range(1, LIMITE_A_VALIDER + 1):
+        contexte.uow.etapes.ajouter(une_etape_signalee(heures_apres(ordre), ordre=ordre))
+    return contexte
+
+
 def test_le_chef_voit_les_etapes_a_valider_de_tous_les_chantiers_les_plus_anciennes_d_abord() -> (
     None
 ):
     contexte = un_contexte_avec_des_etapes_de_chaque_statut()
 
-    vues = contexte.lister_etapes_a_valider().executer(CHEF)
+    liste = contexte.lister_etapes_a_valider().executer(CHEF)
 
-    assert [(vue.id, vue.signalee_le) for vue in vues] == [
+    assert [(vue.id, vue.signalee_le) for vue in liste.etapes] == [
         (id_etape(1, AUTRE_CHANTIER), heures_apres(2)),
         (id_etape(1), heures_apres(8)),
     ]
@@ -65,9 +74,9 @@ def test_chaque_etape_a_valider_porte_ses_actions_et_sa_version() -> None:
     contexte = Contexte()
     contexte.uow.etapes.ajouter(une_etape_signalee(heures_apres(1)))
 
-    vues = contexte.lister_etapes_a_valider().executer(CHEF)
+    liste = contexte.lister_etapes_a_valider().executer(CHEF)
 
-    assert vues == (
+    assert liste.etapes == (
         EtapeAValiderVue(
             id=id_etape(1),
             chantier_id=ID_CHANTIER,
@@ -83,7 +92,9 @@ def test_sans_etape_a_valider_la_liste_est_vide() -> None:
     contexte = Contexte()
     contexte.uow.etapes.ajouter(une_etape(StatutEtape.EN_COURS))
 
-    assert contexte.lister_etapes_a_valider().executer(CHEF) == ()
+    liste = contexte.lister_etapes_a_valider().executer(CHEF)
+
+    assert (liste.etapes, liste.tronquee) == ((), False)
 
 
 def test_un_ouvrier_ne_peut_pas_consulter_les_etapes_a_valider() -> None:
@@ -104,8 +115,32 @@ def test_la_consultation_ne_valide_aucune_transaction() -> None:
 def test_la_liste_a_valider_est_plafonnee_aux_etapes_signalees_depuis_le_plus_longtemps() -> None:
     contexte = un_contexte_avec_une_etape_de_trop_a_valider()
 
-    vues = contexte.lister_etapes_a_valider().executer(CHEF)
+    liste = contexte.lister_etapes_a_valider().executer(CHEF)
 
-    assert [vue.id for vue in vues] == [
+    assert [vue.id for vue in liste.etapes] == [
         id_etape(ordre) for ordre in range(LIMITE_A_VALIDER + 1, 1, -1)
     ]
+
+
+def test_une_liste_coupee_au_plafond_est_signalee_comme_tronquee() -> None:
+    contexte = un_contexte_avec_une_etape_de_trop_a_valider()
+
+    liste = contexte.lister_etapes_a_valider().executer(CHEF)
+
+    assert (len(liste.etapes), liste.tronquee) == (LIMITE_A_VALIDER, True)
+
+
+def test_une_liste_qui_atteint_juste_le_plafond_n_est_pas_tronquee() -> None:
+    contexte = un_contexte_avec_juste_le_plafond_d_etapes_a_valider()
+
+    liste = contexte.lister_etapes_a_valider().executer(CHEF)
+
+    assert (len(liste.etapes), liste.tronquee) == (LIMITE_A_VALIDER, False)
+
+
+def test_une_liste_courte_n_est_pas_tronquee() -> None:
+    contexte = un_contexte_avec_des_etapes_de_chaque_statut()
+
+    liste = contexte.lister_etapes_a_valider().executer(CHEF)
+
+    assert liste.tronquee is False

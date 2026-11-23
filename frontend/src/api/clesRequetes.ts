@@ -8,8 +8,11 @@ export const clesRequetes = {
   // l'identifiant serait « liste » ne doit jamais partager la clé (et le cache) de la liste.
   chantier: (id: string) => ['chantiers', 'detail', id] as const,
   etapes: (chantierId: string) => [...clesRequetes.chantier(chantierId), 'etapes'] as const,
-  // Les étapes à valider de tous les chantiers (réservées au chef) : la section « À valider ».
+  // Les étapes à valider de tous les chantiers : la section « À valider ».
   etapesAValider: () => ['etapes', 'a-valider'] as const,
-  // Préfixe du fil d'activité : le hook y ajoute la limite, et une invalidation couvre toutes les limites.
+  // Les capacités de l'acteur portent le profil : sans lui, les droits du chef resteraient en cache
+  // (et s'afficheraient un instant) après le passage à ouvrier.
+  capacites: (profil: string) => ['moi', profil] as const,
+  // Le fil d'activité du tableau de bord.
   activite: () => ['activite'] as const,
 };

@@ -12,7 +12,7 @@ Implémenter les ports déclarés par `application`. **C'est la seule couche qui
 
 ## Autorisé
 - L'`application` et le `domain` du même module, et `app.shared.*`.
-- SQLAlchemy, psycopg, Pillow, pillow-heif, filetype, argon2-cffi, PyJWT, le client clamd, smtplib, structlog.
+- SQLAlchemy, psycopg (non installé pendant le squelette, ADR 0007), Pillow, pillow-heif, filetype, argon2-cffi, PyJWT, le client clamd, smtplib, structlog.
 
 ## Interdit
 - Tout import d'`api` ou de FastAPI.

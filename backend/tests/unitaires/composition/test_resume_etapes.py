@@ -1,3 +1,5 @@
+"""Adaptateur qui traduit le résumé d'étapes dans le type de chantiers."""
+
 from uuid import UUID
 
 from app.chantiers.application.ports import ResumeEtapesChantier

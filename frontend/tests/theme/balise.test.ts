@@ -81,7 +81,7 @@ describe('typographie, formes et espacements', () => {
     expect(BLOC_CLAIR).toContain(declaration);
   });
 
-  it('charge Archivo avec l’axe de largeur et IBM Plex Mono depuis les paquets locaux', () => {
+  it("charge Archivo avec l'axe de largeur et IBM Plex Mono depuis les paquets locaux", () => {
     expect(CSS).toContain('@fontsource-variable/archivo/wdth.css');
     expect(CSS).toContain('@fontsource/ibm-plex-mono/');
     expect(CSS).not.toContain('fonts.googleapis.com');

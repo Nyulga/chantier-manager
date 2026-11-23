@@ -1,3 +1,5 @@
+"""Paramètres de l'application, lus une seule fois par la composition root."""
+
 import pytest
 
 from app.composition.parametres import Parametres

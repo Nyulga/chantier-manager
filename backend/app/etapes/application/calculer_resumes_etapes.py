@@ -6,6 +6,7 @@ from uuid import UUID
 from app.etapes.application.ports import UnitOfWorkEtapes
 from app.etapes.application.vues import ResumeEtapesVue, vue_resume
 from app.etapes.domain.avancement import resumer_etapes
+from app.etapes.domain.etape import Etape
 
 
 class CalculerResumesEtapes:
@@ -14,8 +15,8 @@ class CalculerResumesEtapes:
     La composition root le branche, par un adaptateur, sur le port
     `FournisseurResumeEtapes` de chantiers. Les étapes de tous les chantiers sont
     lues en une seule fois, pour que la liste des chantiers ne fasse pas une lecture
-    par chantier. Il ne prend pas d'acteur : c'est le cas d'usage de chantiers qui
-    l'appelle qui a vérifié les droits.
+    par chantier, puis réparties par chantier en un seul parcours. Il ne prend pas
+    d'acteur : c'est le cas d'usage de chantiers qui l'appelle qui a vérifié les droits.
     """
 
     def __init__(self, uow: UnitOfWorkEtapes) -> None:
@@ -25,9 +26,12 @@ class CalculerResumesEtapes:
         """Renvoie un résumé par chantier demandé ; il est nul pour un chantier sans étape."""
         with self._uow:
             etapes = self._uow.etapes.lister_par_chantiers(chantier_ids)
+        # Chaque chantier demandé a sa liste, même vide : son résumé sera alors nul.
+        # Le repository ne renvoie que des étapes des chantiers demandés.
+        par_chantier: dict[UUID, list[Etape]] = {chantier_id: [] for chantier_id in chantier_ids}
+        for etape in etapes:
+            par_chantier[etape.chantier_id].append(etape)
         return {
-            chantier_id: vue_resume(
-                resumer_etapes([etape for etape in etapes if etape.chantier_id == chantier_id])
-            )
-            for chantier_id in chantier_ids
+            chantier_id: vue_resume(resumer_etapes(etapes_du_chantier))
+            for chantier_id, etapes_du_chantier in par_chantier.items()
         }

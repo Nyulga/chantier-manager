@@ -1,3 +1,5 @@
+"""Le résumé des étapes est demandé hors de la transaction des chantiers."""
+
 from uuid import UUID
 
 from app.chantiers.application.consulter_chantier import ConsulterChantier

@@ -1,7 +1,7 @@
 // Informations d'un chantier sur sa page de détail : adresse, client, dates et budget.
 import { Carte, formaterDate, formaterMontant, Texte } from '@/ui';
 
-import type { Chantier } from '../services/useChantiers';
+import type { Chantier } from '../services/useChantier';
 
 type InformationsChantierProps = {
   readonly chantier: Chantier;

@@ -14,5 +14,5 @@ export function formaterDelai({ joursRestants, enRetard }: Delai): string {
   if (enRetard) {
     return `En retard de ${String(joursRestants)} ${joursRestants >= 2 ? 'jours' : 'jour'}`;
   }
-  return joursRestants === 0 ? 'Aujourd’hui' : `J-${String(joursRestants)}`;
+  return joursRestants === 0 ? "Aujourd'hui" : `J-${String(joursRestants)}`;
 }

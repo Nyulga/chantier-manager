@@ -1,12 +1,14 @@
 // Tests du cadre commun : barre latérale (logo, navigation, profil) et contenu de la page.
+import { useMutation } from '@tanstack/react-query';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { Route, Routes } from 'react-router';
 import { afterEach, expect, it } from 'vitest';
 
-import { afficherAvecFournisseurs } from '@/ui/test/afficherAvecFournisseurs';
-import { installerServeurApi } from '@/ui/test/serveurApiSimule';
-import { verifierAccessibilite } from '@/ui/test/verifierAccessibilite';
+import { afficherAvecFournisseurs } from '@/test/afficherAvecFournisseurs';
+import { installerServeurApi } from '@/test/serveurApiSimule';
+import { Alerte, Bouton } from '@/ui';
+import { verifierAccessibilite } from '@/test/verifierAccessibilite';
 
 import { LayoutApplication } from './LayoutApplication';
 
@@ -70,13 +72,13 @@ it('affiche « Équipe » et « Inviter un utilisateur » désactivés, avec la 
   expect(screen.getAllByText('Bientôt')).toHaveLength(2);
 });
 
-it('ne montre pas de compteur tant que la liste n’est pas chargée', () => {
+it("ne montre pas de compteur tant que la liste n'est pas chargée", () => {
   afficherLayout();
 
   expect(screen.getByRole('link', { name: 'Mes chantiers' })).toBeVisible();
 });
 
-it('change de profil quand l’utilisateur choisit Ouvrier', () => {
+it("change de profil quand l'utilisateur choisit Ouvrier", () => {
   afficherLayout();
 
   fireEvent.click(screen.getByRole('radio', { name: 'Ouvrier' }));
@@ -85,7 +87,44 @@ it('change de profil quand l’utilisateur choisit Ouvrier', () => {
   expect(localStorage.getItem('chantier-manager.profil')).toBe('ouvrier');
 });
 
-it('n’a aucun défaut d’accessibilité détectable par axe', async () => {
+/** Page de test dont l'action échoue toujours : elle garde l'alerte de sa mutation à l'écran. */
+function PageQuiEchoue() {
+  const action = useMutation({
+    mutationFn: () => Promise.reject(new Error('Impossible de valider cette étape.')),
+  });
+
+  return (
+    <>
+      <Bouton
+        onClick={() => {
+          action.mutate();
+        }}
+      >
+        Valider
+      </Bouton>
+      {action.isError && <Alerte>{action.error.message}</Alerte>}
+    </>
+  );
+}
+
+it("efface l'alerte d'une action ratée quand l'utilisateur change de profil", async () => {
+  serveur.use(http.get('/api/chantiers', () => HttpResponse.json([])));
+  afficherAvecFournisseurs(
+    <Routes>
+      <Route element={<LayoutApplication />}>
+        <Route index element={<PageQuiEchoue />} />
+      </Route>
+    </Routes>,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Valider' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Impossible de valider cette étape.');
+
+  fireEvent.click(screen.getByRole('radio', { name: 'Ouvrier' }));
+
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+});
+
+it("n'a aucun défaut d'accessibilité détectable par axe", async () => {
   const { container } = afficherLayout();
   await screen.findByRole('link', { name: 'Mes chantiers 2' });
 
