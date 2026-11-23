@@ -85,19 +85,39 @@ hooks:
 # réécrit depuis l'index, en LF quelle que soit la valeur de `core.autocrlf` (l'attribut `eol=lf` l'emporte).
 # L'option `--index` met aussi à jour la taille et la date notées dans l'index : sans elle, `git status`
 # signalerait ces fichiers comme modifiés alors que leur contenu est identique. Le contenu indexé n'est
-# jamais modifié. Les noms de fichiers passent par des séparateurs nuls (`xargs -0`, `-z`), donc les espaces
-# ne posent pas de problème. La recette échoue, sans rien supprimer, s'il reste des modifications non
-# indexées, car elles seraient écrasées : indexe-les d'abord. Les fichiers non suivis ne sont pas touchés.
+# jamais modifié. Les listes de Git sont lues avec des séparateurs nuls (`-z`, `-0`) : aucun nom de fichier
+# n'est interprété ni échappé, quels que soient ses caractères (espace, guillemet, tabulation, accent).
+# Garantie : la recette ne supprime rien si `git diff` signale une modification non indexée, ni si l'un des
+# fichiers à réécrire porte le bit `assume-unchanged` ou `skip-worktree`, que `git diff` ne voit pas : elle
+# échoue alors en le disant. Un bit posé sur un fichier qui n'est pas à réécrire ne la gêne pas. Rien n'est
+# garanti au-delà : par exemple, une modification faite pendant l'exécution même de la recette n'est pas
+# détectée. Si la suppression d'un fichier échoue (fichier verrouillé sous Windows), les autres fichiers
+# sont quand même réécrits, puis la recette échoue. Les fichiers non suivis ne sont pas touchés.
 
 # Réécrit en LF les fichiers suivis restés en CRLF dans la copie de travail (Windows).
 normaliser-fins-de-ligne:
     #!/usr/bin/env sh
     set -eu
-    git diff --quiet
-    fichiers=$(git -c core.quotepath=off ls-files --eol | grep -E '^i/[a-z-]+ +w/(crlf|mixed) ' | cut -f2-) || true
-    [ -n "$fichiers" ] || exit 0
-    printf '%s\n' "$fichiers" | tr '\n' '\0' | xargs -0 rm -f --
-    printf '%s\n' "$fichiers" | tr '\n' '\0' | git -c core.autocrlf=false checkout-index --force --index -z --stdin
+    git diff --quiet || { echo "Modifications non indexées : indexe-les d'abord (git add)." >&2; exit 1; }
+    dossier=$(mktemp -d)
+    trap 'rm -rf "$dossier"' EXIT
+    git ls-files -z --eol > "$dossier/etat"
+    grep -z -E '^i/[a-z-]+ +w/(crlf|mixed) ' "$dossier/etat" > "$dossier/lignes" || [ $? -eq 1 ]
+    cut -z -f2- "$dossier/lignes" > "$dossier/liste"
+    [ -s "$dossier/liste" ] || exit 0
+    # Un fichier marqué `assume-unchanged` (étiquette en minuscule) ou `skip-worktree` (`S`) échappe à `git diff`.
+    xargs -0 git --literal-pathspecs ls-files -v -z -- < "$dossier/liste" > "$dossier/marques"
+    trouve=0
+    grep -z -q -E '^[a-zS] ' "$dossier/marques" || trouve=$?
+    case "$trouve" in
+        1) ;;
+        0) echo "Fichier marqué assume-unchanged ou skip-worktree : rien n'a été supprimé." >&2; exit 1 ;;
+        *) exit "$trouve" ;;
+    esac
+    echec=0
+    xargs -0 rm -f -- < "$dossier/liste" || echec=$?
+    git checkout-index --force --index -z --stdin < "$dossier/liste"
+    exit "$echec"
 
 # Lance un test backend ciblé, sans seuil de couverture. Exemple : just test-back -k avancement
 [working-directory: 'backend']

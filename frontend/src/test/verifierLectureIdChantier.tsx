@@ -30,10 +30,15 @@ export function verifierLectureIdChantier(useIdChantier: () => string): void {
 
   it("signale l'erreur quand la route n'a pas d'identifiant de chantier", () => {
     // React journalise l'erreur levée pendant le rendu : on la tait pour garder la sortie lisible.
-    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const espion = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    expect(() => afficherSousRoute(useIdChantier, '/chantiers', '/chantiers')).toThrow(
-      /identifiant de chantier/,
-    );
+    try {
+      expect(() => afficherSousRoute(useIdChantier, '/chantiers', '/chantiers')).toThrow(
+        /identifiant de chantier/,
+      );
+    } finally {
+      // Même si l'assertion échoue, on rend `console.error` aux tests suivants.
+      espion.mockRestore();
+    }
   });
 }
