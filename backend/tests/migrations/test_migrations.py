@@ -161,3 +161,35 @@ def test_le_retour_a_0001_garde_les_donnees_et_retire_l_index_unique(tmp_path: P
     assert compter_l_historique(moteur) == ETAPES_INSEREES
     assert len(lire_les_ordres(moteur)) == ETAPES_INSEREES
     moteur.dispose()
+
+
+def test_la_migration_0002_est_rejouable_quand_l_index_unique_existe_deja(tmp_path: Path) -> None:
+    # Cas d'une migration interrompue, ou d'un index créé à la main en urgence : la base est
+    # encore en 0001, mais l'index unique est déjà là.
+    url = url_sqlite(tmp_path)
+    configuration = configuration_alembic(url)
+    command.upgrade(configuration, "0001")
+    moteur = creer_moteur(url)
+    with moteur.begin() as connexion:
+        connexion.execute(
+            text(f"CREATE UNIQUE INDEX {INDEX_UNIQUE} ON etapes (chantier_id, ordre)")
+        )
+
+    command.upgrade(configuration, "0002")
+
+    assert noms_d_index(moteur) == {INDEX_UNIQUE}
+    moteur.dispose()
+
+
+def test_le_retour_a_0001_est_rejouable_quand_l_index_simple_existe_deja(tmp_path: Path) -> None:
+    url = url_sqlite(tmp_path)
+    configuration = configuration_alembic(url)
+    command.upgrade(configuration, "0002")
+    moteur = creer_moteur(url)
+    with moteur.begin() as connexion:
+        connexion.execute(text("CREATE INDEX ix_etapes_chantier_id ON etapes (chantier_id)"))
+
+    command.downgrade(configuration, "0001")
+
+    assert noms_d_index(moteur) == {"ix_etapes_chantier_id"}
+    moteur.dispose()

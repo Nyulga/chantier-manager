@@ -1,5 +1,8 @@
 """Erreurs de l'application complète : 404 de route, identifiants mal formés, 422 par champ, 503."""
 
+import sqlite3
+from collections.abc import Iterator
+from contextlib import contextmanager
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
@@ -8,6 +11,8 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
+from app.composition.parametres import Parametres
+from app.main import creer_application
 from app.shared.infrastructure.sql.moteur import creer_moteur
 from tests.conftest import url_sqlite
 from tests.integration.conftest import CHANTIER_A_CREER, CHEF
@@ -69,6 +74,9 @@ def creer(client: TestClient, corps: dict[str, Any]) -> Any:
         ),
         ({"budget": "-5"}, "budget", "Le montant ne peut pas être négatif."),
         ({"budget": "abc"}, "budget", "Ce champ doit être un montant valide."),
+        ({"budget": "1" * 13}, "budget", "Ce montant a trop de chiffres."),
+        ({"budget": "99999999999"}, "budget", "Ce montant est trop élevé."),
+        ({"budget": "1.234"}, "budget", "Ce montant ne doit pas avoir plus de 2 décimales."),
         ({"date_debut": "demain"}, "date_debut", "Ce champ doit être une date valide."),
     ],
 )
@@ -104,16 +112,26 @@ def test_une_adresse_invalide_est_designee_par_son_chemin_complet(
     assert reponse.json()["erreurs"] == [{"champ": champ, "message": message}]
 
 
-def test_une_base_inaccessible_donne_un_503_generique(client: TestClient, tmp_path: Path) -> None:
-    # Supprimer les tables rend la base inutilisable, comme une panne : SQLite répond
-    # par une erreur opérationnelle, que le Unit of Work traduit.
-    moteur = creer_moteur(url_sqlite(tmp_path))
-    with moteur.begin() as connexion:
-        for table in ("historique_etapes", "etapes", "chantiers"):
-            connexion.execute(text(f"DROP TABLE {table}"))
-    moteur.dispose()
+@contextmanager
+def base_verrouillee(fichier: Path) -> Iterator[None]:
+    """Garde la base verrouillée en écriture exclusive, comme le ferait un autre processus."""
+    verrou = sqlite3.connect(fichier, isolation_level=None)
+    verrou.execute("BEGIN EXCLUSIVE")
+    try:
+        yield
+    finally:
+        verrou.close()
 
-    reponse = client.get("/api/chantiers", headers=CHEF)
+
+def test_une_base_verrouillee_donne_un_503_generique(tmp_path: Path) -> None:
+    # `timeout=0` : la requête échoue tout de suite au lieu d'attendre le verrou plusieurs secondes.
+    parametres = Parametres(url_base=f"{url_sqlite(tmp_path)}?timeout=0")
+
+    with (
+        TestClient(creer_application(parametres)) as client,
+        base_verrouillee(tmp_path / "test.db"),
+    ):
+        reponse = client.get("/api/chantiers", headers=CHEF)
 
     assert reponse.status_code == HTTPStatus.SERVICE_UNAVAILABLE
     assert reponse.headers["content-type"] == TYPE_PROBLEME
@@ -121,3 +139,27 @@ def test_une_base_inaccessible_donne_un_503_generique(client: TestClient, tmp_pa
     assert reponse.json()["detail"] == (
         "Le service est momentanément indisponible : réessaie dans un instant."
     )
+
+
+def supprimer_les_tables(dossier: Path) -> None:
+    """Vide la base de son schéma, comme un déploiement dont la migration aurait échoué."""
+    moteur = creer_moteur(url_sqlite(dossier))
+    with moteur.begin() as connexion:
+        for table in ("historique_etapes", "etapes", "chantiers"):
+            connexion.execute(text(f"DROP TABLE {table}"))
+    moteur.dispose()
+
+
+def test_une_table_absente_donne_un_500_et_non_un_503(tmp_path: Path) -> None:
+    # Un schéma incomplet est un défaut du programme ou du déploiement : le présenter comme une
+    # panne passagère inviterait à réessayer sans fin, et cacherait la vraie cause au serveur.
+    application = creer_application(Parametres(url_base=url_sqlite(tmp_path)))
+    with TestClient(application, raise_server_exceptions=False) as client:
+        supprimer_les_tables(tmp_path)
+
+        reponse = client.get("/api/chantiers", headers=CHEF)
+
+    assert reponse.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+    assert reponse.headers["content-type"] == TYPE_PROBLEME
+    assert "chantiers" not in reponse.text
+    assert reponse.json()["detail"] == "Une erreur interne est survenue."

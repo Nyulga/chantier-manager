@@ -77,9 +77,22 @@ def erreurs_de(corps: dict[str, Any]) -> list[dict[str, str]]:
         ),
         ({**VALIDE, "age": "abc"}, "age", "Ce champ doit être un nombre entier."),
         ({**VALIDE, "age": 12}, "age", "Ce champ doit être supérieur ou égal à 18."),
-        ({**VALIDE, "pointure": 42}, "pointure", "Ce champ n'est pas attendu."),
+        ({**VALIDE, "pointure": 42}, "", "Ce champ n'est pas attendu."),
+        (
+            {**VALIDE, "adresse": {"code_postal": "69001", "pointure": 42}},
+            "adresse",
+            "Ce champ n'est pas attendu.",
+        ),
     ],
-    ids=["texte", "obligatoire", "trop-long-imbrique", "entier", "minimum", "inattendu"],
+    ids=[
+        "texte",
+        "obligatoire",
+        "trop-long-imbrique",
+        "entier",
+        "minimum",
+        "inattendu-a-la-racine",
+        "inattendu-imbrique",
+    ],
 )
 def test_une_erreur_de_validation_designe_son_champ_avec_un_message_en_francais(
     corps: dict[str, Any], champ: str, message: str
@@ -142,3 +155,20 @@ def test_une_erreur_du_domaine_sans_champ_a_une_liste_d_erreurs_vide() -> None:
     assert reponse.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert reponse.json()["detail"] == "L'échéance ne peut pas précéder le début."
     assert reponse.json()["erreurs"] == []
+
+
+@pytest.mark.parametrize(
+    "corps",
+    [
+        {**VALIDE, "jean.dupont@exemple.fr": 1},
+        {**VALIDE, "adresse": {"code_postal": "69001", "jean.dupont@exemple.fr": 1}},
+    ],
+    ids=["racine", "imbrique"],
+)
+def test_une_cle_inventee_par_le_client_n_est_jamais_recopiee_dans_la_reponse(
+    corps: dict[str, Any],
+) -> None:
+    reponse = TestClient(une_application()).post("/corps", json=corps)
+
+    assert reponse.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert "jean.dupont" not in reponse.text

@@ -14,6 +14,10 @@ les longueurs des colonnes texte, qui demanderaient de recréer `chantiers` et
 L'index unique commence par `chantier_id` : il remplace l'index simple qui existait
 sur cette colonne, devenu redondant.
 
+Les créations et suppressions d'index sont rejouables (`if_not_exists`, `if_exists`) : une
+migration interrompue, ou un index créé à la main, ne bloque pas le démarrage de
+l'application, qui applique les migrations à chaque lancement.
+
 Les ordres sont normalement déjà uniques, puisque l'application les attribue à la
 suite. Si une base contenait pourtant un doublon, la création de l'index échouerait :
 les étapes d'un chantier concerné sont donc d'abord renumérotées de 1 à n, dans leur
@@ -67,12 +71,18 @@ def upgrade() -> None:
     """Corrige les doublons éventuels, crée l'index unique, retire l'index simple."""
     _renumeroter_les_chantiers_a_ordres_en_double()
     op.create_index(
-        op.f("uq_etapes_chantier_id_ordre"), "etapes", ["chantier_id", "ordre"], unique=True
+        op.f("uq_etapes_chantier_id_ordre"),
+        "etapes",
+        ["chantier_id", "ordre"],
+        unique=True,
+        if_not_exists=True,
     )
-    op.drop_index(op.f("ix_etapes_chantier_id"), table_name="etapes")
+    op.drop_index(op.f("ix_etapes_chantier_id"), table_name="etapes", if_exists=True)
 
 
 def downgrade() -> None:
     """Rétablit l'index simple sur le chantier et retire l'index unique."""
-    op.create_index(op.f("ix_etapes_chantier_id"), "etapes", ["chantier_id"], unique=False)
-    op.drop_index(op.f("uq_etapes_chantier_id_ordre"), table_name="etapes")
+    op.create_index(
+        op.f("ix_etapes_chantier_id"), "etapes", ["chantier_id"], unique=False, if_not_exists=True
+    )
+    op.drop_index(op.f("uq_etapes_chantier_id_ordre"), table_name="etapes", if_exists=True)

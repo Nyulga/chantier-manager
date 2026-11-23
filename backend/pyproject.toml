@@ -150,6 +150,8 @@ forbidden_modules = [
 # Seules l'infrastructure et la composition root parlent à la base. Les imports
 # indirects sont permis : app.main passe légitimement par app.composition. La
 # fuite par une infrastructure est fermée par le contrat « infrastructure-reservee ».
+# `psycopg` n'est plus installé pendant le squelette (SQLite, ADR 0007), mais il reste
+# listé comme garde : au retour de PostgreSQL, le contrat l'interdira sans qu'on y pense.
 [[tool.importlinter.contracts]]
 id = "base-reservee"
 name = "Seuls infrastructure et composition importent sqlalchemy et psycopg"

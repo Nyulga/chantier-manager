@@ -9,7 +9,7 @@ from sqlalchemy.orm import composite
 
 from app.chantiers.domain.adresse import LONGUEUR_CODE_POSTAL_MAX, Adresse
 from app.chantiers.domain.chantier import Chantier
-from app.chantiers.domain.montant import Montant
+from app.chantiers.domain.montant import CHIFFRES_MONTANT_MAX, DECIMALES_MONTANT, Montant
 from app.shared.infrastructure.sql.registre import metadata, registre
 
 TABLE_CHANTIERS = Table(
@@ -25,7 +25,7 @@ TABLE_CHANTIERS = Table(
     Column("echeance", Date, nullable=False),
     # La colonne ne s'appelle pas `budget` : ce nom est celui de l'attribut composite
     # du domaine, et les deux entreraient en conflit dans le mapping.
-    Column("budget_euros", Numeric(12, 2), nullable=False),
+    Column("budget_euros", Numeric(CHIFFRES_MONTANT_MAX, DECIMALES_MONTANT), nullable=False),
     # Défense en profondeur : le domaine garantit déjà ces règles (règle 07).
     CheckConstraint("budget_euros >= 0", name="budget_positif"),
     CheckConstraint("echeance >= date_debut", name="echeance_apres_debut"),

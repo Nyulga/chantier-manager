@@ -12,6 +12,7 @@ from tests.integration.etapes.scenario import (
     creer_chantier,
     transitionner,
     transitionner_a_la_version,
+    valider_etape,
 )
 
 UUID_VERSION_7 = 7
@@ -96,12 +97,7 @@ def test_le_chef_voit_les_actions_de_validation_d_une_etape_terminee(client: Tes
 def test_l_avancement_est_la_part_d_etapes_validees(client: TestClient) -> None:
     chantier_id = creer_chantier(client)
     premiere, _ = ajouter_etape(client, chantier_id), ajouter_etape(client, chantier_id)
-    for action, profil in (
-        ("demarrer", OUVRIER),
-        ("signaler_terminee", OUVRIER),
-        ("valider", CHEF),
-    ):
-        transitionner(client, premiere, action, profil)
+    valider_etape(client, premiere)
 
     liste = client.get("/api/chantiers", headers=CHEF).json()
 
@@ -189,7 +185,8 @@ def test_une_version_perimee_donne_un_409_en_problem_json_et_ne_change_rien(
     assert reponse.status_code == HTTPStatus.CONFLICT
     assert reponse.headers["content-type"] == "application/problem+json"
     assert reponse.json()["detail"] == (
-        "Cette étape vient d'être modifiée par quelqu'un d'autre : recharge la page."
+        "Cette étape vient d'être modifiée par quelqu'un d'autre. "
+        "Recharge-la pour voir sa dernière version."
     )
     assert (etapes[0]["statut"], etapes[0]["version"]) == ("en_cours", VERSION_APRES_UNE_TRANSITION)
 

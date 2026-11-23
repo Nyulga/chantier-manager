@@ -6,7 +6,7 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.chantiers.infrastructure.sql.unit_of_work import SqlUnitOfWorkChantiers
@@ -111,4 +111,18 @@ def test_une_base_inaccessible_devient_un_service_indisponible(tmp_path: Path) -
         uow.chantiers.lister()
 
     assert "SELECT" not in str(erreur.value)
+    moteur.dispose()
+
+
+def test_une_table_absente_remonte_telle_quelle_au_lieu_d_un_service_indisponible(
+    tmp_path: Path,
+) -> None:
+    # Le fichier existe mais son schéma est vide : c'est un défaut du programme ou du
+    # déploiement, que le 503 « réessaie dans un instant » masquerait à tort.
+    moteur = creer_moteur(url_sqlite(tmp_path))
+    uow = SqlUnitOfWorkChantiers(creer_usine_sessions(moteur))
+
+    with pytest.raises(OperationalError, match="no such table"), uow:
+        uow.chantiers.lister()
+
     moteur.dispose()

@@ -5,7 +5,7 @@ Le détail natif de FastAPI est en anglais et recopie la valeur envoyée, qui pe
 l'erreur, dont on tire un message écrit à la main.
 """
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Any
 
 from fastapi.exceptions import RequestValidationError
@@ -18,12 +18,14 @@ MONTANT = "Ce champ doit être un montant valide."
 DATE = "Ce champ doit être une date valide."
 IDENTIFIANT = "Ce champ doit être un identifiant valide."
 VALEUR_NON_PERMISE = "Cette valeur n'est pas permise."
+# Type d'erreur de pydantic pour une clé que le schéma n'attend pas (`extra="forbid"`).
+CLE_EN_TROP = "extra_forbidden"
 
 # Message de chaque type d'erreur de pydantic. Les accolades sont remplies avec le
 # contexte de l'erreur (`max_length`, `ge`…), qui ne contient que des bornes.
 MESSAGE_PAR_TYPE: Mapping[str, str] = {
     "missing": "Ce champ est obligatoire.",
-    "extra_forbidden": "Ce champ n'est pas attendu.",
+    CLE_EN_TROP: "Ce champ n'est pas attendu.",
     "string_type": "Ce champ doit être un texte.",
     "string_too_long": "Ce champ ne doit pas dépasser {max_length} caractères.",
     "string_too_short": "Ce champ doit contenir au moins {min_length} caractères.",
@@ -32,6 +34,9 @@ MESSAGE_PAR_TYPE: Mapping[str, str] = {
     "int_from_float": NOMBRE_ENTIER,
     "decimal_type": MONTANT,
     "decimal_parsing": MONTANT,
+    "decimal_max_digits": "Ce montant a trop de chiffres.",
+    "decimal_whole_digits": "Ce montant est trop élevé.",
+    "decimal_max_places": "Ce montant ne doit pas avoir plus de {decimal_places} décimales.",
     "date_type": DATE,
     "date_parsing": DATE,
     "date_from_datetime_parsing": DATE,
@@ -47,7 +52,7 @@ MESSAGE_PAR_TYPE: Mapping[str, str] = {
 
 
 def concerne_le_chemin(erreur: RequestValidationError) -> bool:
-    """Dit si l'une des erreurs porte sur un paramètre du chemin (`/chantiers/{id}`).
+    """Dit si l'une des erreurs porte sur un paramètre du chemin de l'URL.
 
     Le premier élément de l'emplacement d'une erreur nomme sa provenance : `body`,
     `query`, `path`, `header`.
@@ -60,21 +65,30 @@ def erreurs_par_champ(erreur: RequestValidationError) -> list[ErreurChampReponse
 
     Une erreur qui ne désigne aucun champ est omise : c'est le cas d'un corps qui
     n'est pas du JSON, dont l'emplacement n'est qu'une position dans le texte. La
-    réponse garde alors son `detail` global.
+    réponse garde alors son `detail` global. Une clé en trop à la racine du corps
+    est, elle, listée avec un champ vide.
     """
     erreurs = []
     for detail in erreur.errors():
-        champ = _chemin(detail["loc"])
-        if champ:
+        champ = _chemin(detail)
+        if champ is not None:
             erreurs.append(ErreurChampReponse(champ=champ, message=_message(detail)))
     return erreurs
 
 
-def _chemin(emplacement: Sequence[int | str]) -> str:
-    """Écrit le chemin d'un champ (`adresse.code_postal`), sans la provenance de tête."""
-    parties = emplacement[1:]
+def _chemin(detail: Mapping[str, Any]) -> str | None:
+    """Écrit le chemin d'un champ (`adresse.code_postal`), sans la provenance de tête.
+
+    Renvoie `None` quand l'emplacement ne désigne aucun champ. Pour une clé en trop,
+    l'emplacement se termine par la clé inventée par le client : elle peut être
+    n'importe quel texte, une adresse e-mail par exemple. On désigne donc l'objet
+    qui la contient, le chemin vide étant la racine du corps.
+    """
+    parties = detail["loc"][1:]
     if not any(isinstance(partie, str) for partie in parties):
-        return ""
+        return None
+    if detail["type"] == CLE_EN_TROP:
+        parties = parties[:-1]
     return ".".join(str(partie) for partie in parties)
 
 

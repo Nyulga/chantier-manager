@@ -50,6 +50,13 @@ def un_contexte_avec_une_etape_de_trop_a_valider() -> Contexte:
     return contexte
 
 
+def un_contexte_avec_juste_le_plafond_d_etapes_a_valider() -> Contexte:
+    contexte = Contexte()
+    for ordre in range(1, LIMITE_A_VALIDER + 1):
+        contexte.uow.etapes.ajouter(une_etape_signalee(heures_apres(ordre), ordre=ordre))
+    return contexte
+
+
 def test_le_chef_voit_les_etapes_a_valider_de_tous_les_chantiers_les_plus_anciennes_d_abord() -> (
     None
 ):
@@ -124,9 +131,7 @@ def test_une_liste_coupee_au_plafond_est_signalee_comme_tronquee() -> None:
 
 
 def test_une_liste_qui_atteint_juste_le_plafond_n_est_pas_tronquee() -> None:
-    contexte = Contexte()
-    for ordre in range(1, LIMITE_A_VALIDER + 1):
-        contexte.uow.etapes.ajouter(une_etape_signalee(heures_apres(ordre), ordre=ordre))
+    contexte = un_contexte_avec_juste_le_plafond_d_etapes_a_valider()
 
     liste = contexte.lister_etapes_a_valider().executer(CHEF)
 

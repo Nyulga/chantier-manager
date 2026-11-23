@@ -11,8 +11,11 @@ from app.chantiers.domain.adresse import (
     LONGUEUR_VOIE_MAX,
 )
 from app.chantiers.domain.chantier import LONGUEUR_CLIENT_MAX, LONGUEUR_NOM_MAX
+from app.chantiers.domain.montant import CHIFFRES_MONTANT_MAX, DECIMALES_MONTANT
 
 __all__ = [
+    "CHIFFRES_MONTANT_MAX",
+    "DECIMALES_MONTANT",
     "LONGUEUR_CLIENT_MAX",
     "LONGUEUR_CODE_POSTAL_MAX",
     "LONGUEUR_NOM_MAX",

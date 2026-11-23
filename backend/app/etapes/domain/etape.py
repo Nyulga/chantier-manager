@@ -124,7 +124,8 @@ class Etape:
         """
         if version_attendue is not None and version_attendue != self.version:
             raise ConflitVersionError(
-                "Cette étape vient d'être modifiée par quelqu'un d'autre : recharge la page."
+                "Cette étape vient d'être modifiée par quelqu'un d'autre. "
+                "Recharge-la pour voir sa dernière version."
             )
 
     def signalee_le(self) -> datetime | None:

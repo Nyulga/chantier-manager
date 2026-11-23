@@ -7,7 +7,7 @@ from app.shared.api.schemas import ProblemeReponse, ProblemeValidationReponse
 
 DESCRIPTION_PAR_STATUT: dict[HTTPStatus, str] = {
     HTTPStatus.BAD_REQUEST: "Profil `X-Profil` absent ou inconnu.",
-    HTTPStatus.FORBIDDEN: "Action réservée à un chef.",
+    HTTPStatus.FORBIDDEN: "Action non permise à ce profil.",
     HTTPStatus.NOT_FOUND: "Ressource introuvable, hors du périmètre ou identifiant mal formé.",
     HTTPStatus.CONFLICT: "Action impossible dans l'état actuel, ou ressource modifiée entre-temps.",
     HTTPStatus.UNPROCESSABLE_ENTITY: "Données invalides : `erreurs` désigne les champs en cause.",

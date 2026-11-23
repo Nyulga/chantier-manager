@@ -1,5 +1,7 @@
 """Contrat du port `EtapeRepository` : joué sur le fake mémoire et sur SQL."""
 
+from uuid import UUID
+
 import pytest
 
 from app.etapes.application.ports import UnitOfWorkEtapes
@@ -60,14 +62,23 @@ def test_une_transition_validee_est_relue_avec_son_historique_et_sa_version(
     ]
 
 
+def appliquer_dans_des_transactions_successives(
+    uow: UnitOfWorkEtapes, etape_id: UUID, actions: tuple[ActionEtape, ...]
+) -> None:
+    """Applique chaque action dans sa propre transaction, comme des requêtes distinctes."""
+    for action in actions:
+        with uow:
+            uow.etapes.obtenir(etape_id).appliquer(action, OUVRIER, INSTANT)
+            uow.valider()
+
+
 def test_l_historique_est_relu_dans_l_ordre_des_transitions(uow_etapes: UnitOfWorkEtapes) -> None:
     etape = une_etape()
     enregistrer(uow_etapes, etape)
 
-    for action in (ActionEtape.DEMARRER, ActionEtape.SIGNALER_TERMINEE):
-        with uow_etapes:
-            uow_etapes.etapes.obtenir(etape.id).appliquer(action, OUVRIER, INSTANT)
-            uow_etapes.valider()
+    appliquer_dans_des_transactions_successives(
+        uow_etapes, etape.id, (ActionEtape.DEMARRER, ActionEtape.SIGNALER_TERMINEE)
+    )
     with uow_etapes:
         relue = uow_etapes.etapes.obtenir(etape.id)
 

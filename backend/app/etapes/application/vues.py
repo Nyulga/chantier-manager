@@ -19,7 +19,7 @@ class EtapeVue:
     """Étape vue par un acteur, avec les actions qu'il peut faire maintenant.
 
     `actions_permises` vient directement de la table des transitions : le frontend
-    n'affiche que ces boutons, sans recalculer le cycle. `version` permettra de
+    n'affiche que ces boutons, sans recalculer le cycle. `version` permet de
     détecter deux modifications simultanées (intent.md, §2.3).
     """
 

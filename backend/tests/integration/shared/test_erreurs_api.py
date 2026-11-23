@@ -182,6 +182,6 @@ def test_un_service_indisponible_donne_un_503_generique_sans_la_cause(
         "detail": "Le service est momentanément indisponible : réessaie dans un instant.",
     }
     assert "motdepasse" not in reponse.text
-    # Le journal garde le type de la cause, mais jamais son message.
-    assert "RuntimeError" in caplog.text
-    assert "motdepasse" not in caplog.text
+    # Le journal du serveur garde toute la cause, pour diagnostiquer la panne. Les paramètres
+    # des requêtes n'y figurent pas : le moteur les masque (`hide_parameters`).
+    assert "RuntimeError: postgresql://utilisateur:motdepasse@hote/base" in caplog.text

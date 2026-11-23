@@ -513,7 +513,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -572,7 +572,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -644,7 +644,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -714,7 +714,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -784,7 +784,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -867,7 +867,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -946,7 +946,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1011,7 +1011,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action réservée à un chef. */
+            /** @description Action non permise à ce profil. */
             403: {
                 headers: {
                     [name: string]: unknown;

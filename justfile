@@ -53,10 +53,12 @@ verifier-front:
     pnpm build
 
 # Le seuil de 2 % (règle 00, §4) s'applique au code de production, Python et TypeScript, et aux
-# tests Python (0,31 % aujourd'hui). `--fail-on-empty` empêche un contrôle de réussir sans rien analyser.
-# Les tests TypeScript ont un seuil séparé, plus haut : ils répètent leur mise en place (rendu, serveur
-# simulé) pour rester lisibles seuls, et mesurent 6,3 % aujourd'hui. Les 7 % interdisent seulement
-# d'aggraver la situation ; le regroupement des aides de test (issue #32) doit permettre de le baisser.
+# tests Python. `--fail-on-empty` empêche un contrôle de réussir sans rien analyser.
+# Taux mesurés (avant les corrections du lot S5) : backend `app` 0 %, tests Python 0,23 %,
+# TypeScript de production 1,11 % et tests TypeScript 5,60 %.
+# Les tests TypeScript ont un seuil séparé, plus haut (6 %) : ils répètent leur mise en place (rendu,
+# serveur simulé) pour rester lisibles seuls. C'est une dérogation accordée par le propriétaire au lot S5,
+# règle 00 §4. Le regroupement des aides de test (issue #32) doit permettre de la réduire.
 
 # Mesure la duplication de code : 2 % au plus en production, un seuil séparé pour les tests TypeScript.
 [working-directory: 'frontend']
@@ -64,7 +66,7 @@ doublons:
     pnpm exec jscpd ../backend/app --format python --threshold 2 --fail-on-empty --no-tips
     pnpm exec jscpd ../backend/tests ../backend/tools --format python --threshold 2 --fail-on-empty --no-tips
     pnpm exec jscpd src --format "typescript,tsx" --ignore "**/*.test.ts,**/*.test.tsx,**/schema.d.ts" --threshold 2 --fail-on-empty --no-tips
-    pnpm exec jscpd src --format "typescript,tsx" --pattern "**/*.test.{ts,tsx}" --threshold 7 --fail-on-empty --no-tips
+    pnpm exec jscpd src --format "typescript,tsx" --pattern "**/*.test.{ts,tsx}" --threshold 6 --fail-on-empty --no-tips
 
 # pre-commit est installé comme outil uv, à sa version exacte : le script de hook pointe alors vers un
 # environnement durable (un `uvx` éphémère le laisserait pointer dans le vide). Pour passer un hook une
@@ -106,11 +108,29 @@ client:
     cd frontend; pnpm exec openapi-typescript openapi.json -o src/api/schema.d.ts
 
 # Hooks pre-commit du frontend. Les fichiers arrivent depuis la racine du dépôt (`frontend/src/...`) :
-# on retire le préfixe, car les outils tournent dans `frontend/`.
+# on retire le préfixe, car les outils tournent dans `frontend/`. Le retrait se fait dans le shell, argument
+# par argument, et chaque argument reste entre guillemets : un nom de fichier contenant un espace, un `$(...)`
+# ou un `;` est ainsi traité comme un simple nom, jamais comme du code à exécuter. Ce sont des recettes
+# à shebang (`sh`, présent avec Git pour Windows) : le shell PowerShell du reste du fichier n'aurait pas la même
+# protection.
+[positional-arguments]
 [working-directory: 'frontend']
 _hook-prettier *fichiers:
-    pnpm exec prettier --check --ignore-unknown {{replace(fichiers, "frontend/", "")}}
+    #!/usr/bin/env sh
+    set -eu
+    for fichier in "$@"; do
+        shift
+        set -- "$@" "${fichier#frontend/}"
+    done
+    exec pnpm exec prettier --check --ignore-unknown "$@"
 
+[positional-arguments]
 [working-directory: 'frontend']
 _hook-eslint *fichiers:
-    pnpm exec eslint --max-warnings 0 --no-warn-ignored {{replace(fichiers, "frontend/", "")}}
+    #!/usr/bin/env sh
+    set -eu
+    for fichier in "$@"; do
+        shift
+        set -- "$@" "${fichier#frontend/}"
+    done
+    exec pnpm exec eslint --max-warnings 0 --no-warn-ignored "$@"

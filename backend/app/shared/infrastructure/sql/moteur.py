@@ -28,8 +28,12 @@ def creer_moteur(url_base: str) -> Engine:
     prise en charge pendant le squelette (ADR 0007) : au retour de PostgreSQL, il
     faudra le réserver à SQLite (`moteur.dialect.name == "sqlite"`), car PostgreSQL
     ne comprend pas `PRAGMA`.
+
+    `hide_parameters=True` : les messages d'erreur de SQLAlchemy citent d'ordinaire les
+    valeurs de la requête, donc des données personnelles. Elles se retrouveraient dans
+    le journal du serveur à la moindre erreur d'intégrité (intent.md, §3.2).
     """
-    moteur = create_engine(url_base)
+    moteur = create_engine(url_base, hide_parameters=True)
     event.listen(moteur, "connect", _activer_cles_etrangeres)
     return moteur
 
@@ -39,8 +43,8 @@ def creer_usine_sessions(moteur: Engine) -> sessionmaker[Session]:
 
     `expire_on_commit=False` : après la validation, les objets restent lisibles.
     Plusieurs cas d'usage construisent en effet leur vue après être sortis de la
-    transaction, une fois la session fermée. Sans cette
-    option, la validation expirerait les attributs des objets, et les relire sur
-    une session fermée lèverait une erreur.
+    transaction, une fois la session fermée. Sans cette option, la validation
+    expirerait les attributs des objets, et les relire sur une session fermée
+    lèverait une erreur.
     """
     return sessionmaker(bind=moteur, expire_on_commit=False)

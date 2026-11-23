@@ -11,9 +11,13 @@ from app.shared.domain.erreurs import ValeurInvalideError
 
 # Champ de saisie que désignent les erreurs du montant : le budget du chantier.
 CHAMP = "budget"
-CENTIME = Decimal("0.01")
-# Plus grande valeur que la colonne NUMERIC(12,2) peut enregistrer (ADR 0002).
-MONTANT_MAX = Decimal("9999999999.99")
+# Forme de la colonne NUMERIC(12,2) (ADR 0002) : 12 chiffres en tout, dont 2 décimales. Le
+# schéma d'API et la colonne lisent ces deux valeurs, pour que les trois bornes concordent.
+CHIFFRES_MONTANT_MAX = 12
+DECIMALES_MONTANT = 2
+CENTIME = Decimal(1).scaleb(-DECIMALES_MONTANT)
+# Plus grande valeur que la colonne peut enregistrer : 9999999999.99.
+MONTANT_MAX = Decimal(10**CHIFFRES_MONTANT_MAX - 1).scaleb(-DECIMALES_MONTANT)
 
 
 @dataclass(frozen=True, slots=True)

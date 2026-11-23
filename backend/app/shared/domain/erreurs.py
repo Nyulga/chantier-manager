@@ -5,10 +5,12 @@ remonter sans les masquer (règle 02). Leurs messages sont en français et ne
 contiennent jamais de donnée personnelle, car ils peuvent être affichés.
 """
 
-# Message commun aux conflits de modification, affiché tel quel à l'acteur : recharger
-# l'écran suffit à voir l'état que l'autre personne vient d'enregistrer.
+# Message commun aux conflits de modification, affiché tel quel à l'acteur : relire
+# l'élément suffit à voir l'état que l'autre personne vient d'enregistrer. Il ne parle
+# ni de page ni d'écran, pour convenir aussi à l'application mobile.
 MESSAGE_MODIFIE_ENTRE_TEMPS = (
-    "Cet élément vient d'être modifié par quelqu'un d'autre : recharge la page."
+    "Cet élément vient d'être modifié par quelqu'un d'autre. "
+    "Recharge-le pour voir sa dernière version."
 )
 
 

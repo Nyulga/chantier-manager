@@ -7,6 +7,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.chantiers.application.valeurs_publiques import (
+    CHIFFRES_MONTANT_MAX,
+    DECIMALES_MONTANT,
     LONGUEUR_CLIENT_MAX,
     LONGUEUR_CODE_POSTAL_MAX,
     LONGUEUR_NOM_MAX,
@@ -36,7 +38,9 @@ class CreerChantierRequete(BaseModel):
     client: str = Field(max_length=LONGUEUR_CLIENT_MAX)
     date_debut: date
     echeance: date
-    budget: Decimal
+    # Les bornes sont celles de la colonne : un montant trop long est refusé ici, par un 422
+    # sur le champ `budget`, avant d'atteindre le domaine.
+    budget: Decimal = Field(max_digits=CHIFFRES_MONTANT_MAX, decimal_places=DECIMALES_MONTANT)
 
 
 class AdresseReponse(BaseModel):

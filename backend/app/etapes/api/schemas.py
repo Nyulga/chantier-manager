@@ -16,8 +16,9 @@ from app.shared.api.schemas import CONFIG_ENTREE, CONFIG_SORTIE
 
 # Les valeurs du cycle d'une étape, telles que l'API les expose : elles typent le
 # client TypeScript généré. L'api n'importe pas le domaine (contrat `api-sans-domain`),
-# elles sont donc répétées ici ; le test du parcours complet les traverse toutes. Les
-# rôles, eux, viennent de `Role` par la couche application (`valeurs_publiques.py`).
+# elles sont donc répétées ici ; `test_parite_schemas_et_domaine.py` les compare aux
+# énumérations du domaine. Les rôles, eux, viennent de `Role` par la couche application
+# (`valeurs_publiques.py`) : ils n'ont pas de copie.
 StatutReponse = Literal["a_faire", "en_cours", "terminee_a_valider", "validee"]
 ActionEtape = Literal["demarrer", "signaler_terminee", "valider", "refuser"]
 
