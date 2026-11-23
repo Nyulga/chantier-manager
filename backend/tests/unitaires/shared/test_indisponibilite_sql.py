@@ -4,8 +4,9 @@ import sqlite3
 from pathlib import Path
 
 import pytest
-from app.shared.infrastructure.sql.indisponibilite import est_indisponibilite
 from sqlalchemy.exc import OperationalError
+
+from app.shared.infrastructure.sql.indisponibilite import est_indisponibilite
 
 
 class ErreurSqliteError(Exception):
