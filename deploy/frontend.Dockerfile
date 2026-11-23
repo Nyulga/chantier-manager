@@ -5,7 +5,7 @@
 
 # --- Étape 1 : construction du site (Node 24 et pnpm) --------------------------------------
 # node:24-alpine
-FROM node@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5 AS construction
+FROM node@sha256:e18c3ccdf7d71619990b0e85639f506e2028a95410999cab24cc373cbd10e0ac AS construction
 
 # La version de pnpm est celle de `packageManager` dans frontend/package.json.
 RUN npm install --global pnpm@12.21.0
