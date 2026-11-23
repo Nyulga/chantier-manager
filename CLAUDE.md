@@ -31,7 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S5). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
 
 
-Les lots S1 (socle), S2 (chantiers et étapes), S3 (mise en ligne) S4 (tableau de bord) et S5 (corrections de relecture) sont livrés ; la base est **SQLite** pour l'instant (ADR 0007). Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
+Les lots S1 (socle), S2 (chantiers et étapes), S3 (mise en ligne), S4 (tableau de bord) et S5 (corrections de relecture) sont livrés ; la base est **SQLite** pour l'instant (ADR 0007). Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
 
 ## Commandes
 

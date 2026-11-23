@@ -1,7 +1,6 @@
 // Tests du profil courant : lecture et écriture dans localStorage, avec repli sur « chef ».
 import { afterEach, expect, expectTypeOf, it, vi } from 'vitest';
 
-import openapi from '../../openapi.json';
 import {
   CLE_PROFIL,
   ecouterProfil,
@@ -72,14 +71,12 @@ it('prévient aussi les écouteurs quand un autre onglet modifie le profil', () 
   expect(rappel).toHaveBeenCalledOnce();
 });
 
-it("reconnaît chaque rôle que le schéma OpenAPI déclare : un rôle ajouté à l'API ne doit pas être ignoré", () => {
-  const rolesDuSchema = openapi.components.schemas.Role.enum;
+// Le type généré `Profil` vient du schéma OpenAPI : le test de type ci-dessous échoue à la
+// compilation si un rôle de l'API manque à `PROFILS`, sans lire `openapi.json`, qui n'est pas versionné.
+it.each(PROFILS)('reconnaît le profil enregistré « %s »', (profil) => {
+  localStorage.setItem(CLE_PROFIL, profil);
 
-  expect([...PROFILS].sort()).toEqual([...rolesDuSchema].sort());
-  for (const role of rolesDuSchema) {
-    localStorage.setItem(CLE_PROFIL, role);
-    expect(lireProfil()).toBe(role);
-  }
+  expect(lireProfil()).toBe(profil);
 });
 
 it('liste exactement les profils du type généré (vérifié à la compilation)', () => {

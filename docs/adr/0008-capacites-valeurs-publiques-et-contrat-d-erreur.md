@@ -31,7 +31,7 @@ La relecture des lots S1 à S4 (issues #17 à #24, #29, #30 et #32) a relevé qu
 - **Erreur 422** : elle ajoute `erreurs: [{champ, message}]`.
   - `champ` est un chemin pointé du corps (`adresse.code_postal`) ou un paramètre de requête.
   - Les messages sont fixes, et ne recopient jamais la saisie : ni la valeur envoyée, ni une clé inventée par le client.
-  - Une `ValeurInvalideError` du domaine peut indiquer le champ concerné.
+  - Une `ValeurInvalideError` du domaine peut indiquer le champ concerné. L'objet valeur `Montant` porte ainsi le nom `budget`, car il ne sert qu'au budget du chantier. S'il sert un jour à un autre montant, c'est l'appelant (`Chantier`) qui fournira le nom du champ.
 - **Erreur 503** : elle est réservée aux vraies indisponibilités de la base : verrou, fichier impossible à ouvrir, erreur d'entrée-sortie, disque plein ou connexion perdue. Une erreur de programmation reste un 500. La cause est journalisée, sans paramètres SQL (`hide_parameters`).
 - **Erreur 409** : elle couvre une version périmée et un ajout d'étape simultané (violation d'unicité de l'ordre).
 
