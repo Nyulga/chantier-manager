@@ -5,6 +5,12 @@ remonter sans les masquer (règle 02). Leurs messages sont en français et ne
 contiennent jamais de donnée personnelle, car ils peuvent être affichés.
 """
 
+# Message commun aux conflits de modification, affiché tel quel à l'acteur : recharger
+# l'écran suffit à voir l'état que l'autre personne vient d'enregistrer.
+MESSAGE_MODIFIE_ENTRE_TEMPS = (
+    "Cet élément vient d'être modifié par quelqu'un d'autre : recharge la page."
+)
+
 
 class ErreurMetierError(Exception):
     """Classe de base de toute erreur métier : une règle du domaine a été enfreinte."""
@@ -19,7 +25,17 @@ class TransitionInterditeError(ErreurMetierError):
 
 
 class ValeurInvalideError(ErreurMetierError):
-    """Une valeur ne respecte pas un invariant du domaine : l'objet ne peut pas exister."""
+    """Une valeur ne respecte pas un invariant du domaine : l'objet ne peut pas exister.
+
+    `champ` désigne, quand on le sait, le champ de saisie fautif, écrit comme l'api
+    l'expose (`"nom"`, `"adresse.voie"`) : l'écran peut alors afficher le message
+    sous ce champ. Il reste `None` quand l'erreur porte sur plusieurs champs à la
+    fois, ou sur une valeur qui ne vient pas d'un champ.
+    """
+
+    def __init__(self, message: str, champ: str | None = None) -> None:
+        super().__init__(message)
+        self.champ = champ
 
 
 class AccesRefuseError(ErreurMetierError):

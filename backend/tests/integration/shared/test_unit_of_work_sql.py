@@ -1,6 +1,9 @@
 """Comportements propres à l'Unit of Work SQL : verrou optimiste et clés étrangères."""
 
+from dataclasses import replace
 from datetime import UTC, datetime
+from pathlib import Path
+from uuid import UUID
 
 import pytest
 from sqlalchemy.exc import IntegrityError
@@ -9,14 +12,18 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.chantiers.infrastructure.sql.unit_of_work import SqlUnitOfWorkChantiers
 from app.etapes.domain.cycle import ActionEtape
 from app.etapes.infrastructure.sql.unit_of_work import SqlUnitOfWorkEtapes
+from app.shared.application.erreurs import ServiceIndisponibleError
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import ConflitVersionError
+from app.shared.infrastructure.sql.moteur import creer_moteur, creer_usine_sessions
+from tests.conftest import url_sqlite
 from tests.unitaires.chantiers.fabriques import un_chantier
 from tests.unitaires.etapes.fabriques import ID_CHANTIER, une_etape
 
 OUVRIER = Acteur(Role.OUVRIER)
 INSTANT = datetime(2026, 11, 22, 9, 0, tzinfo=UTC)
 VERSION_APRES_UNE_TRANSITION = 2
+CHANTIER_INCONNU = UUID(int=404)
 
 
 def preparer_une_etape(usine: sessionmaker[Session]) -> SqlUnitOfWorkEtapes:
@@ -63,10 +70,45 @@ def test_la_base_refuse_une_etape_dont_le_chantier_n_existe_pas(
 def test_un_uow_est_reutilisable_apres_une_erreur(usine_sessions: sessionmaker[Session]) -> None:
     uow = preparer_une_etape(usine_sessions)
 
+    # Un chantier inconnu : la clé étrangère est refusée, ce qui n'est pas un conflit entre
+    # deux utilisateurs et remonte donc telle quelle.
     with uow, pytest.raises(IntegrityError):
-        uow.etapes.ajouter(une_etape())
+        uow.etapes.ajouter(une_etape(chantier_id=CHANTIER_INCONNU))
         uow.valider()
     with uow:
         etapes = uow.etapes.lister_par_chantiers([ID_CHANTIER])
 
     assert len(etapes) == 1
+
+
+def test_deux_ajouts_simultanes_au_meme_ordre_donnent_un_conflit_sans_ecraser_le_premier(
+    usine_sessions: sessionmaker[Session],
+) -> None:
+    uow = preparer_une_etape(usine_sessions)
+    premiere, seconde = SqlUnitOfWorkEtapes(usine_sessions), SqlUnitOfWorkEtapes(usine_sessions)
+    gagnante = une_etape(ordre=2)
+    perdante = replace(gagnante, id=UUID(int=999))
+
+    # Deux ajouts qui ont lu les mêmes étapes calculent le même ordre suivant.
+    with premiere, seconde:
+        premiere.etapes.ajouter(gagnante)
+        seconde.etapes.ajouter(perdante)
+        premiere.valider()
+        with pytest.raises(ConflitVersionError):
+            seconde.valider()
+    with uow:
+        etapes = uow.etapes.lister_par_chantiers([ID_CHANTIER])
+
+    assert [etape.id for etape in etapes] == [une_etape().id, gagnante.id]
+
+
+def test_une_base_inaccessible_devient_un_service_indisponible(tmp_path: Path) -> None:
+    # Le dossier de la base n'existe pas : SQLite ne peut pas ouvrir le fichier.
+    moteur = creer_moteur(url_sqlite(tmp_path / "absent"))
+    uow = SqlUnitOfWorkChantiers(creer_usine_sessions(moteur))
+
+    with pytest.raises(ServiceIndisponibleError) as erreur, uow:
+        uow.chantiers.lister()
+
+    assert "SELECT" not in str(erreur.value)
+    moteur.dispose()

@@ -1,4 +1,8 @@
-"""Types de colonnes communs aux modules."""
+"""Types de colonnes des tables des étapes : dates en UTC et énumérations en texte.
+
+Ils vivent dans ce module, le seul à s'en servir (règle 06 : on ne met dans `shared` que
+ce qui est utilisé par au moins deux modules).
+"""
 
 from datetime import UTC, datetime
 from enum import StrEnum

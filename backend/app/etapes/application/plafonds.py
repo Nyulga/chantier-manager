@@ -42,5 +42,6 @@ class LimiteActivite:
         if not LIMITE_ACTIVITE_MIN <= self.valeur <= LIMITE_ACTIVITE_MAX:
             raise ValeurInvalideError(
                 f"Le fil d'activité compte de {LIMITE_ACTIVITE_MIN} "
-                f"à {LIMITE_ACTIVITE_MAX} entrées."
+                f"à {LIMITE_ACTIVITE_MAX} entrées.",
+                "limite",
             )

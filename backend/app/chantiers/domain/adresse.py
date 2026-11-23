@@ -31,10 +31,20 @@ class Adresse:
 
         Lève :
             ValeurInvalideError : la voie, le code postal ou la ville est vide, ou
-                dépasse sa longueur maximale.
+                dépasse sa longueur maximale. L'erreur désigne la partie fautive.
         """
-        if not all(partie.strip() for partie in (self.voie, self.code_postal, self.ville)):
-            raise ValeurInvalideError("La voie, le code postal et la ville sont obligatoires.")
-        exiger_longueur_max(self.voie, LONGUEUR_VOIE_MAX, "La voie")
-        exiger_longueur_max(self.code_postal, LONGUEUR_CODE_POSTAL_MAX, "Le code postal")
-        exiger_longueur_max(self.ville, LONGUEUR_VILLE_MAX, "La ville")
+        _exiger_partie(self.voie, "voie", "La voie", LONGUEUR_VOIE_MAX)
+        _exiger_partie(self.code_postal, "code_postal", "Le code postal", LONGUEUR_CODE_POSTAL_MAX)
+        _exiger_partie(self.ville, "ville", "La ville", LONGUEUR_VILLE_MAX)
+
+
+def _exiger_partie(texte: str, partie: str, libelle: str, longueur_max: int) -> None:
+    """Exige une partie d'adresse non vide et assez courte, en désignant son champ.
+
+    Le champ s'écrit `adresse.<partie>` : c'est le nom que l'api donne à l'adresse
+    d'un chantier, la seule adresse que le domaine manipule.
+    """
+    champ = f"adresse.{partie}"
+    if not texte.strip():
+        raise ValeurInvalideError(f"{libelle} est obligatoire.", champ)
+    exiger_longueur_max(texte, longueur_max, libelle, champ)

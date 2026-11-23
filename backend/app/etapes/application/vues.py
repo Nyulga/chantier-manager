@@ -51,6 +51,18 @@ class EtapeAValiderVue:
 
 
 @dataclass(frozen=True)
+class ListeAValiderVue:
+    """La liste « À valider », et l'indication qu'elle a été coupée au plafond.
+
+    `tronquee` est vrai quand d'autres étapes attendent la décision d'un chef que la
+    liste ne contient pas : l'écran peut alors afficher « 50+ » plutôt qu'un total faux.
+    """
+
+    etapes: tuple[EtapeAValiderVue, ...]
+    tronquee: bool
+
+
+@dataclass(frozen=True)
 class ActiviteVue:
     """Une entrée du fil d'activité : un changement de statut d'une étape.
 

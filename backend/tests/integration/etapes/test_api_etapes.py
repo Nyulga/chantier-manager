@@ -7,10 +7,16 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.integration.conftest import CHEF, OUVRIER
-from tests.integration.etapes.scenario import ajouter_etape, creer_chantier, transitionner
+from tests.integration.etapes.scenario import (
+    ajouter_etape,
+    creer_chantier,
+    transitionner,
+    transitionner_a_la_version,
+)
 
 UUID_VERSION_7 = 7
 VERSION_APRES_SIX_TRANSITIONS = 6
+VERSION_APRES_UNE_TRANSITION = 2
 AVANCEMENT_COMPLET = 100
 AVANCEMENT_MOITIE = 50
 
@@ -168,3 +174,52 @@ def test_sans_profil_les_routes_des_etapes_donnent_un_400(
     reponse = client.request(methode, chemin, json={"titre": "x", "action": "demarrer"})
 
     assert reponse.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_une_version_perimee_donne_un_409_en_problem_json_et_ne_change_rien(
+    client: TestClient,
+) -> None:
+    chantier_id = creer_chantier(client)
+    etape_id = ajouter_etape(client, chantier_id)
+    transitionner_a_la_version(client, etape_id, "demarrer", OUVRIER, 1)
+
+    reponse = transitionner_a_la_version(client, etape_id, "signaler_terminee", OUVRIER, 1)
+
+    etapes = client.get(f"/api/chantiers/{chantier_id}/etapes", headers=CHEF).json()
+    assert reponse.status_code == HTTPStatus.CONFLICT
+    assert reponse.headers["content-type"] == "application/problem+json"
+    assert reponse.json()["detail"] == (
+        "Cette étape vient d'être modifiée par quelqu'un d'autre : recharge la page."
+    )
+    assert (etapes[0]["statut"], etapes[0]["version"]) == ("en_cours", VERSION_APRES_UNE_TRANSITION)
+
+
+def test_une_version_a_jour_est_acceptee(client: TestClient) -> None:
+    etape_id = ajouter_etape(client, creer_chantier(client))
+
+    reponse = transitionner_a_la_version(client, etape_id, "demarrer", OUVRIER, 1)
+
+    assert reponse.status_code == HTTPStatus.OK
+    assert reponse.json()["version"] == VERSION_APRES_UNE_TRANSITION
+
+
+def test_sans_version_la_transition_s_applique_comme_avant(client: TestClient) -> None:
+    etape_id = ajouter_etape(client, creer_chantier(client))
+    transitionner(client, etape_id, "demarrer", OUVRIER)
+
+    reponse = client.post(
+        f"/api/etapes/{etape_id}/transitions", json={"action": "signaler_terminee"}, headers=OUVRIER
+    )
+
+    assert (reponse.status_code, reponse.json()["statut"]) == (HTTPStatus.OK, "terminee_a_valider")
+
+
+def test_une_version_inferieure_a_1_donne_un_422_sur_le_champ_version(client: TestClient) -> None:
+    etape_id = ajouter_etape(client, creer_chantier(client))
+
+    reponse = transitionner_a_la_version(client, etape_id, "demarrer", OUVRIER, 0)
+
+    assert reponse.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert reponse.json()["erreurs"] == [
+        {"champ": "version", "message": "Ce champ doit être supérieur ou égal à 1."}
+    ]

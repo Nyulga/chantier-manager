@@ -45,16 +45,18 @@ class FicheChantier:
                 l'échéance précède la date de début.
         """
         if not self.nom.strip():
-            raise ValeurInvalideError("Le nom du chantier est obligatoire.")
-        exiger_longueur_max(self.nom, LONGUEUR_NOM_MAX, "Le nom du chantier")
+            raise ValeurInvalideError("Le nom du chantier est obligatoire.", "nom")
+        exiger_longueur_max(self.nom, LONGUEUR_NOM_MAX, "Le nom du chantier", "nom")
         # Un chantier se fait toujours pour un client : sans lui, la fiche est inexploitable.
         if not self.client.strip():
-            raise ValeurInvalideError("Le client du chantier est obligatoire.")
-        exiger_longueur_max(self.client, LONGUEUR_CLIENT_MAX, "Le client du chantier")
+            raise ValeurInvalideError("Le client du chantier est obligatoire.", "client")
+        exiger_longueur_max(self.client, LONGUEUR_CLIENT_MAX, "Le client du chantier", "client")
         # Une échéance le jour même du début reste possible : c'est le cas d'un
         # chantier d'une seule journée.
         if self.echeance < self.date_debut:
-            raise ValeurInvalideError("L'échéance ne peut pas précéder la date de début.")
+            raise ValeurInvalideError(
+                "L'échéance ne peut pas précéder la date de début.", "echeance"
+            )
 
 
 @dataclass

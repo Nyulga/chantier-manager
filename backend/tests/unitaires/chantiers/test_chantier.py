@@ -65,3 +65,23 @@ def test_une_echeance_le_jour_du_debut_est_acceptee() -> None:
     fiche = une_fiche(echeance=DEBUT)
 
     assert fiche.echeance == fiche.date_debut
+
+
+@pytest.mark.parametrize(
+    ("nom", "client", "echeance", "champ_fautif"),
+    [
+        ("", "Mairie", date(2027, 1, 1), "nom"),
+        ("n" * 201, "Mairie", date(2027, 1, 1), "nom"),
+        ("Rénovation", " ", date(2027, 1, 1), "client"),
+        ("Rénovation", "c" * 201, date(2027, 1, 1), "client"),
+        ("Rénovation", "Mairie", date(2026, 11, 30), "echeance"),
+    ],
+    ids=["nom-vide", "nom-long", "client-vide", "client-long", "echeance"],
+)
+def test_une_fiche_refusee_designe_le_champ_fautif(
+    nom: str, client: str, echeance: date, champ_fautif: str
+) -> None:
+    with pytest.raises(ValeurInvalideError) as erreur:
+        une_fiche(nom=nom, client=client, date_debut=date(2026, 12, 1), echeance=echeance)
+
+    assert erreur.value.champ == champ_fautif

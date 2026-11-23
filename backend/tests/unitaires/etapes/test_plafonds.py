@@ -26,3 +26,10 @@ def test_une_limite_dans_les_bornes_est_acceptee(valeur: int) -> None:
 def test_une_limite_hors_des_bornes_est_refusee(valeur: int) -> None:
     with pytest.raises(ValeurInvalideError):
         LimiteActivite(valeur)
+
+
+def test_une_limite_hors_des_bornes_designe_le_champ_limite() -> None:
+    with pytest.raises(ValeurInvalideError) as erreur:
+        LimiteActivite(0)
+
+    assert erreur.value.champ == "limite"

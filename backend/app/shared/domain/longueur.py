@@ -8,15 +8,18 @@ même limite ne soit écrite qu'une fois. Ce fichier ne fournit que la vérifica
 from app.shared.domain.erreurs import ValeurInvalideError
 
 
-def exiger_longueur_max(texte: str, longueur_max: int, libelle: str) -> None:
+def exiger_longueur_max(texte: str, longueur_max: int, libelle: str, champ: str) -> None:
     """Refuse un texte plus long que `longueur_max` caractères.
 
     `libelle` désigne le texte dans le message, avec son article (« La voie »,
     « Le commentaire ») : le message est affiché tel quel, et ne recopie jamais la
-    valeur saisie, qui pourrait contenir une donnée personnelle.
+    valeur saisie, qui pourrait contenir une donnée personnelle. `champ` nomme le
+    champ de saisie fautif, pour que l'erreur s'affiche à son endroit.
 
     Lève :
         ValeurInvalideError : le texte dépasse la longueur maximale.
     """
     if len(texte) > longueur_max:
-        raise ValeurInvalideError(f"{libelle} ne doit pas dépasser {longueur_max} caractères.")
+        raise ValeurInvalideError(
+            f"{libelle} ne doit pas dépasser {longueur_max} caractères.", champ
+        )

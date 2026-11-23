@@ -4,16 +4,16 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
-# Les espaces autour de la saisie sont retirés ici : le domaine ne le fait pas (`Adresse`).
-CONFIG_ENTREE = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
-CONFIG_SORTIE = ConfigDict(extra="forbid", frozen=True)
-
-LONGUEUR_NOM_MAX = 200
-LONGUEUR_VOIE_MAX = 300
-LONGUEUR_CODE_POSTAL_MAX = 10
-LONGUEUR_VILLE_MAX = 100
+from app.chantiers.application.valeurs_publiques import (
+    LONGUEUR_CLIENT_MAX,
+    LONGUEUR_CODE_POSTAL_MAX,
+    LONGUEUR_NOM_MAX,
+    LONGUEUR_VILLE_MAX,
+    LONGUEUR_VOIE_MAX,
+)
+from app.shared.api.schemas import CONFIG_ENTREE, CONFIG_SORTIE
 
 
 class AdresseRequete(BaseModel):
@@ -33,7 +33,7 @@ class CreerChantierRequete(BaseModel):
 
     nom: str = Field(max_length=LONGUEUR_NOM_MAX)
     adresse: AdresseRequete
-    client: str = Field(max_length=LONGUEUR_NOM_MAX)
+    client: str = Field(max_length=LONGUEUR_CLIENT_MAX)
     date_debut: date
     echeance: date
     budget: Decimal

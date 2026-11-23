@@ -9,7 +9,8 @@ from decimal import Decimal
 
 from app.shared.domain.erreurs import ValeurInvalideError
 
-DEVISE = "EUR"
+# Champ de saisie que désignent les erreurs du montant : le budget du chantier.
+CHAMP = "budget"
 CENTIME = Decimal("0.01")
 # Plus grande valeur que la colonne NUMERIC(12,2) peut enregistrer (ADR 0002).
 MONTANT_MAX = Decimal("9999999999.99")
@@ -17,7 +18,10 @@ MONTANT_MAX = Decimal("9999999999.99")
 
 @dataclass(frozen=True, slots=True)
 class Montant:
-    """Somme d'argent positive ou nulle, au centime près, exprimée en euros (`DEVISE`).
+    """Somme d'argent positive ou nulle, au centime près, exprimée en euros.
+
+    Le montant n'est utilisé que pour le budget d'un chantier : ses erreurs
+    désignent donc le champ `budget`, tel que l'api l'expose.
 
     La précision est bornée au centime parce que la base stocke les montants en
     `NUMERIC(12,2)` (ADR 0002) : une valeur plus précise serait arrondie sans bruit
@@ -39,16 +43,18 @@ class Montant:
         # Le test de finitude passe en premier : comparer NaN à zéro lèverait une
         # erreur technique de `decimal` au lieu d'une erreur métier.
         if not self.valeur.is_finite():
-            raise ValeurInvalideError("Le montant doit être un nombre.")
+            raise ValeurInvalideError("Le montant doit être un nombre.", CHAMP)
         if self.valeur < 0:
-            raise ValeurInvalideError("Le montant ne peut pas être négatif.")
+            raise ValeurInvalideError("Le montant ne peut pas être négatif.", CHAMP)
         # Le plafond est vérifié avant l'arrondi au centime, qui lèverait une erreur
         # technique de `decimal` sur une valeur trop grande.
         if self.valeur > MONTANT_MAX:
-            raise ValeurInvalideError("Le montant dépasse la valeur maximale enregistrable.")
+            raise ValeurInvalideError("Le montant dépasse la valeur maximale enregistrable.", CHAMP)
         au_centime = self.valeur.quantize(CENTIME)
         if self.valeur != au_centime:
-            raise ValeurInvalideError("Le montant ne peut pas être plus précis que le centime.")
+            raise ValeurInvalideError(
+                "Le montant ne peut pas être plus précis que le centime.", CHAMP
+            )
         # `Decimal` distingue le zéro négatif : `-0` passerait le contrôle du signe
         # et serait renvoyé `-0.00` à la création, puis `0.00` une fois relu en base.
         # La valeur étant positive ou nulle, sa valeur absolue ne change qu'un `-0`.

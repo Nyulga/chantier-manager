@@ -7,12 +7,10 @@ l'import de ce fichier, sans classe ORM en double (ADR 0002).
 from sqlalchemy import CheckConstraint, Column, Date, Numeric, String, Table, Uuid
 from sqlalchemy.orm import composite
 
-from app.chantiers.domain.adresse import Adresse
+from app.chantiers.domain.adresse import LONGUEUR_CODE_POSTAL_MAX, Adresse
 from app.chantiers.domain.chantier import Chantier
 from app.chantiers.domain.montant import Montant
 from app.shared.infrastructure.sql.registre import metadata, registre
-
-CODE_POSTAL_LONGUEUR_MAX = 10
 
 TABLE_CHANTIERS = Table(
     "chantiers",
@@ -20,7 +18,7 @@ TABLE_CHANTIERS = Table(
     Column("id", Uuid, primary_key=True),
     Column("nom", String, nullable=False),
     Column("voie", String, nullable=False),
-    Column("code_postal", String(CODE_POSTAL_LONGUEUR_MAX), nullable=False),
+    Column("code_postal", String(LONGUEUR_CODE_POSTAL_MAX), nullable=False),
     Column("ville", String, nullable=False),
     Column("client", String, nullable=False),
     Column("date_debut", Date, nullable=False),

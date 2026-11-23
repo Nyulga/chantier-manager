@@ -24,11 +24,13 @@ def creer_moteur(url_base: str) -> Engine:
     """Crée le moteur synchrone de la base désignée par l'URL (ADR 0002).
 
     La connexion n'est ouverte qu'à la première requête : créer un moteur ne touche
-    pas la base.
+    pas la base. Le réglage des clés étrangères est propre à SQLite, la seule base
+    prise en charge pendant le squelette (ADR 0007) : au retour de PostgreSQL, il
+    faudra le réserver à SQLite (`moteur.dialect.name == "sqlite"`), car PostgreSQL
+    ne comprend pas `PRAGMA`.
     """
     moteur = create_engine(url_base)
-    if moteur.dialect.name == "sqlite":
-        event.listen(moteur, "connect", _activer_cles_etrangeres)
+    event.listen(moteur, "connect", _activer_cles_etrangeres)
     return moteur
 
 

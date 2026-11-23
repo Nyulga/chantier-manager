@@ -34,10 +34,6 @@ AUTORISEES = {
 INTERDITES = [cas for cas in product(StatutEtape, ActionEtape, Role) if cas not in AUTORISEES]
 
 
-def test_la_table_couvre_les_32_combinaisons() -> None:
-    assert len(AUTORISEES) + len(INTERDITES) == len(StatutEtape) * len(ActionEtape) * len(Role)
-
-
 def test_la_table_des_transitions_ne_peut_pas_etre_modifiee() -> None:
     table: object = TRANSITIONS
 
@@ -107,3 +103,10 @@ def test_lire_une_action_connue(action: ActionEtape) -> None:
 def test_lire_une_action_inconnue_est_refuse(nom: str) -> None:
     with pytest.raises(ValeurInvalideError):
         lire_action(nom)
+
+
+def test_une_action_inconnue_designe_le_champ_action() -> None:
+    with pytest.raises(ValeurInvalideError) as erreur:
+        lire_action("supprimer")
+
+    assert erreur.value.champ == "action"

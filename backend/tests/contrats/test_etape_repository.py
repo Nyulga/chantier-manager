@@ -4,10 +4,10 @@ import pytest
 
 from app.etapes.application.ports import UnitOfWorkEtapes
 from app.etapes.domain.cycle import ActionEtape, StatutEtape
-from app.etapes.domain.etape import Etape
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import NonTrouveError
 from tests.contrats.conftest import AUTRE_CHANTIER
+from tests.contrats.enregistrement_etapes import enregistrer
 from tests.unitaires.etapes.fabriques import (
     ID_CHANTIER,
     INSTANT,
@@ -21,13 +21,6 @@ OUVRIER = Acteur(Role.OUVRIER)
 VERSION_APRES_UNE_TRANSITION = 2
 # Assez large pour ne rien couper : les tests de la limite en passent une plus petite.
 LIMITE = 10
-
-
-def enregistrer(uow: UnitOfWorkEtapes, *etapes: Etape) -> None:
-    with uow:
-        for etape in etapes:
-            uow.etapes.ajouter(etape)
-        uow.valider()
 
 
 def test_une_etape_valide_est_relue_identique_dans_une_autre_transaction(

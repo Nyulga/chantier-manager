@@ -7,8 +7,6 @@ from fastapi import Depends, Header
 from app.shared.api.erreurs import PROFILS_ACCEPTES, ProfilInvalideError
 from app.shared.domain.acteur import Acteur, Role
 
-EN_TETE_PROFIL = "X-Profil"
-
 
 def acteur_courant(
     x_profil: Annotated[

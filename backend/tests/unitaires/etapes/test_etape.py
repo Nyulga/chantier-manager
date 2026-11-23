@@ -214,3 +214,21 @@ def test_une_etape_sans_signalement_connu_passe_en_tete_du_tri() -> None:
     triees = trier_par_signalement([signalee, autre_sans_trace, sans_trace])
 
     assert [etape.id for etape in triees] == [sans_trace.id, autre_sans_trace.id, signalee.id]
+
+
+@pytest.mark.parametrize("titre", ["  ", "t" * 201])
+def test_un_titre_refuse_designe_le_champ_titre(titre: str) -> None:
+    with pytest.raises(ValeurInvalideError) as erreur:
+        Etape.creer(UUID(int=7), ID_CHANTIER, titre, ordre=1)
+
+    assert erreur.value.champ == "titre"
+
+
+@pytest.mark.parametrize("commentaire", [None, "c" * 1001])
+def test_un_commentaire_refuse_designe_le_champ_commentaire(commentaire: str | None) -> None:
+    etape = une_etape(StatutEtape.TERMINEE_A_VALIDER)
+
+    with pytest.raises(ValeurInvalideError) as erreur:
+        etape.appliquer(ActionEtape.REFUSER, CHEF, INSTANT, commentaire)
+
+    assert erreur.value.champ == "commentaire"

@@ -5,12 +5,22 @@ C'est le seul endroit qui fait le lien entre les erreurs du domaine et les codes
 interne n'est jamais renvoyée.
 """
 
+import logging
+from collections.abc import Mapping
 from http import HTTPStatus
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.shared.api.erreurs_validation import concerne_le_chemin, erreurs_par_champ
+from app.shared.api.schemas import (
+    ErreurChampReponse,
+    ProblemeReponse,
+    ProblemeValidationReponse,
+)
+from app.shared.application.erreurs import ServiceIndisponibleError
 from app.shared.domain.acteur import Role
 from app.shared.domain.erreurs import (
     AccesRefuseError,
@@ -21,12 +31,21 @@ from app.shared.domain.erreurs import (
 )
 
 TYPE_PROBLEME = "application/problem+json"
+TYPE_PAR_DEFAUT = "about:blank"
 MESSAGE_ERREUR_INTERNE = "Une erreur interne est survenue."
 MESSAGE_REQUETE_INVALIDE = "Les données envoyées sont invalides."
+MESSAGE_RESSOURCE_INCONNUE = "Cette ressource n'existe pas."
+MESSAGE_METHODE_NON_PERMISE = "Cette méthode n'est pas permise sur cette ressource."
+MESSAGE_ERREUR_HTTP = "La requête n'a pas pu être traitée."
+MESSAGE_SERVICE_INDISPONIBLE = (
+    "Le service est momentanément indisponible : réessaie dans un instant."
+)
 # Les profils acceptés sont tirés de `Role` : ajouter un rôle met à jour le message
 # et la documentation de l'en-tête, sans liste à recopier à la main.
 PROFILS_ACCEPTES = " ou ".join(f"« {role.value} »" for role in Role)
 MESSAGE_PROFIL_INVALIDE = f"L'en-tête X-Profil doit valoir {PROFILS_ACCEPTES}."
+
+journal = logging.getLogger(__name__)
 
 
 class ProfilInvalideError(Exception):
@@ -37,33 +56,66 @@ class ProfilInvalideError(Exception):
     """
 
 
+# Les erreurs du domaine qui se traduisent par un simple statut. `ValeurInvalideError`
+# a son propre traducteur : elle ajoute le champ en cause.
 STATUT_PAR_ERREUR: dict[type[Exception], HTTPStatus] = {
     NonTrouveError: HTTPStatus.NOT_FOUND,
     AccesRefuseError: HTTPStatus.FORBIDDEN,
     TransitionInterditeError: HTTPStatus.CONFLICT,
     ConflitVersionError: HTTPStatus.CONFLICT,
-    ValeurInvalideError: HTTPStatus.UNPROCESSABLE_ENTITY,
 }
 
-TITRE_PAR_STATUT = {
+TITRE_PAR_STATUT: dict[int, str] = {
     HTTPStatus.BAD_REQUEST: "Requête incorrecte",
     HTTPStatus.FORBIDDEN: "Accès refusé",
     HTTPStatus.NOT_FOUND: "Ressource introuvable",
+    HTTPStatus.METHOD_NOT_ALLOWED: "Méthode non autorisée",
     HTTPStatus.CONFLICT: "Conflit",
     HTTPStatus.UNPROCESSABLE_ENTITY: "Données invalides",
     HTTPStatus.INTERNAL_SERVER_ERROR: "Erreur interne",
+    HTTPStatus.SERVICE_UNAVAILABLE: "Service indisponible",
+}
+TITRE_PAR_DEFAUT = "Erreur"
+
+# Message des erreurs de routage de Starlette, dont le texte natif est en anglais.
+DETAIL_HTTP_PAR_STATUT: dict[int, str] = {
+    HTTPStatus.NOT_FOUND: MESSAGE_RESSOURCE_INCONNUE,
+    HTTPStatus.METHOD_NOT_ALLOWED: MESSAGE_METHODE_NON_PERMISE,
 }
 
 
-def reponse_probleme(statut: HTTPStatus, detail: str) -> JSONResponse:
+def _reponse(probleme: ProblemeReponse, en_tetes: Mapping[str, str] | None = None) -> JSONResponse:
+    return JSONResponse(
+        probleme.model_dump(mode="json"),
+        status_code=probleme.status,
+        media_type=TYPE_PROBLEME,
+        headers=en_tetes,
+    )
+
+
+def reponse_probleme(
+    statut: int, detail: str, en_tetes: Mapping[str, str] | None = None
+) -> JSONResponse:
     """Construit une réponse `application/problem+json` (RFC 9457)."""
-    corps = {
-        "type": "about:blank",
-        "title": TITRE_PAR_STATUT[statut],
-        "status": statut.value,
-        "detail": detail,
-    }
-    return JSONResponse(corps, status_code=statut.value, media_type=TYPE_PROBLEME)
+    probleme = ProblemeReponse(
+        type=TYPE_PAR_DEFAUT,
+        title=TITRE_PAR_STATUT.get(statut, TITRE_PAR_DEFAUT),
+        status=statut,
+        detail=detail,
+    )
+    return _reponse(probleme, en_tetes)
+
+
+def reponse_validation(detail: str, erreurs: list[ErreurChampReponse]) -> JSONResponse:
+    """Construit la réponse 422, avec la liste des erreurs par champ."""
+    probleme = ProblemeValidationReponse(
+        type=TYPE_PAR_DEFAUT,
+        title=TITRE_PAR_STATUT[HTTPStatus.UNPROCESSABLE_ENTITY],
+        status=HTTPStatus.UNPROCESSABLE_ENTITY,
+        detail=detail,
+        erreurs=erreurs,
+    )
+    return _reponse(probleme)
 
 
 async def _traduire_erreur_metier(_requete: Request, erreur: Exception) -> JSONResponse:
@@ -74,13 +126,40 @@ async def _traduire_erreur_metier(_requete: Request, erreur: Exception) -> JSONR
     return reponse_probleme(statut, str(erreur))
 
 
+async def _traduire_valeur_invalide(_requete: Request, erreur: ValeurInvalideError) -> JSONResponse:
+    erreurs = [ErreurChampReponse(champ=erreur.champ, message=str(erreur))] if erreur.champ else []
+    return reponse_validation(str(erreur), erreurs)
+
+
 async def _traduire_profil(_requete: Request, _erreur: Exception) -> JSONResponse:
     return reponse_probleme(HTTPStatus.BAD_REQUEST, MESSAGE_PROFIL_INVALIDE)
 
 
-async def _traduire_requete_invalide(_requete: Request, _erreur: Exception) -> JSONResponse:
+async def _traduire_requete_invalide(
+    _requete: Request, erreur: RequestValidationError
+) -> JSONResponse:
+    # Un identifiant mal formé dans le chemin désigne une ressource qui n'existe pas, comme
+    # n'importe quel identifiant inconnu : un 422 le distinguerait, sans rien apprendre de plus.
+    if concerne_le_chemin(erreur):
+        return reponse_probleme(HTTPStatus.NOT_FOUND, MESSAGE_RESSOURCE_INCONNUE)
     # Le détail natif de FastAPI renvoie la valeur envoyée : on ne le recopie pas.
-    return reponse_probleme(HTTPStatus.UNPROCESSABLE_ENTITY, MESSAGE_REQUETE_INVALIDE)
+    return reponse_validation(MESSAGE_REQUETE_INVALIDE, erreurs_par_champ(erreur))
+
+
+async def _traduire_erreur_http(_requete: Request, erreur: StarletteHTTPException) -> JSONResponse:
+    # Le texte natif est en anglais ; l'en-tête `Allow` d'un 405 est conservé, car le
+    # protocole HTTP l'exige.
+    detail = DETAIL_HTTP_PAR_STATUT.get(erreur.status_code, MESSAGE_ERREUR_HTTP)
+    return reponse_probleme(erreur.status_code, detail, erreur.headers)
+
+
+async def _traduire_service_indisponible(
+    _requete: Request, erreur: ServiceIndisponibleError
+) -> JSONResponse:
+    # Seul le type de la cause est consigné : son message peut citer la requête et ses
+    # paramètres, donc des données personnelles.
+    journal.error("Service indisponible (%s).", type(erreur.__cause__).__name__)
+    return reponse_probleme(HTTPStatus.SERVICE_UNAVAILABLE, MESSAGE_SERVICE_INDISPONIBLE)
 
 
 async def _traduire_erreur_inconnue(_requete: Request, _erreur: Exception) -> JSONResponse:
@@ -92,6 +171,11 @@ def enregistrer_gestionnaires_erreurs(application: FastAPI) -> None:
     """Branche la traduction des erreurs sur l'application."""
     for classe in STATUT_PAR_ERREUR:
         application.add_exception_handler(classe, _traduire_erreur_metier)
+    # Les traducteurs qui lisent l'erreur passent par le décorateur, qui accepte un type
+    # d'erreur précis ; `add_exception_handler` n'accepte que des traducteurs d'`Exception`.
+    application.exception_handler(ValeurInvalideError)(_traduire_valeur_invalide)
+    application.exception_handler(RequestValidationError)(_traduire_requete_invalide)
+    application.exception_handler(StarletteHTTPException)(_traduire_erreur_http)
+    application.exception_handler(ServiceIndisponibleError)(_traduire_service_indisponible)
     application.add_exception_handler(ProfilInvalideError, _traduire_profil)
-    application.add_exception_handler(RequestValidationError, _traduire_requete_invalide)
     application.add_exception_handler(Exception, _traduire_erreur_inconnue)

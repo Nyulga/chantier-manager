@@ -1,13 +1,11 @@
-"""Types de colonnes communs et Unit of Work SQL utilisée hors de son bloc."""
+"""Types de colonnes des tables des étapes : dates enregistrées en UTC."""
 
 from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy.dialects import sqlite
-from sqlalchemy.orm import Session, sessionmaker
 
-from app.shared.infrastructure.sql.types import DateHeureUtc
-from app.shared.infrastructure.sql.unit_of_work import SqlUnitOfWork
+from app.etapes.infrastructure.sql.types import DateHeureUtc
 
 PARIS = timezone(timedelta(hours=1))
 DIALECTE = sqlite.dialect()
@@ -45,12 +43,3 @@ def test_une_date_deja_localisee_est_relue_telle_quelle() -> None:
     instant = datetime(2026, 11, 22, 9, 0, tzinfo=UTC)
 
     assert DateHeureUtc().process_result_value(instant, DIALECTE) == instant
-
-
-def test_utiliser_la_session_hors_d_un_bloc_with_est_une_erreur_de_programmation(
-    usine_sessions: sessionmaker[Session],
-) -> None:
-    uow = SqlUnitOfWork(usine_sessions)
-
-    with pytest.raises(RuntimeError, match="with"):
-        _ = uow.session

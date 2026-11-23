@@ -2,7 +2,7 @@
 
 from app.etapes.application.plafonds import LIMITE_A_VALIDER
 from app.etapes.application.ports import UnitOfWorkEtapes
-from app.etapes.application.vues import EtapeAValiderVue, vue_etape_a_valider
+from app.etapes.application.vues import ListeAValiderVue, vue_etape_a_valider
 from app.etapes.domain.etape import trier_par_signalement
 from app.etapes.domain.politiques import peut_lister_etapes_a_valider
 from app.shared.application.acces import exiger_acces
@@ -17,6 +17,8 @@ class ListerEtapesAValider:
     liste est plafonnée à `LIMITE_A_VALIDER` étapes, les plus anciennes : ce sont
     celles que le chef doit traiter d'abord. Ce plafond est un choix technique,
     qui borne le coût de la lecture, et non une règle métier (`plafonds.py`).
+    Pour savoir si la liste a été coupée, on demande une étape de plus que le
+    plafond : si elle existe, il y en a d'autres, et la vue le dit (`tronquee`).
     Dans le squelette, elle couvre tous les chantiers ; en phase 2, seulement ceux
     du chef.
     Le droit est vérifié avant toute lecture : un ouvrier n'apprend rien des étapes.
@@ -29,14 +31,15 @@ class ListerEtapesAValider:
     def __init__(self, uow: UnitOfWorkEtapes) -> None:
         self._uow = uow
 
-    def executer(self, acteur: Acteur) -> tuple[EtapeAValiderVue, ...]:
+    def executer(self, acteur: Acteur) -> ListeAValiderVue:
         """Renvoie la vue de chaque étape à valider, avec les actions permises à l'acteur."""
         exiger_acces(
             autorise=peut_lister_etapes_a_valider(acteur),
             message="Seul un chef consulte les étapes à valider.",
         )
         with self._uow:
-            etapes = self._uow.etapes.lister_a_valider(LIMITE_A_VALIDER)
-            return tuple(
-                vue_etape_a_valider(etape, acteur) for etape in trier_par_signalement(etapes)
+            etapes = trier_par_signalement(self._uow.etapes.lister_a_valider(LIMITE_A_VALIDER + 1))
+            return ListeAValiderVue(
+                etapes=tuple(vue_etape_a_valider(e, acteur) for e in etapes[:LIMITE_A_VALIDER]),
+                tronquee=len(etapes) > LIMITE_A_VALIDER,
             )

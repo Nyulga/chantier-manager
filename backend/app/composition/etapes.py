@@ -2,10 +2,15 @@
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.chantiers.application import AutoriserAjoutEtape, VerifierChantierExiste
+from app.chantiers.application import (
+    AutoriserAjoutEtape,
+    EvaluerCreationChantier,
+    VerifierChantierExiste,
+)
 from app.chantiers.infrastructure.sql.unit_of_work import SqlUnitOfWorkChantiers
 from app.etapes.application.ajouter_etape import AjouterEtape
 from app.etapes.application.changer_statut_etape import ChangerStatutEtape
+from app.etapes.application.consulter_capacites import ConsulterCapacites
 from app.etapes.application.lister_activite_recente import ListerActiviteRecente
 from app.etapes.application.lister_etapes import ListerEtapes
 from app.etapes.application.lister_etapes_a_valider import ListerEtapesAValider
@@ -17,9 +22,9 @@ from app.shared.infrastructure.horloge_systeme import HorlogeSysteme
 class FournisseursEtapes:
     """Construit les cas d'usage d'étapes, avec leurs dépendances SQL.
 
-    Les ports `VerificationChantier` et `AutorisationAjoutEtape` d'étapes sont
-    branchés ici sur les cas d'usage publics de chantiers : étapes n'importe rien
-    de chantiers. Chaque appel crée de nouveaux Unit of Work, un par requête.
+    Les ports `VerificationChantier`, `AutorisationAjoutEtape` et `DroitCreationChantier`
+    d'étapes sont branchés ici sur les cas d'usage publics de chantiers : étapes
+    n'importe rien de chantiers. Chaque appel crée de nouveaux Unit of Work, un par requête.
     """
 
     def __init__(self, usine_sessions: sessionmaker[Session], generateur_id: GenerateurId) -> None:
@@ -53,3 +58,7 @@ class FournisseursEtapes:
     def lister_activite_recente(self) -> ListerActiviteRecente:
         """Fournit le cas d'usage du fil d'activité."""
         return ListerActiviteRecente(self._uow())
+
+    def consulter_capacites(self) -> ConsulterCapacites:
+        """Fournit le cas d'usage des capacités, qui ne lit aucune donnée."""
+        return ConsulterCapacites(EvaluerCreationChantier())

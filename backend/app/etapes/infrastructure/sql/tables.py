@@ -4,14 +4,14 @@ Les entités `Etape` et `HistoriqueEtape` restent des dataclasses pures : le map
 les instrumente à l'import de ce fichier, sans classe ORM en double (ADR 0002).
 """
 
-from sqlalchemy import CheckConstraint, Column, ForeignKey, Integer, String, Table, Uuid
+from sqlalchemy import CheckConstraint, Column, ForeignKey, Index, Integer, String, Table, Uuid
 from sqlalchemy.orm import relationship
 
 from app.etapes.domain.cycle import StatutEtape
 from app.etapes.domain.etape import Etape, HistoriqueEtape
+from app.etapes.infrastructure.sql.types import DateHeureUtc, enum_texte
 from app.shared.domain.acteur import Role
 from app.shared.infrastructure.sql.registre import metadata, registre
-from app.shared.infrastructure.sql.types import DateHeureUtc, enum_texte
 
 # Les clés étrangères désignent la table par son nom : étapes n'importe rien de
 # l'infrastructure de chantiers (contrat import-linter), mais la base vérifie le lien.
@@ -19,13 +19,20 @@ TABLE_ETAPES = Table(
     "etapes",
     metadata,
     Column("id", Uuid, primary_key=True),
-    Column("chantier_id", Uuid, ForeignKey("chantiers.id"), nullable=False, index=True),
+    Column("chantier_id", Uuid, ForeignKey("chantiers.id"), nullable=False),
     Column("titre", String, nullable=False),
     Column("ordre", Integer, nullable=False),
     Column("statut", enum_texte(StatutEtape, "statut"), nullable=False),
     Column("version", Integer, nullable=False),
     CheckConstraint("ordre >= 1", name="ordre_positif"),
     CheckConstraint("version >= 1", name="version_positive"),
+    # Deux étapes d'un chantier n'ont jamais le même ordre : c'est ce qui rend leur liste
+    # déterministe, et ce qui fait échouer l'un de deux ajouts simultanés (voir
+    # `SqlUnitOfWork.valider`). Un index unique, et non une contrainte `UNIQUE` : sous
+    # SQLite, ajouter une contrainte recrée la table, ce qui supprimerait en cascade
+    # l'historique (migration 0002). Sa colonne de tête, `chantier_id`, sert aussi aux
+    # recherches par chantier : il remplace l'ancien index simple.
+    Index("uq_etapes_chantier_id_ordre", "chantier_id", "ordre", unique=True),
 )
 
 # Une entrée d'historique n'a pas d'identifiant dans le domaine : l'identifiant de

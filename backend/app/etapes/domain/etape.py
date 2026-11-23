@@ -67,8 +67,8 @@ class Etape:
                 dépasse `LONGUEUR_TITRE_MAX` caractères.
         """
         if not titre.strip():
-            raise ValeurInvalideError("Le titre de l'étape est obligatoire.")
-        exiger_longueur_max(titre, LONGUEUR_TITRE_MAX, "Le titre de l'étape")
+            raise ValeurInvalideError("Le titre de l'étape est obligatoire.", "titre")
+        exiger_longueur_max(titre, LONGUEUR_TITRE_MAX, "Le titre de l'étape", "titre")
         return cls(id=id, chantier_id=chantier_id, titre=titre, ordre=ordre)
 
     def appliquer(
@@ -91,9 +91,13 @@ class Etape:
         """
         transition = trouver_transition(self.statut, action, acteur.role)
         if transition.commentaire_obligatoire and not (commentaire and commentaire.strip()):
-            raise ValeurInvalideError("Un commentaire est obligatoire pour cette action.")
+            raise ValeurInvalideError(
+                "Un commentaire est obligatoire pour cette action.", "commentaire"
+            )
         if commentaire is not None:
-            exiger_longueur_max(commentaire, LONGUEUR_COMMENTAIRE_MAX, "Le commentaire")
+            exiger_longueur_max(
+                commentaire, LONGUEUR_COMMENTAIRE_MAX, "Le commentaire", "commentaire"
+            )
         self.historique.append(
             HistoriqueEtape(
                 role=acteur.role,

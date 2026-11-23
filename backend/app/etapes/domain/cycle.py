@@ -113,4 +113,4 @@ def lire_action(nom: str) -> ActionEtape:
     try:
         return ActionEtape(nom)
     except ValueError:
-        raise ValeurInvalideError("Action inconnue sur une étape.") from None
+        raise ValeurInvalideError("Action inconnue sur une étape.", "action") from None

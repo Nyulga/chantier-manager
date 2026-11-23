@@ -219,3 +219,29 @@ def test_un_chantier_a_l_echeance_depassee_est_en_retard_de_plusieurs_jours(
 
     assert chantier["en_retard"] is True
     assert chantier["jours_restants"] > 0
+
+
+def test_une_liste_a_valider_complete_n_est_pas_signalee_tronquee(client: TestClient) -> None:
+    etapes_signalees_dans_l_ordre(client, LIMITE_A_VALIDER)
+
+    reponse = client.get("/api/etapes/a-valider", headers=CHEF)
+
+    assert len(reponse.json()) == LIMITE_A_VALIDER
+    assert reponse.headers["X-Liste-Tronquee"] == "false"
+
+
+def test_une_liste_a_valider_coupee_au_plafond_est_signalee_tronquee(client: TestClient) -> None:
+    etapes_signalees_dans_l_ordre(client, LIMITE_A_VALIDER + 1)
+
+    reponse = client.get("/api/etapes/a-valider", headers=CHEF)
+
+    assert len(reponse.json()) == LIMITE_A_VALIDER
+    assert reponse.headers["X-Liste-Tronquee"] == "true"
+
+
+def test_l_en_tete_de_troncature_est_documente_dans_openapi(client: TestClient) -> None:
+    schema = client.get("/api/openapi.json").json()
+
+    en_tetes = schema["paths"]["/api/etapes/a-valider"]["get"]["responses"]["200"]["headers"]
+
+    assert en_tetes["X-Liste-Tronquee"]["schema"]["enum"] == ["true", "false"]

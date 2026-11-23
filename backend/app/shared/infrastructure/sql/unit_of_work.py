@@ -3,10 +3,13 @@
 from types import TracebackType
 from typing import Self
 
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.orm.exc import StaleDataError
 
-from app.shared.domain.erreurs import ConflitVersionError
+from app.shared.application.erreurs import ServiceIndisponibleError
+from app.shared.domain.erreurs import MESSAGE_MODIFIE_ENTRE_TEMPS, ConflitVersionError
+from app.shared.infrastructure.sql.violation_unicite import est_violation_unicite
 
 
 class SqlUnitOfWork:
@@ -42,21 +45,37 @@ class SqlUnitOfWork:
     ) -> None:
         """Ferme la session. Une transaction non validée est annulée par cette fermeture.
 
-        L'exception éventuelle n'est pas absorbée : elle remonte à l'appelant.
+        L'exception éventuelle n'est pas absorbée : elle remonte à l'appelant. Seule
+        une erreur de connexion à la base (`OperationalError`) est traduite, ici et
+        pas dans chaque repository : c'est la sortie du bloc `with` qui voit toutes
+        les lectures et l'écriture finale. Elle devient `ServiceIndisponibleError`,
+        sans le texte de la requête ni ses paramètres, qui peuvent contenir des
+        données personnelles ; la cause reste chaînée pour le journal du serveur.
+
+        Lève :
+            ServiceIndisponibleError : la base n'a pas pu être jointe ou interrogée.
         """
         session, self._session = self.session, None
         session.close()
+        if isinstance(erreur, OperationalError):
+            raise ServiceIndisponibleError("Base de données inaccessible.") from erreur
 
     def valider(self) -> None:
         """Enregistre définitivement la transaction.
 
         Lève :
             ConflitVersionError : un objet a été modifié par quelqu'un d'autre depuis
-                sa lecture (verrou optimiste, intent.md §2.3) ; rien n'est enregistré.
+                sa lecture (verrou optimiste, intent.md §2.3), ou une valeur unique a
+                été prise entre-temps, comme l'ordre d'une étape ajoutée en même temps
+                qu'une autre ; rien n'est enregistré.
         """
         try:
             self.session.commit()
         except StaleDataError:
-            raise ConflitVersionError(
-                "Cet élément vient d'être modifié par quelqu'un d'autre : recharge la page."
-            ) from None
+            raise ConflitVersionError(MESSAGE_MODIFIE_ENTRE_TEMPS) from None
+        except IntegrityError as erreur:
+            # Les autres contraintes (clé étrangère, CHECK) sont des défauts du programme :
+            # elles remontent telles quelles, pour être vues et corrigées.
+            if not est_violation_unicite(erreur):
+                raise
+            raise ConflitVersionError(MESSAGE_MODIFIE_ENTRE_TEMPS) from None
