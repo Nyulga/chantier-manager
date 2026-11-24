@@ -1,12 +1,13 @@
 """Fakes mémoire de shared : horloge fixe, identifiants prévisibles et Unit of Work."""
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
 import pytest
 
 from app.shared.domain.erreurs import ValeurInvalideError
 from app.shared.infrastructure.memoire.generateur_id_previsible import GenerateurIdPrevisible
+from app.shared.infrastructure.memoire.horloge_avancable import HorlogeAvancable
 from app.shared.infrastructure.memoire.horloge_fixe import HorlogeFixe
 from app.shared.infrastructure.memoire.unit_of_work import MemoireEntrepot, MemoireUnitOfWork
 
@@ -45,6 +46,30 @@ def test_la_date_du_jour_de_l_horloge_fixe_est_celle_de_paris(
     horloge = HorlogeFixe(instant)
 
     assert horloge.aujourd_hui() == date_a_paris
+
+
+def test_l_horloge_avancable_commence_a_l_instant_donne() -> None:
+    horloge = HorlogeAvancable(INSTANT)
+
+    assert horloge.maintenant() == INSTANT
+
+
+def test_l_horloge_avancable_avance_du_delai_demande() -> None:
+    horloge = HorlogeAvancable(INSTANT)
+
+    horloge.avancer(timedelta(seconds=90))
+    horloge.avancer(timedelta(microseconds=5))
+
+    assert horloge.maintenant() == INSTANT + timedelta(seconds=90, microseconds=5)
+
+
+def test_la_date_du_jour_de_l_horloge_avancable_suit_l_instant() -> None:
+    # 22 h 30 UTC un soir d'hiver : une heure plus tard, il est minuit passé à Paris.
+    horloge = HorlogeAvancable(datetime(2026, 11, 22, 22, 30, tzinfo=UTC))
+
+    horloge.avancer(timedelta(hours=1))
+
+    assert horloge.aujourd_hui() == date(2026, 11, 23)
 
 
 def test_le_generateur_previsible_renvoie_des_identifiants_croissants() -> None:

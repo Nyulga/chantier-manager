@@ -36,3 +36,20 @@ Le lot fait suite au premier test d'intrusion local (règle 08) et à la demande
 **Vert** (`just verifier`, coordinateur) : `799 passed`, couverture 100 %, 8 contrats tenus, `458` tests frontend.
 
 **Décision du coordinateur** : une adresse bloquée par un piège reçoit un 403 sur ses écritures, sans délai annoncé ; `est_bloquee` suffit.
+
+## Étape 2b – Limiteur et liste d'adresses bloquées en mémoire (`dev-donnees`, Sonnet, effort élevé)
+
+**Livré** (`shared/infrastructure`, `composition/parametres.py` et leurs tests seulement) :
+- `MemoireLimiteurDebit(horloge, seuils, fenetre, cles_max)` : fenêtre glissante, une file d'horodatages par adresse et catégorie, verrou, au plus 5 000 clés suivies (au-delà, la plus ancienne est évincée plutôt que de refuser les nouvelles adresses, ce qui serait un déni de service) ;
+- `MemoireListeAdressesBloquees(horloge, duree, adresses_max)` : au plus 10 000 adresses, éviction du blocage le plus proche de son terme ;
+- `HorlogeAvancable`, pour tester le temps sans attendre ;
+- `Parametres` : `documentation_exposee = False`, `hotes_acceptes = ["localhost", "127.0.0.1"]`, `taille_max_corps = 64 Ko`.
+
+Les suites de contrat sont prêtes à recevoir une seconde implémentation (base ou Redis) ; il n'y en a qu'une pendant le squelette (un seul processus API, ADR 0015).
+
+**Rouge** : `16 failed, 6 passed` avec une première version qui permettait tout (`assert None == 60`, `assert 400 == 50`, `est_bloquee` toujours faux) ; `AttributeError` sur les nouveaux paramètres.
+**Vert** (`just verifier`, coordinateur) : `840 passed`, couverture 100 %, 8 contrats tenus, `458` tests frontend.
+
+**Limite connue** : le test de concurrence passe aussi sans verrou (section critique trop courte face au GIL) ; le verrou est justifié par lecture.
+
+**Pour la suite** : `compose.prod.yaml` devra définir `CHANTIER_HOTES_ACCEPTES` (étape `dev-socle`) ; les tests de l'API construiront leurs `Parametres` avec l'hôte `testserver` et la documentation exposée.

@@ -24,6 +24,7 @@ from app.shared.application.ports import GenerateurId, Horloge
 from app.shared.infrastructure.generateur_uuid7 import GenerateurUuid7
 from app.shared.infrastructure.horloge_systeme import HorlogeSysteme
 from app.shared.infrastructure.memoire.generateur_id_previsible import GenerateurIdPrevisible
+from app.shared.infrastructure.memoire.horloge_avancable import HorlogeAvancable
 from app.shared.infrastructure.memoire.horloge_fixe import HorlogeFixe
 from tests.fabriques.chantiers import un_chantier
 from tests.fabriques.etapes import ID_CHANTIER
@@ -62,6 +63,16 @@ def horloge(request: pytest.FixtureRequest) -> Horloge:
     if request.param == "systeme":
         return HorlogeSysteme()
     return HorlogeFixe(INSTANT_FIXE)
+
+
+@pytest.fixture
+def horloge_avancable() -> HorlogeAvancable:
+    """Horloge figée sur `INSTANT_FIXE` que le test fait avancer du délai voulu.
+
+    Elle sert aux contrats des ports dont le comportement dépend du temps qui passe
+    (limite de débit, blocage d'une adresse) : aucun `sleep`, aucune attente réelle.
+    """
+    return HorlogeAvancable(INSTANT_FIXE)
 
 
 @pytest.fixture(params=["uuid7", "previsible"])
