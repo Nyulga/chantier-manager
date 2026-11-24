@@ -113,7 +113,7 @@ Les suites de contrat sont prêtes à recevoir une seconde implémentation (base
 Le propriétaire a validé, le 2026-11-24, les corrections des constats importants de `revue`, `conformite` et `securite`, le plafond de 20 transitions par étape, le piège `/.git/…` et l'ADR 0016. Les constats mineurs deviennent des issues (label `relecture`).
 
 ### ADR 0016 et règles (coordinateur)
-`docs/decisions/0016-protections-de-la-demo-publique.md` et son index ; renvois du code corrigés (ADR 0015 → 0016) ; règles 01 (`unicodedata`), 04 (middlewares, 409 plafond, 400/403/413/429), 06 (`shared/api`) et 09 (« Comment vérifier »). Commit `9157cef`.
+`docs/decisions/0016-protections-de-la-demo-publique.md` et son index ; renvois du code corrigés (ADR 0015 → 0016) ; règles 01 (`unicodedata`), 04 (middlewares, 409 plafond, 400/403/413/429), 06 (`shared/api`) et 09 (« Comment vérifier »). Commit `d6fc693`.
 
 ### Adresse réelle du visiteur (`dev-socle`, Sonnet, effort élevé)
 `header_up X-Forwarded-For {remote_host}` dans les deux `reverse_proxy` vers l'API (`protections.caddy`, `Caddyfile.extrait`), vérification IPv4/IPv6 ajoutée à la procédure de mise en ligne. `caddy validate` passe sur les deux fichiers.
@@ -125,3 +125,9 @@ Le propriétaire a validé, le 2026-11-24, les corrections des constats importan
 `LIMITE_TRANSITIONS_PAR_ETAPE = 20`, vérifié une fois dans `ChangerStatutEtape`, après le chargement et la version, avant toute écriture, avec `len(etape.historique)` (aucun port modifié). `tests/application/etapes/test_plafond_transitions.py` (8 tests).
 - Rouge : `Failed: DID NOT RAISE PlafondAtteintError` sur les 4 actions (4 failed, 4 passed).
 - Vert : `just verifier-back` → 958 passed, couverture 100 %.
+
+### Créations sous le même verrou (`dev-donnees`, Sonnet, effort élevé)
+`creer_moteur` ouvre chaque transaction par `BEGIN IMMEDIATE` (`isolation_level=None` côté pilote, écouteur `begin`, méthode de la documentation SQLAlchemy pour pysqlite) : le comptage d'un plafond et l'écriture se font sous le même verrou. Un verrou tenu plus de 5 s donne toujours une 503. `test_plafond_concurrent.py` (12 créations simultanées depuis 99 chantiers, moteur à délai d'attente de 30 s pour ne prouver que le plafond) ; `test_une_creation_pendant_qu_un_autre_ecrit_donne_un_503_apres_l_attente` ; le test du conflit de version est réécrit, car deux transactions imbriquées dans un même fil sont désormais impossibles (même propriété vérifiée : verrou optimiste par version).
+- Rouge : `assert 111 == 100` (111, 111, 104, 111, 111, puis 111, 111, 111, 110, 111, 111 chantiers).
+- Vert : 20 lancements consécutifs, 3,06 s au plus ; `just verifier-back` → 960 passed, couverture 100 %.
+- À retenir pour le retour de PostgreSQL (ADR 0007) : réserver l'écouteur au dialecte SQLite.
