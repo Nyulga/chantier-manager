@@ -1,6 +1,6 @@
 # Lot 06 – Notes, photos, documents
 
-**Dépend de** : 04 · **Statut** : à faire · **Issue** : #6 · **Référence** : [ADR 0004](../adr/0004-traitement-des-fichiers.md) · Peut se mener **en parallèle du lot 05**.
+**Dépend de** : 04 · **Statut** : à faire · **Issue** : #6 · **Référence** : [ADR 0004](../decisions/0004-traitement-des-fichiers.md) · Peut se mener **en parallèle du lot 05**.
 
 ## Objectif
 Centraliser les informations du terrain sur chaque chantier, avec une chaîne de contrôle des fichiers sans faille.
@@ -32,7 +32,7 @@ Centraliser les informations du terrain sur chaque chantier, avec une chaîne de
 | Un fichier n'est accessible qu'aux utilisateurs autorisés, jamais par une URL publique | `test_telechargement_cloisonne.py` (404 hors périmètre), test vérifiant que le dossier de stockage n'est pas servi | API |
 | Un échec de transaction ne laisse pas de fichier orphelin, et `reconcilier-fichiers` nettoie les restes | `test_envoyer_fichier.py` (compensation), `test_reconcilier_fichiers.py` | Service, données |
 | Les en-têtes de téléchargement sont corrects (`nosniff`, `sandbox`, `attachment` pour les PDF) | `test_entetes_telechargement.py` | API |
-| L'ordre de la chaîne est garanti | `tests/unitaires/documents/test_chaine_controle.py` (espions sur les fakes) | Service |
+| L'ordre de la chaîne est garanti | `tests/application/documents/test_chaine_controle.py` (espions sur les fakes) | Service |
 
 ## Hors lot
 Stockage S3, édition de documents, formats autres que PDF et photos, modification d'une note.

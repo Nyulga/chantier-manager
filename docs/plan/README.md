@@ -1,6 +1,6 @@
 # Plan de développement de la V1
 
-Référence : [`intent.md`](../../intent.md) · Décisions : [`docs/adr/`](../adr/README.md)
+Référence : [`intent.md`](../../intent.md) · Décisions : [`docs/decisions/`](../decisions/README.md)
 
 ## Phase 1 : squelette (en cours)
 

@@ -18,7 +18,7 @@ Lis, dans cet ordre :
 Si une consigne du coordinateur contredit une règle ou `intent.md`, **arrête-toi et signale-le** dans ton rapport. N'écris rien dans ce cas.
 
 ## Méthode : TDD strict
-1. Écris les tests de l'étape (`backend/tests/unitaires/<module>/`). Pour le domaine : sans base de données et sans mock. Pour les services : uniquement les implémentations mémoire des ports.
+1. Écris les tests de l'étape (`backend/tests/domain/<module>/` pour le domaine, `backend/tests/application/<module>/` pour les services). Pour le domaine : sans base de données et sans mock. Pour les services : uniquement les implémentations mémoire des ports.
 2. Lance-les avec `just test-back <chemin>`. Ils doivent **échouer pour la bonne raison** : une assertion, ou une fonction absente. Une erreur de syntaxe ou d'import ne compte pas. Garde cette sortie.
 3. Écris le minimum de code qui les fait passer.
 4. Refactorise sans casser les tests. Respecte les limites de taille et de complexité de la règle 00 (§4).

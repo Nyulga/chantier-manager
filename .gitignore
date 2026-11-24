@@ -30,6 +30,9 @@ coverage/
 *.tar.gz
 sauvegardes/
 
+# Rapports de tests d'intrusion : jamais publiés (règle 08)
+pentest-rapports/
+
 # Fichiers envoyés (stockage local)
 uploads/
 

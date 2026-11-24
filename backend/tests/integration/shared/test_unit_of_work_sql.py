@@ -17,8 +17,8 @@ from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import ConflitVersionError
 from app.shared.infrastructure.sql.moteur import creer_moteur, creer_usine_sessions
 from tests.conftest import url_sqlite
-from tests.unitaires.chantiers.fabriques import un_chantier
-from tests.unitaires.etapes.fabriques import ID_CHANTIER, une_etape
+from tests.fabriques.chantiers import un_chantier
+from tests.fabriques.etapes import ID_CHANTIER, une_etape
 
 OUVRIER = Acteur(Role.OUVRIER)
 INSTANT = datetime(2026, 11, 22, 9, 0, tzinfo=UTC)

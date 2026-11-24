@@ -18,11 +18,20 @@ Relire d'abord `00-principes.md`.
 ### Organisation (backend)
 ```
 backend/tests/
-├── unitaires/<module>/        # domain et application, sans base ni réseau
+├── domain/<module>/           # tests du code de app/<module>/domain, sans base ni réseau
+├── application/<module>/      # cas d'usage et services publics, sur des fakes mémoire
+├── infrastructure/<module>/   # tests unitaires de l'infrastructure : types SQL, UoW, implémentations mémoire, horloge réelle
+├── api/<module>/              # tests de la couche api qui ne passent pas par HTTP (par exemple la parité des schémas)
+├── composition/               # tests de la composition root
+├── outils/                    # tests des outils du dossier tools
+├── fabriques/<module>.py      # fabriques de données fictives servant à plusieurs couches
 ├── contrats/                  # une suite par port, jouée sur SQL ET mémoire
 ├── integration/<module>/      # routes API + PostgreSQL réel (testcontainers ; SQLite pendant le squelette, ADR 0007)
+├── migrations/                # application, annulation et réapplication des migrations
 └── architecture/              # contrats import-linter et limites de taille
 ```
+Un fichier de test va dans le dossier de la couche **du code qu'il teste**. S'il en exerce plusieurs, on choisit la couche la plus haute. Une aide de test (espion, contexte) reste à côté des tests qui l'utilisent ; une fabrique utilisée par plusieurs couches va dans `fabriques/`.
+
 Côté frontend : un fichier `*.test.tsx` à côté du fichier testé, et les tests Playwright dans `frontend/e2e/`.
 
 ### Règles d'écriture

@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `main` est protégée sur GitHub : le push direct, le force-push et la suppression sont interdits, y compris pour les admins. Le seul chemin vers `main` est une **pull request de `dev` vers `main`**. N'ouvre cette PR que si l'utilisateur le demande ; seul lui décide de la fusionner.
 - **Ne démarre jamais un lot de développement de toi-même** : chaque lot ne commence que sur la demande explicite de l'utilisateur.
 - Un lot se traite **toujours avec le skill `lot`** (`/lot NN`).
-  - La session principale coordonne, en Opus 5.5 avec un effort élevé au minimum. Elle délègue le code aux sous-agents `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` et `dev-socle`, puis fait vérifier le travail par `revue`, `conformite` et `securite`.
+  - La session principale coordonne, en Opus 5.5 avec un effort élevé au minimum. Elle délègue le code aux sous-agents `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` et `dev-socle`, puis fait vérifier le travail par `revue`, `conformite` et `securite` ; l'agent `pentest` attaque ensuite l'application qui tourne (skill `pentest`, règle 08).
   - Le skill fixe le modèle et l'effort de chaque agent.
   - Un commit `feat(lot-NN): <étape>` est fait par étape validée, sur `dev`.
   - À la fin du lot, la PR vers `main` est **proposée**, jamais ouverte sans accord.
@@ -21,8 +21,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Documents de référence
 
 - **`intent.md`** est la source de vérité : produit, architecture, contraintes, hors périmètre (section 4, à ne jamais réaliser) et critères d'acceptation (section 5).
-- **`.claude/rules/`** : les règles **strictes** par couche. `00-principes.md` s'applique toujours (SOLID, limites chiffrées, commentaires en français, TDD) ; les règles `01` à `07` couvrent les couches `domain`, `application`, `infrastructure` et `api`, le frontend, la composition root avec `shared`, ainsi que les tests et migrations. **Avant de coder dans une couche, relis sa règle**, à chaque lot. Si une demande contredit une règle, signale-le au lieu de la contourner.
-- **`docs/adr/`** : les décisions d'architecture et leurs justifications. Toute décision structurante nouvelle ou modifiée donne lieu à un nouvel ADR.
+- **`.claude/rules/`** : les règles **strictes** par couche. `00-principes.md` s'applique toujours (SOLID, limites chiffrées, commentaires en français, TDD) ; les règles `01` à `07` couvrent les couches `domain`, `application`, `infrastructure` et `api`, le frontend, la composition root avec `shared`, ainsi que les tests et migrations ; la règle `08` fixe les règles d'engagement des tests d'intrusion (périmètre, charge, rapports). **Avant de coder dans une couche, relis sa règle**, à chaque lot. Si une demande contredit une règle, signale-le au lieu de la contourner.
+- **`docs/decisions/`** : les décisions d'architecture et leurs justifications. Toute décision structurante nouvelle ou modifiée donne lieu à un nouvel ADR.
 - **`docs/design-system.md`** : le design system « Balise », validé. Toute interface l'applique, et ses tokens ne passent que par le thème Tailwind ; aucune couleur ni taille en dur. Le jaune haute visibilité et les rayures sont réservés aux étapes à valider (le jaune aussi au bouton principal sur mobile et à l'élément actif de la navigation).
 - **`docs/plan/`** : le plan de développement en 9 lots verticaux (`README.md`, puis un fichier `lot-XX-*.md` par lot). Avant de travailler sur un lot, lis son fichier et respecte sa « définition de terminé ».
 
@@ -42,7 +42,7 @@ Toutes passent par le `justfile` de la racine (Windows et Linux) :
 | `just installer` | `uv sync --locked` (backend), puis `pnpm install --frozen-lockfile` (frontend) |
 | `just lancer` | l'API sur le port 8000 (avec `--reload`) et Vite, qui relaie `/api` vers l'API |
 | `just verifier` | tous les contrôles de la CI : ruff, format, mypy, import-linter, limites de taille, bandit, pytest et couverture (100 % sur domain et application) ; ESLint, tsc, Prettier, Vitest et build ; duplication de code (`just doublons`) |
-| `just test-back <chemin ou -k nom>` | un test backend précis, sans couverture (par exemple `just test-back tests/unitaires/etapes/test_cycle.py`) |
+| `just test-back <chemin ou -k nom>` | un test backend précis, sans couverture (par exemple `just test-back tests/domain/etapes/test_cycle.py`) |
 | `just test-front <motif>` | un test frontend précis (`vitest run <motif>`) |
 | `just e2e` | Playwright à 360 et 1280 px, contre l'API réelle sur une base SQLite temporaire |
 | `just client` | régénère `frontend/src/api/schema.d.ts` depuis le schéma OpenAPI de l'API |

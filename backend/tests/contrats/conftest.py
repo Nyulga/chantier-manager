@@ -25,8 +25,8 @@ from app.shared.infrastructure.generateur_uuid7 import GenerateurUuid7
 from app.shared.infrastructure.horloge_systeme import HorlogeSysteme
 from app.shared.infrastructure.memoire.generateur_id_previsible import GenerateurIdPrevisible
 from app.shared.infrastructure.memoire.horloge_fixe import HorlogeFixe
-from tests.unitaires.chantiers.fabriques import un_chantier
-from tests.unitaires.etapes.fabriques import ID_CHANTIER
+from tests.fabriques.chantiers import un_chantier
+from tests.fabriques.etapes import ID_CHANTIER
 
 IMPLEMENTATIONS = ["memoire", "sql"]
 # Un soir d'hiver, 23 h 30 en UTC : il est déjà le lendemain à Paris.

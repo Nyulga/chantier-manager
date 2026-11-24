@@ -26,6 +26,7 @@ Argument : le numéro du lot (`$ARGUMENTS`), par exemple `03`.
 | `revue` | Vérification : critères, correction, tests | Opus | élevé | Doit trouver ce que les codeurs ont raté |
 | `conformite` | Vérification : règles `.claude/rules/`, design system, commentaires | Sonnet | élevé | Contrôle systématique, liste de points précise |
 | `securite` | Vérification : sécurité (ASVS niveau 2), secrets, RGPD | Opus | élevé | Tolérance zéro |
+| `pentest` | Vérification : attaque l'application qui tourne (règle 08, skill `pentest`) | Opus | élevé | Doit penser en attaquant sans jamais sortir du périmètre |
 | `backlog` | Issues GitHub | Sonnet | faible | Tâche simple et mécanique |
 
 **Ajustements imposés** : le coordinateur les passe dans les paramètres `model` et `effort` de l'outil Agent.
@@ -85,7 +86,8 @@ Les étapes s'enchaînent **une par une**, parce que chacune s'appuie sur la pr�
    - relancer uniquement le vérificateur concerné.
 3. Après **deux allers-retours** sans résolution, s'arrêter et soumettre le problème à l'utilisateur.
 4. Les constats `mineur` et hors lot ne sont pas corrigés dans le lot : ils deviennent des issues, via l'agent `backlog` (label `relecture`).
-5. **CI** : suivre `gh run watch` sur le dernier push. La CI doit être entièrement verte, y compris les tests de mutation, qui ne tournent qu'en CI Linux.
+5. **Pentest** : si le lot touche l'API, le frontend ou le déploiement, lancer le skill `pentest` en mode `local`, une fois les constats ci-dessus corrigés. Ses constats suivent le même circuit (correction dans le lot, ou issue pour les mineurs).
+6. **CI** : suivre `gh run watch` sur le dernier push. La CI doit être entièrement verte, y compris les tests de mutation, qui ne tournent qu'en CI Linux.
 
 ## 5. Clore le lot et proposer la PR
 

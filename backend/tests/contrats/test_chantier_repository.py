@@ -8,7 +8,7 @@ from app.chantiers.application.ports import UnitOfWorkChantiers
 from app.chantiers.domain.chantier import Chantier
 from app.chantiers.domain.montant import MONTANT_MAX, Montant
 from app.shared.domain.erreurs import NonTrouveError
-from tests.unitaires.chantiers.fabriques import un_chantier
+from tests.fabriques.chantiers import un_chantier
 
 
 def enregistrer(uow: UnitOfWorkChantiers, *chantiers: Chantier) -> None:
