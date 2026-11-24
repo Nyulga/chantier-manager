@@ -54,7 +54,7 @@ Sous Windows, uv et just viennent de winget : si le shell ne les trouve pas, raf
 
 ## Architecture
 
-- `backend/` : API REST en Python 3.12+ avec FastAPI. `frontend/` : SPA React, TypeScript et Vite, servie sur le même domaine que l'API (`/api`). La future application mobile utilisera la même API, donc **aucune règle métier dans le frontend**.
+- `backend/` : API REST en Python 3.13+ avec FastAPI. `frontend/` : SPA React, TypeScript et Vite, servie sur le même domaine que l'API (`/api`). La future application mobile utilisera la même API, donc **aucune règle métier dans le frontend**.
 - Le backend est un **monolithe modulaire** : modules `auth`, `chantiers`, `etapes`, `documents`, `rgpd`, plus `shared` pour le code technique transverse.
 - Chaque module est découpé en 4 parties :
   - `domain` : Python pur, sans FastAPI, SQLAlchemy ni Pydantic ;

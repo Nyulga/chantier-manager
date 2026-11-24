@@ -37,7 +37,7 @@ Chaînes d'appel autorisées, **et aucune autre** :
 
 ## 4. Zéro code spaghetti, zéro fichier fourre-tout : limites chiffrées
 
-Ces limites sont **vérifiées automatiquement** (lint, pre-commit et CI, configurés au lot 01). Un dépassement fait échouer la CI.
+Ces limites sont **vérifiées automatiquement** (lint, pre-commit et CI). Un dépassement fait échouer la CI.
 
 | Mesure | Python | TypeScript |
 |---|---|---|
@@ -146,3 +146,14 @@ Avant de déclarer une tâche terminée :
 - **Relecture** du code produit contre cette règle et contre la règle de chaque couche touchée, y compris la qualité des commentaires (§7).
 - Lint, typage, contrats d'architecture et tests sont **tous verts en local**.
 - La définition de « terminé » du lot (`docs/plan/README.md`) est respectée.
+
+## Comment vérifier
+- **Automatique** (`just verifier`, lancé aussi par la CI et par les hooks git) :
+  - tailles, complexité, branches, paramètres : ruff (`C901`, `PLR09xx`), `tools/verifier_tailles.py`, ESLint (`frontend/eslint/limites.js`) ;
+  - imports et dépendances : import-linter (8 contrats, `backend/pyproject.toml`), ESLint (`dependances.js`, `import/no-cycle`) ;
+  - désactivations de règles (`noqa`, `type: ignore`, `pragma: no cover`, `cast`) et profondeur d'imbrication en Python : contrôle dédié du backend (`just verifier-back`) ; en TypeScript : ESLint (`typage.js`) ;
+  - duplication : `just doublons` (jscpd) ;
+  - docstrings des modules et des classes : ruff `D100`, `D101`, `D104` ;
+  - tests et couverture : pytest et Vitest avec leurs seuils.
+- **Par un agent** : `conformite` (SOLID, patterns, nommage, qualité des commentaires, sobriété), `revue` (TDD vu en rouge, correction), à la fin de chaque lot.
+- **Pas encore vérifié** : le score de mutation (phase 2).

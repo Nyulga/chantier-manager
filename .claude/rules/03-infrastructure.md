@@ -12,7 +12,7 @@ Implémenter les ports déclarés par `application`. **C'est la seule couche qui
 
 ## Autorisé
 - L'`application` et le `domain` du même module, et `app.shared.*`.
-- SQLAlchemy, psycopg (non installé pendant le squelette, ADR 0007), Pillow, pillow-heif, filetype, argon2-cffi, PyJWT, le client clamd, smtplib, structlog.
+- SQLAlchemy, psycopg (non installé pendant le squelette, ADR 0007), Pillow, pillow-heif, filetype, argon2-cffi, PyJWT, le client clamd, smtplib, et la journalisation (structlog prévu par `intent.md` ; pendant le squelette, `logging` de la bibliothèque standard).
 
 ## Interdit
 - Tout import d'`api` ou de FastAPI.
@@ -37,6 +37,20 @@ Implémenter les ports déclarés par `application`. **C'est la seule couche qui
 - Les fichiers sont écrits hors du dossier public, sous un nom aléatoire, de façon atomique (fichier temporaire, puis renommage).
 - Requêtes de liste : chargement explicite des relations nécessaires (pas de requêtes N+1) et pagination.
 
+## Journalisation
+- Un journal par module (`logging.getLogger(__name__)`) ; jamais de `print`.
+- On journalise l'erreur technique et sa cause, **jamais** une donnée personnelle, un mot de passe, un token, le contenu d'un fichier ni les paramètres d'une requête SQL (le moteur est créé avec `hide_parameters=True`).
+- Le passage à structlog (format JSON, identifiant de requête) se fera avec un ADR, au plus tard au lot 08.
+
 ## Tests (voir aussi `07-tests-et-migrations.md`)
 - **Tests de contrat** : une suite de tests unique par port, exécutée sur l'implémentation SQL (PostgreSQL réel via testcontainers ; SQLite pendant le squelette, voir l'ADR 0007) **et** sur l'implémentation mémoire. Les deux doivent se comporter exactement de la même façon (principe L).
 - Les adaptateurs externes (ClamAV, SMTP) sont testés en intégration contre les conteneurs de développement : fichier EICAR pour ClamAV, Mailpit pour le SMTP.
+
+## Comment vérifier
+- **Automatique** (`just verifier`) :
+  - import-linter : « Seuls infrastructure et composition importent sqlalchemy et psycopg », « Couches de chaque module » ;
+  - suites de contrat (`backend/tests/contrats/`), jouées sur SQL **et** mémoire ;
+  - tests dans `backend/tests/infrastructure/`, dont l'absence de donnée dans les journaux (`tests/integration/shared/test_journal_sans_donnees.py`) ;
+  - bandit (requêtes et appels dangereux).
+- **Par un agent** : `conformite` (aucune logique métier, pas de `commit` dans un repository, exceptions techniques traduites), `securite` (SQL paramétré, journaux sans donnée personnelle).
+- **Pas encore vérifié** : les délais d'attente réseau et ClamAV (rien d'externe avant le lot 06).

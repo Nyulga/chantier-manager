@@ -123,7 +123,7 @@ Les fichiers ne sont servis que par l'API, après vérification des droits. Les 
 ### 2.8 Choix techniques
 | Élément | Choix |
 |---|---|
-| Backend | Python 3.12+, FastAPI, Pydantic v2, pydantic-settings |
+| Backend | Python 3.13+, FastAPI, Pydantic v2, pydantic-settings |
 | Persistance | PostgreSQL 16+, SQLAlchemy 2 (synchrone, mapping impératif), Alembic, psycopg 3 |
 | Sécurité | argon2-cffi, PyJWT, filetype, Pillow et pillow-heif, ClamAV (clamd) |
 | Logs | structlog (format JSON, identifiant de requête, aucune donnée personnelle) |
