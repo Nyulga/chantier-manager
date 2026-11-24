@@ -220,6 +220,11 @@ export interface components {
          * @description Corps de l'ajout d'une étape en fin de liste.
          */
         AjouterEtapeRequete: {
+            /**
+             * Site Web
+             * @description Champ piège : ne pas remplir. Il doit rester vide ou absent.
+             */
+            site_web?: string | null;
             /** Titre */
             titre: string;
         };
@@ -300,12 +305,15 @@ export interface components {
         };
         /**
          * CreerChantierRequete
-         * @description Corps de la création d'un chantier ; le budget est en euros, au centime près.
+         * @description Corps de la création d'un chantier ; le budget est un texte décimal en euros.
          */
         CreerChantierRequete: {
             adresse: components["schemas"]["AdresseRequete"];
-            /** Budget */
-            budget: number | string;
+            /**
+             * Budget
+             * @example 1234.50
+             */
+            budget: string;
             /** Client */
             client: string;
             /**
@@ -320,6 +328,11 @@ export interface components {
             echeance: string;
             /** Nom */
             nom: string;
+            /**
+             * Site Web
+             * @description Champ piège : ne pas remplir. Il doit rester vide ou absent.
+             */
+            site_web?: string | null;
         };
         /**
          * ErreurChampReponse
@@ -590,6 +603,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
             /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
@@ -655,6 +677,15 @@ export interface operations {
             };
             /** @description Ressource introuvable, hors du périmètre ou identifiant mal formé. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -732,6 +763,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
             /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
@@ -802,7 +842,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action impossible dans l'état actuel, ou ressource modifiée entre-temps. */
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -885,7 +925,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action impossible dans l'état actuel, ou ressource modifiée entre-temps. */
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -1029,7 +1069,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action impossible dans l'état actuel, ou ressource modifiée entre-temps. */
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
             409: {
                 headers: {
                     [name: string]: unknown;

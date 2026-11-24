@@ -1,7 +1,7 @@
 // Formulaire de création d'un chantier : les champs de saisie et le bouton d'envoi.
 import { useState } from 'react';
 
-import { Alerte, Bouton, Champ, Formulaire } from '@/ui';
+import { Alerte, Bouton, Champ, ChampPiege, Formulaire } from '@/ui';
 
 import type { ErreurApi, SaisieChantier } from '../services/useCreerChantier';
 
@@ -13,7 +13,7 @@ type FormulaireChantierProps = {
 };
 
 type DescriptionChamp = {
-  readonly cle: keyof SaisieChantier;
+  readonly cle: Exclude<keyof SaisieChantier, 'siteWeb'>;
   /** Chemin du champ dans le corps de la requête, tel que l'API le désigne dans ses erreurs. */
   readonly champApi: string;
   readonly libelle: string;
@@ -44,6 +44,7 @@ const SAISIE_VIDE: SaisieChantier = {
   dateDebut: '',
   echeance: '',
   budget: '',
+  siteWeb: '',
 };
 
 /**
@@ -75,6 +76,12 @@ export function FormulaireChantier({ onSoumettre, enCours, erreur }: FormulaireC
           }}
         />
       ))}
+      <ChampPiege
+        valeur={saisie.siteWeb}
+        onChange={(siteWeb) => {
+          setSaisie({ ...saisie, siteWeb });
+        }}
+      />
       {messageGlobal !== undefined && <Alerte>{messageGlobal}</Alerte>}
       <Bouton type="submit" disabled={enCours}>
         Créer le chantier

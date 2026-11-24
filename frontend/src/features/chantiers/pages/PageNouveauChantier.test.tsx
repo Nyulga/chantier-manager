@@ -68,6 +68,68 @@ it('crée le chantier puis ouvre son détail', async () => {
   expect(corps).toMatchObject({ nom: 'Rénovation de la mairie', budget: '18450.00' });
 });
 
+it("n'envoie pas le champ piège quand un humain remplit le formulaire, et ne le montre pas", async () => {
+  let corps: unknown = null;
+  serveur.use(
+    http.post('/api/chantiers', async ({ request }) => {
+      corps = await request.json();
+      return HttpResponse.json(chantierDeTest(), { status: 201 });
+    }),
+  );
+  afficherPage();
+  await screen.findByLabelText('Nom du chantier');
+
+  expect(screen.getAllByRole('textbox')).toHaveLength(5);
+  await remplirEtEnvoyer();
+
+  await screen.findByText('Détail du chantier');
+  expect(corps).not.toHaveProperty('site_web');
+});
+
+it("envoie le champ piège quand un robot l'a rempli", async () => {
+  let corps: unknown = null;
+  serveur.use(
+    http.post('/api/chantiers', async ({ request }) => {
+      corps = await request.json();
+      return reponseProbleme(403, "Cette action n'est pas permise.");
+    }),
+  );
+  const { container } = afficherPage();
+  await screen.findByLabelText('Nom du chantier');
+  const piege = container.querySelector('input[name="site_web"]');
+  if (piege === null) {
+    throw new Error('Le champ piège est absent du formulaire.');
+  }
+  fireEvent.change(piege, { target: { value: 'http://exemple.invalid' } });
+
+  await remplirEtEnvoyer();
+
+  expect(await screen.findByRole('alert')).toHaveTextContent("Cette action n'est pas permise.");
+  expect(corps).toMatchObject({ site_web: 'http://exemple.invalid' });
+});
+
+it.each([
+  [409, 'La démo a atteint sa limite de 100 chantiers.'],
+  [429, 'Trop de demandes. Réessaie dans quelques instants.'],
+  [413, 'Ta demande est trop volumineuse.'],
+  [403, "Cette action n'est pas permise."],
+])("affiche dans l'alerte le message d'un refus %i, sans le rejouer", async (statut, message) => {
+  let appels = 0;
+  serveur.use(
+    http.post('/api/chantiers', () => {
+      appels += 1;
+      return reponseProbleme(statut, message);
+    }),
+  );
+  afficherPage();
+
+  await remplirEtEnvoyer();
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  expect(screen.getByRole('button', { name: 'Créer le chantier' })).toBeEnabled();
+  expect(appels).toBe(1);
+});
+
 it("affiche l'erreur globale de l'API, collée au bouton d'envoi, et reste sur le formulaire", async () => {
   serveur.use(
     http.post('/api/chantiers', () =>

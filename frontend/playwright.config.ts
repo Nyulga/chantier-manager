@@ -46,7 +46,14 @@ export default defineConfig({
       // `uv sync --no-dev` de la CI ; l'API n'a besoin d'aucun outil de développement.
       command: `uv run --no-dev uvicorn app.main:creer_application --factory --host 127.0.0.1 --port ${String(PORT_API)}`,
       cwd: '../backend',
-      env: { CHANTIER_URL_BASE: urlBase },
+      // Les parcours e2e enchaînent bien plus d'écritures et de lectures que la limite de débit de la
+      // démo (20 et 120 par minute et par adresse) : on la relève ici. Les seuils de production sont
+      // testés côté backend.
+      env: {
+        CHANTIER_URL_BASE: urlBase,
+        CHANTIER_ECRITURES_PAR_MINUTE: '100000',
+        CHANTIER_LECTURES_PAR_MINUTE: '100000',
+      },
       url: `http://127.0.0.1:${String(PORT_API)}/api/health`,
       reuseExistingServer: false,
       timeout: 120_000,

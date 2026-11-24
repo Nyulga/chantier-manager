@@ -129,3 +129,21 @@ it("envoie dans l'alerte globale une erreur sans champ (clé inattendue à la ra
   expect(inattendue.messageGlobal(['nom'])).toBe("Ce champ n'est pas attendu.");
   expect(inattendue.messageDuChamp('nom')).toBe('Le nom est requis.');
 });
+
+it.each([
+  [413, 'Ta demande est trop volumineuse.'],
+  [429, 'Trop de demandes. Réessaie dans quelques instants.'],
+])(
+  "donne un message clair au statut %i quand la réponse n'a pas de détail (proxy, pare-feu)",
+  (statut, message) => {
+    expect(erreurApi(undefined, statut).message).toBe(message);
+    expect(erreurApi({}, statut).message).toBe(message);
+  },
+);
+
+it.each([409, 413, 429, 403])(
+  "affiche le détail de l'API tel quel pour un %i : il passe avant le message de repli",
+  (statut) => {
+    expect(erreurApi({ detail: "Message de l'API." }, statut).message).toBe("Message de l'API.");
+  },
+);

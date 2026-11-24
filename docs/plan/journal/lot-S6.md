@@ -82,3 +82,12 @@ Les suites de contrat sont prêtes à recevoir une seconde implémentation (base
 **Rouge** : `12 failed, 5 passed` (`openapi.json` en 200, `/api/chantiers/` en 307, 201 au lieu de 429 ou 403, ni 413 ni 400). **Vert** (`just verifier`, coordinateur) : `943 passed`, couverture 100 %. `just client` produit toujours le schéma complet.
 
 **À suivre** : `just e2e` demande `CHANTIER_ECRITURES_PAR_MINUTE` et `CHANTIER_LECTURES_PAR_MINUTE` relevés dans la configuration Playwright (étape 4) ; `deploy/` doit définir `CHANTIER_HOTES_ACCEPTES` (étape 5) ; le paramètre temporaire des routeurs devient obligatoire (`dev-api`).
+
+## Étape 4 – Frontend (`dev-frontend`, Sonnet, effort élevé)
+
+**Livré** (`frontend/` seulement) : client régénéré (`just client`) ; nouveau composant `ui/ChampPiege`, caché visuellement (`sr-only`, pour qu'un robot le voie et le remplisse), `aria-hidden`, hors tabulation, sans libellé ; branché dans les formulaires de chantier et d'étape, `site_web` n'est envoyé que s'il est rempli (jamais par un humain). Le budget partait déjà en texte (prouvé par un test). `erreurApi` affiche le détail de l'API, avec un message de repli par statut (413, 429) quand la réponse n'en a pas. Configuration Playwright : seuils relevés pour les parcours e2e.
+
+**Rouge** : composant absent (`Failed to resolve import "./ChampPiege"`), repli 413/429 absent, `site_web` non transmis, champ piège absent des pages.
+**Vert** (coordinateur) : `just verifier` vert, `488` tests frontend, couverture 99,76 % ; `just e2e` : `36 passed` à 360 et 1280 px.
+
+**Non testé** : la navigation au clavier réelle (pas de `user-event` installé) ; elle repose sur `tabindex=-1`, vérifié par test.

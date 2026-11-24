@@ -4,7 +4,7 @@ import { expect, it } from 'vitest';
 import { ErreurApi } from './erreurApi';
 import { reessayerRequete } from './reessai';
 
-it.each([403, 404, 422])(
+it.each([403, 404, 409, 413, 422, 429])(
   "ne rejoue jamais une requête refusée par l'API (%i) : la réponse ne changera pas",
   (statut) => {
     expect(reessayerRequete(0, new ErreurApi('Refusé.', statut))).toBe(false);

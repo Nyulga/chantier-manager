@@ -8,6 +8,12 @@ import { rafraichirChantier } from '@/api/rafraichissement';
 /** Type de l'erreur que lève l'ajout, pour le formulaire qui affiche ses erreurs par champ. */
 export type { ErreurApi } from '@/api/erreurApi';
 
+/** Saisie de l'ajout : le titre, et le champ piège que seul un robot remplit (voir `ChampPiege`). */
+export type SaisieEtape = {
+  readonly titre: string;
+  readonly siteWeb: string;
+};
+
 /**
  * Ajoute une étape (par son titre) au chantier. L'avancement baisse quand une étape s'ajoute :
  * on rafraîchit donc aussi le chantier et la liste, pas seulement les étapes. On les relit même
@@ -17,11 +23,12 @@ export function useAjouterEtape(chantierId: string) {
   const clientRequetes = useQueryClient();
 
   return useMutation({
-    mutationFn: async (titre: string) =>
+    mutationFn: async ({ titre, siteWeb }: SaisieEtape) =>
       donneesOuErreur(
         await creerClientApi().POST('/chantiers/{chantier_id}/etapes', {
           params: { path: { chantier_id: chantierId } },
-          body: { titre },
+          // Le champ piège part seulement s'il est rempli, pour que l'API repère le robot.
+          body: { titre, ...(siteWeb !== '' && { site_web: siteWeb }) },
         }),
       ),
     onSettled: () => rafraichirChantier(clientRequetes, chantierId),

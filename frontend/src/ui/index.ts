@@ -11,6 +11,7 @@ export { Bouton } from './Bouton/Bouton';
 export { CadreApplication } from './CadreApplication/CadreApplication';
 export { Carte } from './Carte/Carte';
 export { Champ } from './Champ/Champ';
+export { ChampPiege } from './ChampPiege/ChampPiege';
 export { ChampRecherche } from './ChampRecherche/ChampRecherche';
 export { Colonnes } from './Colonnes/Colonnes';
 export { ElementNavigation } from './ElementNavigation/ElementNavigation';
