@@ -37,17 +37,24 @@ def preparer_une_etape(usine: sessionmaker[Session]) -> SqlUnitOfWorkEtapes:
     return uow
 
 
-def test_deux_modifications_simultanees_d_une_etape_donnent_un_conflit_de_version(
+def test_une_modification_sur_un_objet_lu_avant_celle_d_un_autre_donne_un_conflit_de_version(
     usine_sessions: sessionmaker[Session],
 ) -> None:
     uow = preparer_une_etape(usine_sessions)
     premiere, seconde = SqlUnitOfWorkEtapes(usine_sessions), SqlUnitOfWorkEtapes(usine_sessions)
     identifiant = une_etape().id
 
-    with premiere, seconde:
-        premiere.etapes.obtenir(identifiant).appliquer(ActionEtape.DEMARRER, OUVRIER, INSTANT)
-        seconde.etapes.obtenir(identifiant).appliquer(ActionEtape.DEMARRER, OUVRIER, INSTANT)
-        premiere.valider()
+    # Les transactions commencent par `BEGIN IMMEDIATE` : deux transactions ne se chevauchent
+    # plus, la seconde attendrait la fin de la première. Le conflit reste possible quand
+    # l'objet a été lu dans une transaction déjà terminée (ici validée à vide), puis modifié
+    # après qu'un autre a enregistré la sienne : c'est ce que le numéro de version détecte.
+    with seconde:
+        lue_trop_tot = seconde.etapes.obtenir(identifiant)
+        seconde.valider()
+        with premiere:
+            premiere.etapes.obtenir(identifiant).appliquer(ActionEtape.DEMARRER, OUVRIER, INSTANT)
+            premiere.valider()
+        lue_trop_tot.appliquer(ActionEtape.DEMARRER, OUVRIER, INSTANT)
         with pytest.raises(ConflitVersionError):
             seconde.valider()
     with uow:
