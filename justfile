@@ -78,14 +78,46 @@ hooks:
     uv tool run --from pre-commit==4.7.0 pre-commit install
 
 # Le dépôt est en LF (.gitattributes), mais des fichiers déjà présents avant cette règle sont restés en CRLF
-# dans la copie de travail : ruff format et Prettier les refusent. `git checkout-index` les réécrit depuis
-# l'index. La première ligne échoue, sans rien modifier, s'il reste des modifications non indexées, car
-# elles seraient écrasées : indexe-les d'abord. Les fichiers non suivis ne sont pas touchés.
+# dans la copie de travail : ruff format et Prettier les refusent. `git checkout-index --force` ne suffit
+# pas : il saute tout fichier dont la taille et la date correspondent à l'entrée de l'index, et l'index a
+# enregistré celles du fichier CRLF lors de son extraction ou d'un `git add`. La recette supprime donc
+# d'abord les fichiers concernés (ceux que `git ls-files --eol` donne en `w/crlf` ou `w/mixed`), puis les
+# réécrit depuis l'index, en LF quelle que soit la valeur de `core.autocrlf` (l'attribut `eol=lf` l'emporte).
+# L'option `--index` met aussi à jour la taille et la date notées dans l'index : sans elle, `git status`
+# signalerait ces fichiers comme modifiés alors que leur contenu est identique. Le contenu indexé n'est
+# jamais modifié. Les listes de Git sont lues avec des séparateurs nuls (`-z`, `-0`) : aucun nom de fichier
+# n'est interprété ni échappé, quels que soient ses caractères (espace, guillemet, tabulation, accent).
+# Garantie : la recette ne supprime rien si `git diff` signale une modification non indexée, ni si l'un des
+# fichiers à réécrire porte le bit `assume-unchanged` ou `skip-worktree`, que `git diff` ne voit pas : elle
+# échoue alors en le disant. Un bit posé sur un fichier qui n'est pas à réécrire ne la gêne pas. Rien n'est
+# garanti au-delà : par exemple, une modification faite pendant l'exécution même de la recette n'est pas
+# détectée. Si la suppression d'un fichier échoue (fichier verrouillé sous Windows), les autres fichiers
+# sont quand même réécrits, puis la recette échoue. Les fichiers non suivis ne sont pas touchés.
 
 # Réécrit en LF les fichiers suivis restés en CRLF dans la copie de travail (Windows).
 normaliser-fins-de-ligne:
-    git diff --quiet
-    git checkout-index --all --force
+    #!/usr/bin/env sh
+    set -eu
+    git diff --quiet || { echo "Modifications non indexées : indexe-les d'abord (git add)." >&2; exit 1; }
+    dossier=$(mktemp -d)
+    trap 'rm -rf "$dossier"' EXIT
+    git ls-files -z --eol > "$dossier/etat"
+    grep -z -E '^i/[a-z-]+ +w/(crlf|mixed) ' "$dossier/etat" > "$dossier/lignes" || [ $? -eq 1 ]
+    cut -z -f2- "$dossier/lignes" > "$dossier/liste"
+    [ -s "$dossier/liste" ] || exit 0
+    # Un fichier marqué `assume-unchanged` (étiquette en minuscule) ou `skip-worktree` (`S`) échappe à `git diff`.
+    xargs -0 git --literal-pathspecs ls-files -v -z -- < "$dossier/liste" > "$dossier/marques"
+    trouve=0
+    grep -z -q -E '^[a-zS] ' "$dossier/marques" || trouve=$?
+    case "$trouve" in
+        1) ;;
+        0) echo "Fichier marqué assume-unchanged ou skip-worktree : rien n'a été supprimé." >&2; exit 1 ;;
+        *) exit "$trouve" ;;
+    esac
+    echec=0
+    xargs -0 rm -f -- < "$dossier/liste" || echec=$?
+    git checkout-index --force --index -z --stdin < "$dossier/liste"
+    exit "$echec"
 
 # Lance un test backend ciblé, sans seuil de couverture. Exemple : just test-back -k avancement
 [working-directory: 'backend']
@@ -113,6 +145,9 @@ client:
 # ou un `;` est ainsi traité comme un simple nom, jamais comme du code à exécuter. Ce sont des recettes
 # à shebang (`sh`, présent avec Git pour Windows) : le shell PowerShell du reste du fichier n'aurait pas la même
 # protection.
+# Limite connue sous Windows : just transmet mal aux hooks un nom de fichier qui contient une apostrophe.
+# C'est un défaut de just, sans exécution de code : le hook échoue de façon visible, il ne laisse pas passer
+# le fichier.
 [positional-arguments]
 [working-directory: 'frontend']
 _hook-prettier *fichiers:

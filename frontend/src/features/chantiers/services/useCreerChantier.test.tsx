@@ -79,12 +79,27 @@ it('relit la liste des chantiers après la création : le nouveau chantier y fig
   });
 });
 
-it("expose le message de l'API et ses erreurs par champ, avec le champ pointé de l'adresse", async () => {
+it.each([
+  {
+    cas: "un 422, avec le champ pointé de l'adresse",
+    statut: 422,
+    message: 'Les données envoyées sont invalides.',
+    erreurs: [{ champ: 'adresse.code_postal', message: 'Le code postal est trop long.' }],
+  },
+  {
+    cas: 'un 403, sans erreur par champ',
+    statut: 403,
+    message: "Tu n'as pas le droit de créer un chantier.",
+    erreurs: [],
+  },
+])("expose le message global et les erreurs par champ d'un refus : $cas", async (refus) => {
   serveur.use(
     http.post('/api/chantiers', () =>
-      reponseProbleme(422, 'Les données envoyées sont invalides.', [
-        { champ: 'adresse.code_postal', message: 'Le code postal est trop long.' },
-      ]),
+      reponseProbleme(
+        refus.statut,
+        refus.message,
+        refus.erreurs.length ? refus.erreurs : undefined,
+      ),
     ),
   );
   const { result } = afficherHook(() => useCreerChantier());
@@ -94,9 +109,7 @@ it("expose le message de l'API et ses erreurs par champ, avec le champ pointé d
   });
 
   await waitFor(() => {
-    expect(result.current.error?.message).toBe('Les données envoyées sont invalides.');
+    expect(result.current.error?.message).toBe(refus.message);
   });
-  expect(result.current.error?.erreurs).toEqual([
-    { champ: 'adresse.code_postal', message: 'Le code postal est trop long.' },
-  ]);
+  expect(result.current.error?.erreurs).toEqual(refus.erreurs);
 });

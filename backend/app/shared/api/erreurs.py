@@ -156,9 +156,9 @@ async def _traduire_erreur_http(_requete: Request, erreur: StarletteHTTPExceptio
 async def _traduire_service_indisponible(
     _requete: Request, erreur: ServiceIndisponibleError
 ) -> JSONResponse:
-    # La cause complète est consignée, pour diagnostiquer la panne. Elle ne contient pas de
-    # donnée personnelle : le moteur SQL masque les paramètres des requêtes, et le message
-    # de la réponse ne la recopie pas.
+    # La cause complète est consignée, pour diagnostiquer la panne : son message est journalisé
+    # tel quel. Le moteur SQL masque les paramètres des requêtes (`hide_parameters`), et la
+    # réponse reste générique : elle ne recopie jamais la cause.
     journal.error("Service indisponible.", exc_info=erreur)
     return reponse_probleme(HTTPStatus.SERVICE_UNAVAILABLE, MESSAGE_SERVICE_INDISPONIBLE)
 

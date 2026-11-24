@@ -16,6 +16,11 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
+    ignore:
+      # Les types de Node doivent suivre la version de Node réellement utilisée (Node 24 en CI et dans
+      # l'image). On change @types/node de version majeure en même temps que Node, jamais seul.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /deploy
     schedule:
