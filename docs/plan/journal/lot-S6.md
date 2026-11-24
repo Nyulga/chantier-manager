@@ -64,3 +64,11 @@ Les suites de contrat sont prêtes à recevoir une seconde implémentation (base
 
 **Rouge** : `3 failed, 2 passed` sur les plafonds et le budget (`PlafondAtteintError` non traduite, `assert 201 == 422`) ; les autres tests échouaient à l'import des middlewares absents.
 **Vert** (`just verifier`, coordinateur) : `911 passed`, couverture 100 %, 8 contrats tenus, `458` tests frontend.
+
+## Étape 3c – Hôtes acceptés (`dev-api`, Sonnet, effort moyen)
+
+`MiddlewareHotesAcceptes(app, hotes)` dans `shared/api/hotes_acceptes.py` : un `Host` absent ou hors liste reçoit un 400 au format RFC 9457 (« Hôte non reconnu. », sans recopier l'hôte). Il remplace `TrustedHostMiddleware` de Starlette, qui répond en texte brut (contraire à l'ADR 0008). Comparaison sans le port et sans la casse ; le démarrage (`lifespan`) passe.
+
+**Ordre d'empilement retenu**, de l'extérieur vers l'intérieur : en-têtes de sécurité, hôtes, taille, blocage, débit.
+
+**Rouge** : `ModuleNotFoundError: app.shared.api.hotes_acceptes`. **Vert** (`just verifier`, coordinateur) : `922 passed`, couverture 100 %.
