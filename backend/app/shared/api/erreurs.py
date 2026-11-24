@@ -14,13 +14,14 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.shared.api.en_tetes_securite import EN_TETES_SECURITE
 from app.shared.api.erreurs_validation import concerne_le_chemin, erreurs_par_champ
 from app.shared.api.schemas import (
     ErreurChampReponse,
     ProblemeReponse,
     ProblemeValidationReponse,
 )
-from app.shared.application.erreurs import ServiceIndisponibleError
+from app.shared.application.erreurs import PlafondAtteintError, ServiceIndisponibleError
 from app.shared.domain.acteur import Role
 from app.shared.domain.erreurs import (
     AccesRefuseError,
@@ -37,6 +38,11 @@ MESSAGE_REQUETE_INVALIDE = "Les données envoyées sont invalides."
 MESSAGE_RESSOURCE_INCONNUE = "Cette ressource n'existe pas."
 MESSAGE_METHODE_NON_PERMISE = "Cette méthode n'est pas permise sur cette ressource."
 MESSAGE_ERREUR_HTTP = "La requête n'a pas pu être traitée."
+# Refus neutre : il ne dit pas pourquoi (adresse bloquée, champ piège rempli), pour ne pas
+# apprendre à un robot ce qui l'a trahi. Le même texte sert au middleware et au champ piège.
+MESSAGE_ACTION_REFUSEE = "Cette action n'est pas permise."
+MESSAGE_TROP_DE_DEMANDES = "Trop de demandes. Réessaie dans quelques instants."
+MESSAGE_CORPS_TROP_VOLUMINEUX = "Le corps de la requête est trop volumineux."
 MESSAGE_SERVICE_INDISPONIBLE = (
     "Le service est momentanément indisponible : réessaie dans un instant."
 )
@@ -63,6 +69,9 @@ STATUT_PAR_ERREUR: dict[type[Exception], HTTPStatus] = {
     AccesRefuseError: HTTPStatus.FORBIDDEN,
     TransitionInterditeError: HTTPStatus.CONFLICT,
     ConflitVersionError: HTTPStatus.CONFLICT,
+    # Un plafond de volume atteint ne se résout pas en réessayant : c'est un conflit avec
+    # l'état de la démo, qui ne change que si le propriétaire en décide.
+    PlafondAtteintError: HTTPStatus.CONFLICT,
 }
 
 TITRE_PAR_STATUT: dict[int, str] = {
@@ -71,7 +80,9 @@ TITRE_PAR_STATUT: dict[int, str] = {
     HTTPStatus.NOT_FOUND: "Ressource introuvable",
     HTTPStatus.METHOD_NOT_ALLOWED: "Méthode non autorisée",
     HTTPStatus.CONFLICT: "Conflit",
+    HTTPStatus.CONTENT_TOO_LARGE: "Requête trop volumineuse",
     HTTPStatus.UNPROCESSABLE_ENTITY: "Données invalides",
+    HTTPStatus.TOO_MANY_REQUESTS: "Trop de demandes",
     HTTPStatus.INTERNAL_SERVER_ERROR: "Erreur interne",
     HTTPStatus.SERVICE_UNAVAILABLE: "Service indisponible",
 }
@@ -79,6 +90,7 @@ TITRE_PAR_DEFAUT = "Erreur"
 
 # Message des erreurs de routage de Starlette, dont le texte natif est en anglais.
 DETAIL_HTTP_PAR_STATUT: dict[int, str] = {
+    HTTPStatus.FORBIDDEN: MESSAGE_ACTION_REFUSEE,
     HTTPStatus.NOT_FOUND: MESSAGE_RESSOURCE_INCONNUE,
     HTTPStatus.METHOD_NOT_ALLOWED: MESSAGE_METHODE_NON_PERMISE,
 }
@@ -165,7 +177,11 @@ async def _traduire_service_indisponible(
 
 async def _traduire_erreur_inconnue(_requete: Request, _erreur: Exception) -> JSONResponse:
     # Aucun détail : une trace interne aiderait un attaquant. Le serveur consigne l'erreur.
-    return reponse_probleme(HTTPStatus.INTERNAL_SERVER_ERROR, MESSAGE_ERREUR_INTERNE)
+    # Starlette produit cette réponse hors de la pile des middlewares : les en-têtes de
+    # sécurité sont donc posés ici, sinon la 500 en serait privée.
+    return reponse_probleme(
+        HTTPStatus.INTERNAL_SERVER_ERROR, MESSAGE_ERREUR_INTERNE, EN_TETES_SECURITE
+    )
 
 
 def enregistrer_gestionnaires_erreurs(application: FastAPI) -> None:

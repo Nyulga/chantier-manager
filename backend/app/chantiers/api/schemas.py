@@ -2,9 +2,11 @@
 
 from datetime import date
 from decimal import Decimal
+from typing import Annotated, Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field, WithJsonSchema
+from pydantic_core import PydanticCustomError
 
 from app.chantiers.application.valeurs_publiques import (
     CHIFFRES_MONTANT_MAX,
@@ -15,6 +17,7 @@ from app.chantiers.application.valeurs_publiques import (
     LONGUEUR_VILLE_MAX,
     LONGUEUR_VOIE_MAX,
 )
+from app.shared.api.champ_piege import ChampPiege
 from app.shared.api.schemas import CONFIG_ENTREE, CONFIG_SORTIE
 
 
@@ -28,8 +31,28 @@ class AdresseRequete(BaseModel):
     ville: str = Field(max_length=LONGUEUR_VILLE_MAX)
 
 
-class CreerChantierRequete(BaseModel):
-    """Corps de la création d'un chantier ; le budget est en euros, au centime près."""
+def _exiger_un_texte(valeur: Any) -> Any:
+    """Refuse un nombre JSON : un flottant perd en précision avant même d'être lu.
+
+    L'erreur reprend le type `decimal_type`, dont le message en français est déjà prévu
+    (`erreurs_validation.py`) et ne recopie pas la valeur.
+    """
+    if not isinstance(valeur, str):
+        raise PydanticCustomError("decimal_type", "Le montant doit être un texte décimal.")
+    return valeur
+
+
+# Montant reçu comme texte décimal (`"1234.50"`) : les montants sont des `Decimal`, jamais des
+# flottants (intent.md). Le schéma OpenAPI l'annonce comme une chaîne, pour le client généré.
+MontantTexte = Annotated[
+    Decimal,
+    BeforeValidator(_exiger_un_texte),
+    WithJsonSchema({"type": "string", "examples": ["1234.50"]}),
+]
+
+
+class CreerChantierRequete(ChampPiege):
+    """Corps de la création d'un chantier ; le budget est un texte décimal en euros."""
 
     model_config = CONFIG_ENTREE
 
@@ -40,7 +63,7 @@ class CreerChantierRequete(BaseModel):
     echeance: date
     # Les bornes sont celles de la colonne : un montant trop long est refusé ici, par un 422
     # sur le champ `budget`, avant d'atteindre le domaine.
-    budget: Decimal = Field(max_digits=CHIFFRES_MONTANT_MAX, decimal_places=DECIMALES_MONTANT)
+    budget: MontantTexte = Field(max_digits=CHIFFRES_MONTANT_MAX, decimal_places=DECIMALES_MONTANT)
 
 
 class AdresseReponse(BaseModel):

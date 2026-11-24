@@ -9,7 +9,10 @@ DESCRIPTION_PAR_STATUT: dict[HTTPStatus, str] = {
     HTTPStatus.BAD_REQUEST: "Profil `X-Profil` absent ou inconnu.",
     HTTPStatus.FORBIDDEN: "Action non permise à ce profil.",
     HTTPStatus.NOT_FOUND: "Ressource introuvable, hors du périmètre ou identifiant mal formé.",
-    HTTPStatus.CONFLICT: "Action impossible dans l'état actuel, ou ressource modifiée entre-temps.",
+    HTTPStatus.CONFLICT: (
+        "Action impossible dans l'état actuel, ressource modifiée entre-temps "
+        "ou plafond de volume de la démo atteint."
+    ),
     HTTPStatus.UNPROCESSABLE_ENTITY: "Données invalides : `erreurs` désigne les champs en cause.",
     HTTPStatus.SERVICE_UNAVAILABLE: "Service momentanément indisponible : réessayer plus tard.",
 }

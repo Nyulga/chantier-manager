@@ -53,3 +53,14 @@ Les suites de contrat sont prêtes à recevoir une seconde implémentation (base
 **Limite connue** : le test de concurrence passe aussi sans verrou (section critique trop courte face au GIL) ; le verrou est justifié par lecture.
 
 **Pour la suite** : `compose.prod.yaml` devra définir `CHANTIER_HOTES_ACCEPTES` (étape `dev-socle`) ; les tests de l'API construiront leurs `Parametres` avec l'hôte `testserver` et la documentation exposée.
+
+## Étape 3 – Protections HTTP (`dev-api`, Sonnet, effort moyen)
+
+**Livré** (`*/api/` et tests seulement), dans `shared/api/` : `MiddlewareEnTetesSecurite` (valeurs identiques au Caddyfile, vérifié par test), `MiddlewareTailleCorps` (413, y compris sans `Content-Length`), `MiddlewareLimiteDebit` (429 + `Retry-After`, `/api/health` exclu), `MiddlewareBlocageEcritures` (403 neutre sur les écritures d'une adresse bloquée), `creer_routeur_pieges` (fausses adresses : 404 identique à une adresse inconnue, et blocage), champ piège `site_web` (403 neutre avant la validation et le cas d'usage). `PlafondAtteintError` → 409, documenté dans OpenAPI. Budget accepté en texte décimal uniquement. `HEAD /api/health`.
+
+**Écarté** : nommer le champ en trop dans le 422. L'ADR 0008 interdit de renvoyer une clé inventée par le client (elle peut contenir une donnée personnelle) ; la demande du plan était une erreur du coordinateur.
+
+**Temporaire** : les routeurs acceptent encore une liste d'adresses bloquées absente, le temps que l'étape 3b la branche ; ce cas sera retiré ensuite.
+
+**Rouge** : `3 failed, 2 passed` sur les plafonds et le budget (`PlafondAtteintError` non traduite, `assert 201 == 422`) ; les autres tests échouaient à l'import des middlewares absents.
+**Vert** (`just verifier`, coordinateur) : `911 passed`, couverture 100 %, 8 contrats tenus, `458` tests frontend.

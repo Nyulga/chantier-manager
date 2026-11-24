@@ -16,6 +16,15 @@ def test_la_route_sante_repond_ok() -> None:
     assert reponse.json() == {"statut": "ok"}
 
 
+def test_la_route_sante_repond_200_sans_corps_a_head() -> None:
+    client = TestClient(creer_application())
+
+    reponse = client.head("/api/health")
+
+    assert reponse.status_code == HTTPStatus.OK
+    assert reponse.content == b""
+
+
 def test_la_route_sante_refuse_les_methodes_autres_que_get() -> None:
     client = TestClient(creer_application())
 

@@ -4,7 +4,7 @@ from http import HTTPStatus
 from typing import Annotated, Protocol
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, params
 
 from app.chantiers.api.conversions import commande_depuis, reponse_depuis
 from app.chantiers.api.schemas import ChantierReponse, CreerChantierRequete
@@ -12,7 +12,9 @@ from app.chantiers.application.consulter_chantier import ConsulterChantier
 from app.chantiers.application.creer_chantier import CreerChantier
 from app.chantiers.application.lister_chantiers import ListerChantiers
 from app.shared.api.acteur import ActeurCourant
+from app.shared.api.champ_piege import dependances_champ_piege
 from app.shared.api.documentation_erreurs import erreurs_documentees
+from app.shared.application.ports import ListeAdressesBloquees
 
 # Les erreurs possibles, documentées dans OpenAPI pour le client généré. Leur corps
 # est celui de la traduction centrale (RFC 9457).
@@ -20,6 +22,7 @@ ERREURS = erreurs_documentees(
     HTTPStatus.BAD_REQUEST,
     HTTPStatus.FORBIDDEN,
     HTTPStatus.NOT_FOUND,
+    HTTPStatus.CONFLICT,
     HTTPStatus.UNPROCESSABLE_ENTITY,
     HTTPStatus.SERVICE_UNAVAILABLE,
 )
@@ -45,20 +48,25 @@ class CasUsagesChantiers(Protocol):
         ...
 
 
-def creer_routeur(cas_usages: CasUsagesChantiers) -> APIRouter:
-    """Crée le routeur des chantiers, branché sur les cas d'usage fournis."""
+def creer_routeur(
+    cas_usages: CasUsagesChantiers, adresses_bloquees: ListeAdressesBloquees | None = None
+) -> APIRouter:
+    """Crée le routeur des chantiers, branché sur les cas d'usage et la liste des pièges."""
     routeur = APIRouter(prefix="/chantiers", tags=["chantiers"], responses=ERREURS)
-    _declarer_creation(routeur, cas_usages)
+    _declarer_creation(routeur, cas_usages, dependances_champ_piege(adresses_bloquees))
     _declarer_lectures(routeur, cas_usages)
     return routeur
 
 
-def _declarer_creation(routeur: APIRouter, cas_usages: CasUsagesChantiers) -> None:
+def _declarer_creation(
+    routeur: APIRouter, cas_usages: CasUsagesChantiers, gardes: list[params.Depends]
+) -> None:
     @routeur.post(
         "",
         status_code=HTTPStatus.CREATED,
         response_model=ChantierReponse,
         summary="Crée un chantier",
+        dependencies=gardes,
     )
     def creer(
         requete: CreerChantierRequete,

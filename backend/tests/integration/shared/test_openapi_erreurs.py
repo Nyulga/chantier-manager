@@ -72,7 +72,8 @@ def test_le_probleme_de_validation_ajoute_la_liste_des_erreurs_au_probleme(
 @pytest.mark.parametrize(
     ("chemin", "statuts"),
     [
-        ("/api/chantiers", {"400", "403", "422", "503"}),
+        ("/api/chantiers", {"400", "403", "409", "422", "503"}),
+        ("/api/chantiers/{chantier_id}/etapes", {"400", "403", "404", "409", "422", "503"}),
         ("/api/chantiers/{chantier_id}", {"400", "404", "503"}),
         ("/api/etapes/{etape_id}/transitions", {"400", "403", "404", "409", "422", "503"}),
         ("/api/moi", {"400", "503"}),
