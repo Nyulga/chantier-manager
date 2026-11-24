@@ -107,3 +107,21 @@ Les suites de contrat sont prêtes à recevoir une seconde implémentation (base
 **Rouge** : sur une copie volontairement dégradée du champ (rendu tabulable, puis visible et libellé), le test échoue (« le focus s'est posé sur le champ piège au pas 15 », puis `toHaveCount(0)` reçu 1). **Vert** : `just e2e` `44 passed`, `just verifier` vert.
 
 **Instabilité constatée** (coordinateur, trois passages de `just e2e` en local : vert, 1 échec, vert) : deux tests anciens échouent parfois, sur des délais d'affichage (`robustesse` : le formulaire d'étape se vide après le premier ajout alors que le second titre est déjà saisi ; `parcours` : bouton attendu plus de 30 s). La CI rejoue deux fois les tests e2e, ce qui masque ces échecs. Le premier cas est un vrai défaut d'ergonomie antérieur au lot (la remise à zéro du formulaire arrive après l'affichage de l'étape) : il devient une issue.
+
+## Corrections après vérification
+
+Le propriétaire a validé, le 2026-11-24, les corrections des constats importants de `revue`, `conformite` et `securite`, le plafond de 20 transitions par étape, le piège `/.git/…` et l'ADR 0016. Les constats mineurs deviennent des issues (label `relecture`).
+
+### ADR 0016 et règles (coordinateur)
+`docs/decisions/0016-protections-de-la-demo-publique.md` et son index ; renvois du code corrigés (ADR 0015 → 0016) ; règles 01 (`unicodedata`), 04 (middlewares, 409 plafond, 400/403/413/429), 06 (`shared/api`) et 09 (« Comment vérifier »). Commit `9157cef`.
+
+### Adresse réelle du visiteur (`dev-socle`, Sonnet, effort élevé)
+`header_up X-Forwarded-For {remote_host}` dans les deux `reverse_proxy` vers l'API (`protections.caddy`, `Caddyfile.extrait`), vérification IPv4/IPv6 ajoutée à la procédure de mise en ligne. `caddy validate` passe sur les deux fichiers.
+- Rouge : `test_le_proxy_force_l_adresse_du_client_pour_l_api` → `AssertionError: protections.caddy`, `assert [[], []] == []` (aucun `header_up`).
+- Vert : `tests/architecture/test_caddy_deploiement.py` → 7 passed.
+- Commit `661cd29`.
+
+### Plafond de transitions (`dev-metier`, Opus, effort élevé)
+`LIMITE_TRANSITIONS_PAR_ETAPE = 20`, vérifié une fois dans `ChangerStatutEtape`, après le chargement et la version, avant toute écriture, avec `len(etape.historique)` (aucun port modifié). `tests/application/etapes/test_plafond_transitions.py` (8 tests).
+- Rouge : `Failed: DID NOT RAISE PlafondAtteintError` sur les 4 actions (4 failed, 4 passed).
+- Vert : `just verifier-back` → 958 passed, couverture 100 %.
