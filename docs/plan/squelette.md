@@ -31,6 +31,7 @@
 | **S3 – Mise en ligne** | Images de production, `docker-compose.prod.yml`, Caddy existant du serveur (HTTPS, en-têtes, limite de taille) ; pare-feu, fail2ban et sauvegarde chiffrée en phase 2 | `dev-socle` (Opus, élevé) | S2 |
 | **S4 – Tableau de bord** | Page d'accueil de la maquette Balise : « À valider », cartes de chantier avec compteurs et délai, activité récente ; Équipe, Invitation et Recherche affichées « Bientôt » (issue #28, journal `journal/lot-S4.md`) | `dev-metier`, `dev-donnees`, `dev-frontend` | S2 |
 | **S5 – Corrections de relecture** | Constats des issues #17 à #24, #29, #30 et #32 : verrou de version, unicité de l'ordre, erreurs RFC 9457 et 422 par champ, capacités via `/api/moi`, jscpd et pre-commit (issue #38, journal `journal/lot-S5.md`) | `dev-metier`, `dev-donnees`, `dev-frontend`, `dev-socle` | S4 |
+| **S6 – Sécuriser la démo** | Textes sans caractères de contrôle, plafonds de volume (100 chantiers, 30 étapes par chantier), limite de débit par adresse, pièges à robots, protections dans l'application (documentation masquée, taille des corps, en-têtes, hôtes), copie locale alignée sur la production (issue #45, journal `journal/lot-S6.md`) | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend`, `dev-socle`, puis `pentest` | S5 |
 
 Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `conformite` et `securite`, puis PR proposée.
 
