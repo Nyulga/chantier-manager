@@ -16,3 +16,4 @@ Chaque décision structurante est consignée ici : son contexte, la décision pr
 | [0010](0010-pnpm-pour-le-frontend.md) | pnpm pour les dépendances du frontend | Accepté |
 | [0011](0011-tailwind-et-radix-pour-l-interface.md) | Tailwind CSS et Radix pour l'interface | Accepté |
 | [0012](0012-react-hook-form-et-zod-pour-les-formulaires.md) | react-hook-form et zod pour les formulaires | Accepté |
+| [0013](0013-types-du-frontend-generes-depuis-l-api.md) | Les types du frontend sont générés depuis l'API | Accepté |
