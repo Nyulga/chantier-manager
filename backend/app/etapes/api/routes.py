@@ -55,7 +55,7 @@ class CasUsagesEtapes(CasUsagesTableauDeBord, CasUsagesCapacites, Protocol):
 
 
 def creer_routeur(
-    cas_usages: CasUsagesEtapes, adresses_bloquees: ListeAdressesBloquees | None = None
+    cas_usages: CasUsagesEtapes, adresses_bloquees: ListeAdressesBloquees
 ) -> APIRouter:
     """Crée le routeur des étapes, branché sur les cas d'usage et la liste des pièges."""
     routeur = APIRouter()

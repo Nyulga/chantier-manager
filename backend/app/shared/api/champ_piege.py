@@ -54,14 +54,13 @@ def creer_garde_champ_piege(liste: ListeAdressesBloquees) -> Callable[[Request],
     return verifier
 
 
-def dependances_champ_piege(liste: ListeAdressesBloquees | None) -> list[params.Depends]:
+def dependances_champ_piege(liste: ListeAdressesBloquees) -> list[params.Depends]:
     """Donne les `dependencies` d'une route d'écriture qui porte le champ piège.
 
-    TEMPORAIRE (lot S6, étape 3) : tant que la composition ne fournit pas la liste, `None`
-    désactive la garde. L'étape 3b branche la liste ; `None` disparaîtra alors, car une
-    garde optionnelle serait une protection qu'on peut oublier de brancher.
+    La liste est obligatoire : une garde facultative serait une protection qu'on peut
+    oublier de brancher.
     """
-    return [] if liste is None else [Depends(creer_garde_champ_piege(liste))]
+    return [Depends(creer_garde_champ_piege(liste))]
 
 
 def _champ_piege_rempli(corps: bytes) -> bool:

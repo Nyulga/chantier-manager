@@ -49,7 +49,7 @@ class CasUsagesChantiers(Protocol):
 
 
 def creer_routeur(
-    cas_usages: CasUsagesChantiers, adresses_bloquees: ListeAdressesBloquees | None = None
+    cas_usages: CasUsagesChantiers, adresses_bloquees: ListeAdressesBloquees
 ) -> APIRouter:
     """Crée le routeur des chantiers, branché sur les cas d'usage et la liste des pièges."""
     routeur = APIRouter(prefix="/chantiers", tags=["chantiers"], responses=ERREURS)
