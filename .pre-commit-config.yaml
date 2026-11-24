@@ -64,6 +64,15 @@ repos:
         language: system
         types: [python]
         files: ^backend/(app|tools|tests)/
+      # Interdit `noqa`, `type: ignore`, `pragma: no cover`, `nosec` et `cast` (règle 00, §4). Le script
+      # examine tout `backend/` : il tourne dans ce dossier, sans recevoir de noms de fichiers.
+      - id: desactivations-de-regles-python
+        name: désactivations de règles (noqa, type ignore, pragma, cast)
+        entry: uv run --directory backend python -m tools.verifier_desactivations
+        language: system
+        pass_filenames: false
+        types: [python]
+        files: ^backend/(app|tools|migrations|tests)/
       # mypy, import-linter et bandit lisent leur configuration dans backend/pyproject.toml : ils
       # tournent dans backend/ et examinent tout le projet (typage et contrats portent sur l'ensemble).
       - id: mypy

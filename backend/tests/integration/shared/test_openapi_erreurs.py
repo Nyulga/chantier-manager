@@ -16,16 +16,26 @@ def schema_openapi(client: TestClient) -> dict[str, Any]:
     return schema
 
 
+def reponses_declarees(schema: dict[str, Any]) -> list[tuple[str, str, str, dict[str, Any]]]:
+    """Liste toutes les réponses déclarées : (chemin, méthode, statut, réponse)."""
+    return [
+        (chemin, methode, statut, reponse)
+        for chemin, operations in schema["paths"].items()
+        for methode, operation in operations.items()
+        for statut, reponse in operation["responses"].items()
+    ]
+
+
 def schemas_des_erreurs(schema: dict[str, Any]) -> dict[tuple[str, str, str], str]:
     """Associe chaque réponse d'erreur (chemin, méthode, statut) au schéma de son corps."""
-    resultat: dict[tuple[str, str, str], str] = {}
-    for chemin, operations in schema["paths"].items():
-        for methode, operation in operations.items():
-            for statut, reponse in operation["responses"].items():
-                if int(statut) >= STATUT_D_ERREUR_MINIMAL:
-                    contenu = reponse.get("content", {}).get("application/json", {})
-                    resultat[(chemin, methode, statut)] = contenu.get("schema", {}).get("$ref", "")
-    return resultat
+    return {
+        (chemin, methode, statut): reponse.get("content", {})
+        .get("application/json", {})
+        .get("schema", {})
+        .get("$ref", "")
+        for chemin, methode, statut, reponse in reponses_declarees(schema)
+        if int(statut) >= STATUT_D_ERREUR_MINIMAL
+    }
 
 
 def test_chaque_reponse_d_erreur_a_un_corps_type_en_rfc_9457(client: TestClient) -> None:
