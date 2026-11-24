@@ -25,3 +25,14 @@ Le lot fait suite au premier test d'intrusion local (règle 08) et à la demande
 **Vert** (`just verifier`, coordinateur) : `797 passed`, couverture backend 100 %, domain et application `687 0 48 0 100%`, 8 contrats tenus, `458` tests frontend.
 
 **Reste pour l'étape 3 (`dev-api`)** : `PlafondAtteintError` → 409, tests d'intégration du 409 et du 422 sur un caractère nul.
+
+## Étape 2a – Ports de la limite de débit et des pièges (`dev-metier`, Opus, effort élevé)
+
+**Ajustement du plan** : pour qu'aucun agent ne sorte de sa couche, l'ancienne étape 2 est découpée. `dev-metier` écrit les ports (2a), `dev-donnees` leurs implémentations en mémoire (2b), `dev-api` les middlewares (3), puis `dev-donnees` les branche dans la composition (3b).
+
+**Livré** (`shared/application` seulement) : `CategorieAcces` (lecture, écriture), ports `LimiteurDebit.consommer(adresse, categorie) -> int | None` (délai en secondes entières, au moins 1) et `ListeAdressesBloquees` (`bloquer`, `est_bloquee`). Constantes des décisions du propriétaire dans `limites_debit.py` : fenêtre de 1 min, 20 écritures, 120 lectures, blocage de 1 h. Hypothèse écrite : stockage en mémoire, un seul processus API (ADR 0015).
+
+**TDD** : pas de phase rouge, car il n'y a pas de comportement (des `Protocol` et des constantes). Le test `test_limites_debit.py` fige les valeurs décidées.
+**Vert** (`just verifier`, coordinateur) : `799 passed`, couverture 100 %, 8 contrats tenus, `458` tests frontend.
+
+**Décision du coordinateur** : une adresse bloquée par un piège reçoit un 403 sur ses écritures, sans délai annoncé ; `est_bloquee` suffit.
