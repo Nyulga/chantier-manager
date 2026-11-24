@@ -14,7 +14,7 @@ ADRESSES_BLOQUEES_MAX = 10_000
 class MemoireListeAdressesBloquees:
     """Retient en mémoire la fin du blocage de chaque adresse.
 
-    Hypothèse assumée (ADR 0015) : un seul processus API, donc une liste perdue au
+    Hypothèse assumée (ADR 0016) : un seul processus API, donc une liste perdue au
     redémarrage. Un verrou protège l'état, car FastAPI exécute les dépendances
     synchrones dans plusieurs fils d'exécution.
 

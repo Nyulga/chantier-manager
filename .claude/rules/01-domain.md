@@ -11,7 +11,7 @@ Relire d'abord `00-principes.md`.
 Porter **toutes** les règles métier : les invariants, la machine à états des étapes, le calcul de l'avancement, les politiques d'accès et les erreurs métier. C'est la seule couche qui *décide*.
 
 ## Autorisé
-- La bibliothèque standard Python uniquement : `dataclasses`, `enum`, `decimal`, `datetime` (types seulement), `uuid` (le type `UUID` seulement), `typing`.
+- La bibliothèque standard Python uniquement : `dataclasses`, `enum`, `decimal`, `datetime` (types seulement), `uuid` (le type `UUID` seulement), `typing`, `unicodedata` (catégories des caractères, pour refuser les caractères de contrôle et bidirectionnels, ADR 0016).
 - Les imports depuis le `domain` du même module, ou depuis `app.shared.domain`.
 
 ## Interdit

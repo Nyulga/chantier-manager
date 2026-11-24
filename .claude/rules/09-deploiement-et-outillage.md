@@ -8,7 +8,7 @@ paths:
 
 # Règle 09 – Déploiement et outillage
 
-Relire d'abord `00-principes.md`. Décisions liées : ADR 0010 (pnpm), 0013 (client généré), 0014 (uv et just), 0015 (déploiement du squelette).
+Relire d'abord `00-principes.md`. Décisions liées : ADR 0010 (pnpm), 0013 (client généré), 0014 (uv et just), 0015 (déploiement du squelette), 0016 (protections de la démo publique).
 
 **Pourquoi une règle dédiée** : une régression ici ne casse aucun test. Une image non figée, un conteneur qui tourne en administrateur ou une CI qui peut écrire dans le dépôt passent inaperçus, jusqu'au jour où ils servent à une attaque.
 
@@ -40,6 +40,8 @@ Relire d'abord `00-principes.md`. Décisions liées : ADR 0010 (pnpm), 0013 (cli
 - **Automatique** (CI) :
   - job « Hooks git » : les hooks tournent sur tout le dépôt ;
   - gitleaks sur tout l'historique ;
-  - Trivy sur les fichiers de dépendances (`trivy fs`) et sur la configuration : Dockerfile et compose (`trivy config`, qui repère par exemple un conteneur sans `USER`).
+  - Trivy sur les fichiers de dépendances (`trivy fs`) et sur la configuration : Dockerfile et compose (`trivy config`, qui repère par exemple un conteneur sans `USER`) ;
+  - `pip-audit` et `pnpm audit` sur les dépendances ;
+  - `backend/tests/architecture/test_caddy_deploiement.py` (dans `just verifier`) : le bloc du serveur recopie `protections.caddy`, la copie locale l'importe, les fausses adresses du proxy sont celles de l'API, le site statique pose les mêmes en-têtes, et aucun port n'est publié en production (ADR 0016).
 - **Par un agent** : `securite` (secrets, images, droits de la CI, dépôt public), `conformite` (cette règle), `pentest` (ce que le serveur expose vraiment).
-- **Pas encore vérifié automatiquement** : l'épinglage par SHA ou par digest, le bloc `x-durcissement` et la validité de la composition (`docker compose config`) ne sont contrôlés que par relecture.
+- **Pas encore vérifié automatiquement** : l'épinglage par SHA ou par digest, le bloc `x-durcissement`, la validité de la composition (`docker compose config`) et la configuration réelle du Caddy du serveur ne sont contrôlés que par relecture.

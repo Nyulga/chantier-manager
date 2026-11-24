@@ -24,7 +24,7 @@ class MemoireLimiteurDebit:
     courte à écrire, mais elle laisse passer le double du seuil à cheval sur deux
     fenêtres et annonce un délai moins précis.
 
-    Hypothèse assumée (ADR 0015) : un seul processus API, donc un état en mémoire,
+    Hypothèse assumée (ADR 0016) : un seul processus API, donc un état en mémoire,
     perdu au redémarrage. Un verrou protège l'état, car FastAPI exécute les
     dépendances synchrones dans plusieurs fils d'exécution.
 

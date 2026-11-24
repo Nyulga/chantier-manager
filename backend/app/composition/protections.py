@@ -32,7 +32,7 @@ class Protections:
 
 
 def creer_protections(parametres: Parametres) -> Protections:
-    """Crée le limiteur et la liste d'adresses bloquées, en mémoire (ADR 0015)."""
+    """Crée le limiteur et la liste d'adresses bloquées, en mémoire (ADR 0016)."""
     horloge = HorlogeSysteme()
     seuils = {
         CategorieAcces.ECRITURE: parametres.ecritures_par_minute,

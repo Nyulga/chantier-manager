@@ -91,7 +91,7 @@ class LimiteurDebit(Protocol):
 
     Hypothèse assumée pendant le squelette : l'implémentation garde ses compteurs en
     mémoire. Ils sont donc perdus au redémarrage et propres à un processus, ce qui
-    suffit avec un seul conteneur API à un seul worker (ADR 0015). Elle doit rester
+    suffit avec un seul conteneur API à un seul worker (ADR 0016). Elle doit rester
     juste sous des appels concurrents et oublier les entrées expirées, pour que sa
     mémoire ne grossisse pas sans fin.
     """

@@ -38,7 +38,7 @@ Chaque maillon se protège sans compter sur celui de devant : le site statique (
 
 Une adresse fixe pour le proxy n'est pas possible : c'est l'autre projet, qui héberge le Caddy du serveur, qui le rattache au réseau, et Docker lui attribue son adresse.
 
-**Un seul processus** (`--workers 1`) : le limiteur et la liste des adresses bloquées sont en mémoire (ADR 0015). Un second processus doublerait les limites.
+**Un seul processus** (`--workers 1`) : le limiteur et la liste des adresses bloquées sont en mémoire (ADR 0016). Un second processus doublerait les limites.
 
 ## Tester en local
 
