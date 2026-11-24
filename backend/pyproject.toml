@@ -92,7 +92,7 @@ plugins = ["pydantic.mypy"]
 # la recette « test-back » : `coverage report` avec ses propres options.
 # ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
-# `tools/tests` : tests des outils, à rapprocher de tests/unitaires/outils.
+# `tools/tests` : tests des outils, à rapprocher de tests/outils.
 testpaths = ["tests", "tools/tests"]
 pythonpath = ["."]
 addopts = [

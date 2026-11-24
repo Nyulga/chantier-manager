@@ -23,13 +23,13 @@ Fournir au module `shared` les briques techniques communes, avec leurs ports, le
 | Critère | Test qui le prouve | Couche |
 |---|---|---|
 | Une transaction annulée dans le UoW SQL ne laisse aucune trace en base, et le UoW mémoire se comporte de la même façon | `tests/contrats/test_unit_of_work.py`, joué sur les deux implémentations | Données |
-| `JournalAudit` mémoire enregistre et restitue les entrées dans l'ordre, sans champ sensible | `tests/unitaires/shared/test_journal_audit_memoire.py` | Service |
+| `JournalAudit` mémoire enregistre et restitue les entrées dans l'ordre, sans champ sensible | `tests/infrastructure/shared/test_journal_audit_memoire.py` | Service |
 | Les en-têtes de sécurité sont présents sur toutes les réponses | `tests/integration/shared/test_entetes_securite.py` | API |
 | Une requête qui modifie des données sans token CSRF valide est rejetée (403) | `tests/integration/shared/test_csrf.py` | API |
 | Une requête plus volumineuse que la limite est rejetée (413) avant d'être lue en entier | `tests/integration/shared/test_limite_taille.py` | API |
 | Une erreur du domaine produit le bon code HTTP au format RFC 9457, sans trace interne | `tests/integration/shared/test_traduction_erreurs.py` (paramétré, un cas par erreur) | API |
-| Les logs ne contiennent ni mot de passe, ni token, ni cookie | `tests/unitaires/shared/test_filtre_logs.py` | Données |
-| Une configuration invalide empêche le démarrage, avec un message clair | `tests/unitaires/shared/test_parametres.py` | Données |
+| Les logs ne contiennent ni mot de passe, ni token, ni cookie | `tests/infrastructure/shared/test_filtre_logs.py` | Données |
+| Une configuration invalide empêche le démarrage, avec un message clair | `tests/composition/test_parametres.py` | Données |
 | Le client frontend envoie l'en-tête CSRF et transforme une erreur RFC 9457 en message affichable | `src/api/client.test.ts` (MSW) | Frontend |
 
 ## Hors lot

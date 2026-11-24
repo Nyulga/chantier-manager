@@ -14,8 +14,8 @@ from app.etapes.domain.cycle import ActionEtape, StatutEtape
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import ConflitVersionError, ValeurInvalideError
 from app.shared.infrastructure.memoire.horloge_fixe import HorlogeFixe
-from tests.unitaires.chantiers.fabriques import un_chantier
-from tests.unitaires.etapes.fabriques import INSTANT, une_etape
+from tests.fabriques.chantiers import un_chantier
+from tests.fabriques.etapes import INSTANT, une_etape
 
 OUVRIER = Acteur(Role.OUVRIER)
 ETAPE = une_etape().id

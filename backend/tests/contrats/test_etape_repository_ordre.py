@@ -9,7 +9,7 @@ from app.etapes.application.ports import UnitOfWorkEtapes
 from app.shared.domain.erreurs import ConflitVersionError
 from tests.contrats.conftest import AUTRE_CHANTIER
 from tests.contrats.enregistrement_etapes import enregistrer
-from tests.unitaires.etapes.fabriques import ID_CHANTIER, id_etape, une_etape
+from tests.fabriques.etapes import ID_CHANTIER, id_etape, une_etape
 
 AUTRE_IDENTIFIANT = UUID(int=999)
 

@@ -15,7 +15,7 @@ from app.etapes.infrastructure.sql.unit_of_work import SqlUnitOfWorkEtapes
 from app.shared.api.erreurs import enregistrer_gestionnaires_erreurs
 from app.shared.infrastructure.sql.moteur import creer_moteur, creer_usine_sessions
 from tests.conftest import url_sqlite
-from tests.unitaires.etapes.fabriques import une_etape
+from tests.fabriques.etapes import une_etape
 
 TITRE_CONFIDENTIEL = "titre-confidentiel-a-ne-jamais-journaliser"
 

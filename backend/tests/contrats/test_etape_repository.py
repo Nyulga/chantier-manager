@@ -10,7 +10,7 @@ from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import NonTrouveError
 from tests.contrats.conftest import AUTRE_CHANTIER
 from tests.contrats.enregistrement_etapes import enregistrer
-from tests.unitaires.etapes.fabriques import (
+from tests.fabriques.etapes import (
     ID_CHANTIER,
     INSTANT,
     heures_apres,

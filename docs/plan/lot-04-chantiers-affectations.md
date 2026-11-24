@@ -25,8 +25,8 @@ Gérer les chantiers et leurs affectations, avec un cloisonnement strict pour le
 ## Critères d'acceptation → tests
 | Critère | Test qui le prouve | Couche |
 |---|---|---|
-| Un chef crée un chantier avec son nom, son adresse, son client, ses dates et son budget | `tests/unitaires/chantiers/test_creer_chantier.py`, test d'intégration, e2e | Toutes |
-| Les invariants sont respectés : dates cohérentes, au moins un chef, archivé en lecture seule | `tests/unitaires/chantiers/test_chantier.py` | Domaine |
+| Un chef crée un chantier avec son nom, son adresse, son client, ses dates et son budget | `tests/application/chantiers/test_creer_chantier.py`, test d'intégration, e2e | Toutes |
+| Les invariants sont respectés : dates cohérentes, au moins un chef, archivé en lecture seule | `tests/domain/chantiers/test_chantier.py` | Domaine |
 | Un chef modifie et archive ses chantiers, et y affecte ou en retire des membres | Tests des cas d'usage, tests des routes | Service, API |
 | Un utilisateur ne voit **que** ses chantiers ; tout autre chantier renvoie 404 par l'URL comme par l'API | `test_politiques_chantiers.py`, `tests/integration/chantiers/test_cloisonnement.py`, e2e | Domaine, API, e2e |
 | Un ouvrier ne peut ni créer, ni modifier, ni archiver, ni voir le budget | Matrice des politiques, et `test_budget_absent_pour_ouvrier.py` (corps de la réponse) | Domaine, API |

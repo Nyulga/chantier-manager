@@ -24,12 +24,12 @@ Des comptes sécurisés : le premier chef créé en CLI, les invitations, la con
 ## Critères d'acceptation → tests
 | Critère | Test qui le prouve | Couche |
 |---|---|---|
-| Le premier chef se crée en CLI ; la commande refuse s'il en existe déjà un ; il n'existe aucune inscription publique | `tests/unitaires/auth/test_creer_premier_chef.py`, `tests/integration/auth/test_cli_premier_chef.py`, test vérifiant qu'aucune route d'inscription n'existe dans OpenAPI | Service, données, API |
-| Un chef invite un utilisateur ; le lien est à usage unique et à durée limitée ; un lien expiré ou déjà utilisé est refusé | `tests/unitaires/auth/test_inviter_utilisateur.py`, `test_accepter_invitation.py` (nominal, expiré, réutilisé), e2e | Domaine, service, e2e |
+| Le premier chef se crée en CLI ; la commande refuse s'il en existe déjà un ; il n'existe aucune inscription publique | `tests/application/auth/test_creer_premier_chef.py`, `tests/integration/auth/test_cli_premier_chef.py`, test vérifiant qu'aucune route d'inscription n'existe dans OpenAPI | Service, données, API |
+| Un chef invite un utilisateur ; le lien est à usage unique et à durée limitée ; un lien expiré ou déjà utilisé est refusé | `tests/application/auth/test_inviter_utilisateur.py`, `test_accepter_invitation.py` (nominal, expiré, réutilisé), e2e | Domaine, service, e2e |
 | Un ouvrier ne peut pas inviter (403) | Matrice `test_politiques_auth.py`, `tests/integration/auth/test_routes_invitations.py` | Domaine, API |
 | Connexion, déconnexion, réinitialisation par e-mail | Tests unitaires des cas d'usage, tests d'intégration des routes, e2e | Toutes |
 | La demande de réinitialisation donne la même réponse, que le compte existe ou non | `test_routes_reinitialisation.py` (comparaison du code et du corps de la réponse) | API |
-| Un mot de passe de moins de 12 caractères, courant ou fuité est refusé avec un message clair | `tests/unitaires/auth/test_mot_de_passe.py` (hypothesis sur les longueurs), test Vitest de l'affichage de l'erreur | Domaine, frontend |
+| Un mot de passe de moins de 12 caractères, courant ou fuité est refusé avec un message clair | `tests/domain/auth/test_mot_de_passe.py` (hypothesis sur les longueurs), test Vitest de l'affichage de l'erreur | Domaine, frontend |
 | Réutiliser un refresh token déjà utilisé révoque toute la session | `test_rafraichir_session.py`, `tests/integration/auth/test_rotation_refresh.py` | Service, API |
 | La limitation des tentatives bloque après le seuil, par IP et par compte (§5.3) | `tests/contrats/test_limiteur_tentatives.py`, `tests/integration/auth/test_blocage_connexion.py` | Données, API |
 | Un JWT expiré, falsifié ou signé avec un autre algorithme (`none`, HS/RS) est refusé | `tests/integration/auth/test_jwt_refuse.py` (paramétré) | Données, API |
