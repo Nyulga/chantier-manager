@@ -23,7 +23,7 @@ header {
 # Fausses adresses que seuls les robots demandent. Elles vont à l'API (et non au site, qui
 # répondrait par sa page d'accueil) : elle répond 404 et bloque l'adresse en écriture.
 # Cette liste doit rester celle de `app/shared/api/pieges.py` (le même test le vérifie).
-@pieges path /wp-admin /wp-admin/* /wp-login.php /wp-login.php/* /.env /.env/* /.git/config /.git/config/* /phpmyadmin /phpmyadmin/* /xmlrpc.php /xmlrpc.php/*
+@pieges path /wp-admin /wp-admin/* /wp-login.php /wp-login.php/* /.env /.env/* /.git /.git/* /phpmyadmin /phpmyadmin/* /xmlrpc.php /xmlrpc.php/*
 handle @pieges {
 	reverse_proxy chantier-api:8000 {
 		# Adresse réelle du visiteur, imposée ici : la limite de débit et le blocage de

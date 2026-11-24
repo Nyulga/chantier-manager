@@ -17,6 +17,7 @@ from app.shared.api.schemas import CONFIG_ENTREE
 from app.shared.application.ports import ListeAdressesBloquees
 
 NOM_CHAMP_PIEGE = "site_web"
+TYPE_JSON = "application/json"
 
 
 class ChampPiege(BaseModel):
@@ -47,7 +48,7 @@ def creer_garde_champ_piege(liste: ListeAdressesBloquees) -> Callable[[Request],
     """
 
     async def verifier(requete: Request) -> None:
-        if _champ_piege_rempli(await requete.body()):
+        if _est_du_json(requete) and _champ_piege_rempli(await requete.body()):
             liste.bloquer(adresse_du_client(requete.scope))
             raise HTTPException(status_code=HTTPStatus.FORBIDDEN)
 
@@ -61,6 +62,14 @@ def dependances_champ_piege(liste: ListeAdressesBloquees) -> list[params.Depends
     oublier de brancher.
     """
     return [Depends(creer_garde_champ_piege(liste))]
+
+
+def _est_du_json(requete: Request) -> bool:
+    # Un formulaire `text/plain` envoyé par un site tiers, à l'insu du visiteur, ne doit pas
+    # le faire bloquer : seul un corps JSON, que le navigateur d'une page tierce ne peut pas
+    # envoyer sans autorisation, est examiné (ADR 0016). Les paramètres (`charset`) sont ignorés.
+    type_contenu = requete.headers.get("content-type", "").split(";")[0]
+    return type_contenu.strip().lower() == TYPE_JSON
 
 
 def _champ_piege_rempli(corps: bytes) -> bool:

@@ -87,6 +87,53 @@ def test_un_corps_sans_champ_piege_lisible_n_est_pas_bloque(contenu: bytes) -> N
     assert not liste.est_bloquee(ADRESSE)
 
 
+@pytest.mark.parametrize(
+    "type_contenu",
+    ["application/json", "application/json; charset=utf-8", "Application/JSON;charset=UTF-8"],
+)
+def test_un_champ_piege_rempli_bloque_quel_que_soit_le_parametre_du_type_json(
+    type_contenu: str,
+) -> None:
+    client, liste, _ = un_client()
+    corps = f'{{"nom": "a", "{NOM_CHAMP_PIEGE}": "x"}}'
+
+    reponse = client.post("/formulaires", content=corps, headers={"Content-Type": type_contenu})
+
+    assert reponse.status_code == HTTPStatus.FORBIDDEN
+    assert liste.est_bloquee(ADRESSE)
+
+
+@pytest.mark.parametrize(
+    "type_contenu",
+    ["text/plain", "application/x-www-form-urlencoded", "multipart/form-data; boundary=x", ""],
+)
+def test_un_corps_qui_n_est_pas_du_json_n_est_jamais_une_raison_de_bloquer(
+    type_contenu: str,
+) -> None:
+    # Un formulaire `text/plain` envoyé par un site tiers ne doit pas faire bloquer le visiteur.
+    client, liste, recus = un_client()
+    corps = f'{{"nom": "a", "{NOM_CHAMP_PIEGE}": "x"}}'
+
+    reponse = client.post("/formulaires", content=corps, headers={"Content-Type": type_contenu})
+
+    assert reponse.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert recus == []
+    assert not liste.est_bloquee(ADRESSE)
+
+
+@pytest.mark.parametrize("contenu", [b"pas du json", b'{"nom": "a", ', b""])
+def test_un_corps_json_illisible_est_refuse_en_422_sans_bloquer(contenu: bytes) -> None:
+    client, liste, recus = un_client()
+
+    reponse = client.post(
+        "/formulaires", content=contenu, headers={"Content-Type": "application/json"}
+    )
+
+    assert reponse.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert recus == []
+    assert not liste.est_bloquee(ADRESSE)
+
+
 def test_le_champ_piege_est_documente_comme_a_ne_pas_remplir() -> None:
     propriete = ChampPiege.model_json_schema()["properties"][NOM_CHAMP_PIEGE]
 

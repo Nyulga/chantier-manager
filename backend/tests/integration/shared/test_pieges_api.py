@@ -17,7 +17,7 @@ CHEMINS_ATTENDUS = {
     "/wp-admin",
     "/wp-login.php",
     "/.env",
-    "/.git/config",
+    "/.git",
     "/phpmyadmin",
     "/xmlrpc.php",
 }
@@ -47,6 +47,30 @@ def test_un_piege_repond_comme_une_adresse_inconnue_et_bloque_l_adresse(chemin: 
     assert reponse.json() == inconnue.json()
     assert reponse.headers["content-type"] == inconnue.headers["content-type"]
     assert liste.est_bloquee(ADRESSE)
+
+
+@pytest.mark.parametrize("chemin", ["/.git/HEAD", "/.git/objects/ab/cdef", "/.git/"])
+def test_tout_chemin_sous_git_est_un_piege(chemin: str) -> None:
+    client, liste = une_application()
+    inconnue = client.get("/rien-du-tout")
+
+    reponse = client.get(chemin)
+
+    assert reponse.status_code == HTTPStatus.NOT_FOUND
+    assert reponse.json() == inconnue.json()
+    assert liste.est_bloquee(ADRESSE)
+
+
+@pytest.mark.parametrize("origine", ["same-origin", "same-site", "cross-site", "none"])
+def test_un_piege_touche_par_un_navigateur_repond_404_sans_bloquer(origine: str) -> None:
+    client, liste = une_application()
+    inconnue = client.get("/rien-du-tout")
+
+    reponse = client.get("/wp-admin", headers={"Sec-Fetch-Site": origine})
+
+    assert reponse.status_code == HTTPStatus.NOT_FOUND
+    assert reponse.json() == inconnue.json()
+    assert not liste.est_bloquee(ADRESSE)
 
 
 def test_un_piege_touche_en_ecriture_bloque_aussi_l_adresse() -> None:
