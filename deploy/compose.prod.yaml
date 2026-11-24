@@ -35,6 +35,11 @@ services:
       dockerfile: deploy/backend.Dockerfile
     environment:
       CHANTIER_URL_BASE: sqlite:////donnees/chantier.db
+      # Noms d'hôte acceptés par l'API (liste JSON) : le nom public de la démo, que le proxy
+      # transmet tel quel, et 127.0.0.1 pour la sonde de santé du conteneur. Tout autre
+      # `Host` reçoit un 400. Les seuils de débit, les plafonds et la documentation gardent
+      # leurs valeurs par défaut, qui sont les valeurs sûres.
+      CHANTIER_HOTES_ACCEPTES: '["chantier-ultra.ddns.net", "127.0.0.1"]'
     # Seul /donnees est inscriptible (migrations et base SQLite) : le code de /app est en lecture seule.
     volumes:
       - chantier-donnees:/donnees

@@ -1,11 +1,18 @@
 # Surcharge pour tester sur un poste de développement, où le Caddy du serveur n'existe pas.
-# Elle ajoute un petit Caddy qui joue son rôle (sans HTTPS ni mot de passe), branché sur le
-# réseau `chantier-interne` comme le sera celui du serveur, et publie le site sur
-# http://localhost:8080.
+# Elle ajoute un petit Caddy qui joue son rôle (sans HTTPS ni mot de passe, mais avec les
+# mêmes protections : `protections.caddy`), branché sur le réseau `chantier-interne` comme le
+# sera celui du serveur, et publie le site sur http://localhost:8080. Un conteneur du même
+# réseau (le pentest local, règle 08) le joint par http://proxy-local:8080.
 #
 # Commande : docker compose -f compose.prod.yaml -f compose.local.yaml up -d --build
 
 services:
+  chantier-api:
+    environment:
+      # Les hôtes de la copie locale : le poste (localhost, 127.0.0.1) et le nom du proxy sur
+      # le réseau Docker. Le nom public de la démo n'y figure pas.
+      CHANTIER_HOTES_ACCEPTES: '["localhost", "127.0.0.1", "proxy-local"]'
+
   proxy-local:
     # caddy:2-alpine
     image: caddy@sha256:4851e54a46b206517c574821bb5cc67f170d2156041e9fbc4c9193b45e84a75b
@@ -14,6 +21,7 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+      - ./protections.caddy:/etc/caddy/protections.caddy:ro
     # `chantier-interne` est fermé vers Internet et n'accepte aucun port publié : le réseau par
     # défaut sert à publier le port 8080 sur le poste, comme le réseau propre du Caddy du serveur.
     networks:

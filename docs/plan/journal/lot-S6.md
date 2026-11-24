@@ -91,3 +91,11 @@ Les suites de contrat sont prêtes à recevoir une seconde implémentation (base
 **Vert** (coordinateur) : `just verifier` vert, `488` tests frontend, couverture 99,76 % ; `just e2e` : `36 passed` à 360 et 1280 px.
 
 **Non testé** : la navigation au clavier réelle (pas de `user-event` installé) ; elle repose sur `tabindex=-1`, vérifié par test.
+
+## Étape 5 – Déploiement et copie locale alignés (`dev-socle`, Sonnet, effort élevé)
+
+**Livré** (`deploy/`, plus un test d'alignement) : `deploy/protections.caddy` décrit tout ce que le proxy applique (compression, en-têtes, retrait de `Server` et `Via`, documentation en 404, corps limité à 64 Ko, pièges envoyés à l'API) ; `Caddyfile.local` l'importe, `Caddyfile.extrait` (bloc du serveur) en garde une copie. `backend/tests/architecture/test_caddy_deploiement.py` fait échouer `just verifier` si l'extrait diverge, si la liste des pièges diffère de celle de l'API, si le site statique n'a pas les mêmes en-têtes ou si un port est publié en production. Le site statique pose aussi ses en-têtes. uvicorn : `--no-server-header`, `--workers 1` (limiteur en mémoire), `--proxy-headers --forwarded-allow-ips "*"` : sûr parce que le port 8000 n'est publié nulle part et que Caddy ignore par défaut les `X-Forwarded-*` reçus des clients. `CHANTIER_HOTES_ACCEPTES` défini en production et en local. README : procédure de mise en ligne et de test local.
+
+**Vérifié sur la copie locale** (puis `down -v`) : en-têtes présents et aucun nom de logiciel ; documentation en 404 ; 71 Ko → 413 ; `/api/chantiers/` → 404 sans redirection ; après `GET /wp-admin`, écriture → 403 même avec un `X-Forwarded-For` falsifié, lecture → 200, et une autre adresse peut toujours écrire ; CSP sans violation dans Chromium.
+
+**Vert** (`just verifier`, coordinateur) : `948 passed`, couverture 100 %, `488` tests frontend. Aucun conteneur ni volume `chantier` restant.

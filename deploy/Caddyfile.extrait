@@ -3,6 +3,10 @@
 # 2026-11-22) : n'importe qui peut agir en chef, donc aucune donnée réelle n'y est saisie.
 # Pour protéger le site, ajouter dans ce bloc un `basic_auth` avec l'empreinte obtenue par
 # `docker exec -it <conteneur-caddy> caddy hash-password`, sans jamais la commiter.
+#
+# Le contenu du bloc est celui de `protections.caddy` (que la copie locale importe). Il est
+# recopié ici parce que le Caddy du serveur n'a pas accès au dépôt ; un test échoue si les
+# deux divergent. Modifier d'abord `protections.caddy`.
 chantier-ultra.ddns.net {
 	encode zstd gzip
 
@@ -15,9 +19,18 @@ chantier-ultra.ddns.net {
 		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
 		Cross-Origin-Opener-Policy same-origin
+		# Ni le proxy ni les serveurs derrière lui ne doivent annoncer leur logiciel.
 		-Server
+		-Via
 	}
 
+	# Fausses adresses que seuls les robots demandent. Elles vont à l'API (et non au site, qui
+	# répondrait par sa page d'accueil) : elle répond 404 et bloque l'adresse en écriture.
+	# Cette liste doit rester celle de `app/shared/api/pieges.py` (le même test le vérifie).
+	@pieges path /wp-admin /wp-admin/* /wp-login.php /wp-login.php/* /.env /.env/* /.git/config /.git/config/* /phpmyadmin /phpmyadmin/* /xmlrpc.php /xmlrpc.php/*
+	handle @pieges {
+		reverse_proxy chantier-api:8000
+	}
 
 	handle /api/* {
 		# La documentation de l'API n'est pas exposée en production : le client TypeScript

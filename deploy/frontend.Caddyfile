@@ -1,11 +1,25 @@
 # Configuration de Caddy dans le conteneur du frontend : fichiers statiques et repli SPA.
-# Le HTTPS et les en-têtes de sécurité sont gérés par le Caddy du serveur, devant ce conteneur.
+# Le HTTPS est géré par le Caddy du serveur, devant ce conteneur. Les en-têtes de sécurité sont
+# posés ici aussi : le site reste protégé même sans ce proxy (défense en profondeur). Ils sont
+# identiques à ceux de `protections.caddy` (test_caddy_deploiement.py le vérifie).
 {
 	admin off
 	auto_https off
 }
 
 :8080 {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy same-origin
+		-Server
+		-Via
+	}
+
 	root * /srv
 	# Application d'une seule page : une adresse qui n'est pas un fichier (par exemple
 	# /chantiers/12) renvoie index.html, et c'est le routeur de React qui l'affiche.

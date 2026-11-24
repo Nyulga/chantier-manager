@@ -1,14 +1,10 @@
-# Caddy de test local : même aiguillage que sur le serveur, sans HTTPS ni mot de passe.
+# Caddy de test local : mêmes protections que sur le serveur (fichier importé), sans HTTPS
+# ni mot de passe. Le pentest local (règle 08) passe par lui : il doit voir ce que verra la démo.
 {
 	admin off
 	auto_https off
 }
 
 :8080 {
-	handle /api/* {
-		reverse_proxy chantier-api:8000
-	}
-	handle {
-		reverse_proxy chantier-web:8080
-	}
+	import /etc/caddy/protections.caddy
 }
