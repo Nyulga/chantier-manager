@@ -14,3 +14,4 @@ Chaque décision structurante est consignée ici : son contexte, la décision pr
 | [0008](0008-capacites-valeurs-publiques-et-contrat-d-erreur.md) | Capacités de l'acteur, valeurs publiques et contrat d'erreur | Accepté |
 | [0009](0009-tanstack-query-pour-les-donnees-serveur.md) | TanStack Query pour les données venant de l'API | Accepté |
 | [0010](0010-pnpm-pour-le-frontend.md) | pnpm pour les dépendances du frontend | Accepté |
+| [0011](0011-tailwind-et-radix-pour-l-interface.md) | Tailwind CSS et Radix pour l'interface | Accepté |
