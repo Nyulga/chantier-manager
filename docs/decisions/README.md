@@ -18,3 +18,4 @@ Chaque décision structurante est consignée ici : son contexte, la décision pr
 | [0012](0012-react-hook-form-et-zod-pour-les-formulaires.md) | react-hook-form et zod pour les formulaires | Accepté |
 | [0013](0013-types-du-frontend-generes-depuis-l-api.md) | Les types du frontend sont générés depuis l'API | Accepté |
 | [0014](0014-uv-et-just-pour-l-outillage.md) | uv pour le Python et just pour les commandes | Accepté |
+| [0015](0015-deploiement-du-squelette-derriere-caddy.md) | Déploiement du squelette : deux conteneurs derrière le Caddy existant | Accepté (squelette) |
