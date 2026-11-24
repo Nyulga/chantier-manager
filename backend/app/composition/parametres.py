@@ -1,6 +1,9 @@
 """Paramètres de l'application, lus une seule fois (règle 06)."""
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.shared.application.limites_debit import ECRITURES_PAR_FENETRE, LECTURES_PAR_FENETRE
 
 # Taille maximale du corps d'une requête : les requêtes de l'API sont de petits JSON.
 # C'est la même valeur que le `request_body` de Caddy (`deploy/Caddyfile.extrait`) : le
@@ -36,3 +39,11 @@ class Parametres(BaseSettings):
     hotes_acceptes: list[str] = ["localhost", "127.0.0.1"]
 
     taille_max_corps: int = TAILLE_MAX_CORPS
+
+    # Seuils de la limite de débit, par adresse et par minute. Les valeurs par défaut sont
+    # les décisions du propriétaire (`limites_debit.py`) : la production ne les change pas.
+    # Ils ne sont réglables que pour les tests et le test de bout en bout, qui écrivent
+    # bien plus de 20 fois par minute depuis une seule adresse. Un seuil nul couperait toute
+    # l'API : il est refusé au démarrage.
+    ecritures_par_minute: int = Field(default=ECRITURES_PAR_FENETRE, ge=1)
+    lectures_par_minute: int = Field(default=LECTURES_PAR_FENETRE, ge=1)

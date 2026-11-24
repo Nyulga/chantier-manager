@@ -72,3 +72,13 @@ Les suites de contrat sont prêtes à recevoir une seconde implémentation (base
 **Ordre d'empilement retenu**, de l'extérieur vers l'intérieur : en-têtes de sécurité, hôtes, taille, blocage, débit.
 
 **Rouge** : `ModuleNotFoundError: app.shared.api.hotes_acceptes`. **Vert** (`just verifier`, coordinateur) : `922 passed`, couverture 100 %.
+
+## Étape 3b – Branchement dans la composition (`dev-donnees`, Sonnet, effort élevé)
+
+**Livré** : `composition/protections.py` crée une seule fois par application le limiteur et la liste d'adresses bloquées, et empile les middlewares (de l'extérieur vers l'intérieur : en-têtes, hôtes, taille, blocage, débit). `main.py` : documentation et `openapi.json` seulement si `documentation_exposee`, pas de redirection de la barre oblique finale, routeur des pièges à la racine, liste passée aux routeurs. `Parametres` gagne `ecritures_par_minute` et `lectures_par_minute`, par défaut égaux aux décisions du propriétaire (20 et 120) ; seuls les tests les relèvent.
+
+**Tests** : la fixture `client` relève les seuils et expose la documentation ; la nouvelle fixture `client_protege` garde les réglages de production. `test_protections_application.py` et `test_protections_enveloppe.py` prouvent chaque protection sur l'application réelle. `test_champ_piege_routes.py` est supprimé : il montait les routeurs à la main, ses cas sont repris sur l'application réelle.
+
+**Rouge** : `12 failed, 5 passed` (`openapi.json` en 200, `/api/chantiers/` en 307, 201 au lieu de 429 ou 403, ni 413 ni 400). **Vert** (`just verifier`, coordinateur) : `943 passed`, couverture 100 %. `just client` produit toujours le schéma complet.
+
+**À suivre** : `just e2e` demande `CHANTIER_ECRITURES_PAR_MINUTE` et `CHANTIER_LECTURES_PAR_MINUTE` relevés dans la configuration Playwright (étape 4) ; `deploy/` doit définir `CHANTIER_HOTES_ACCEPTES` (étape 5) ; le paramètre temporaire des routeurs devient obligatoire (`dev-api`).

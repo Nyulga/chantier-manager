@@ -1,8 +1,10 @@
 """Paramètres de l'application, lus une seule fois par la composition root."""
 
 import pytest
+from pydantic import ValidationError
 
 from app.composition.parametres import Parametres
+from app.shared.application.limites_debit import ECRITURES_PAR_FENETRE, LECTURES_PAR_FENETRE
 
 URL_PRODUCTION = "sqlite:////donnees/chantier.db"
 UN_KIBIOCTET = 1024
@@ -48,3 +50,28 @@ def test_la_taille_maximale_du_corps_est_lue_dans_chantier_taille_max_corps(
     monkeypatch.setenv("CHANTIER_TAILLE_MAX_CORPS", str(UN_KIBIOCTET))
 
     assert Parametres().taille_max_corps == UN_KIBIOCTET
+
+
+def test_les_seuils_de_debit_par_defaut_sont_ceux_decides_par_le_proprietaire() -> None:
+    parametres = Parametres()
+
+    assert parametres.ecritures_par_minute == ECRITURES_PAR_FENETRE
+    assert parametres.lectures_par_minute == LECTURES_PAR_FENETRE
+
+
+def test_les_seuils_de_debit_sont_lus_dans_l_environnement(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("CHANTIER_ECRITURES_PAR_MINUTE", "5000")
+    monkeypatch.setenv("CHANTIER_LECTURES_PAR_MINUTE", "6000")
+
+    parametres = Parametres()
+
+    assert (parametres.ecritures_par_minute, parametres.lectures_par_minute) == (5000, 6000)
+
+
+@pytest.mark.parametrize("variable", ["ecritures_par_minute", "lectures_par_minute"])
+def test_un_seuil_de_debit_nul_est_refuse(variable: str) -> None:
+    # Un seuil à zéro couperait toute l'API : mieux vaut refuser la configuration au démarrage.
+    with pytest.raises(ValidationError):
+        Parametres.model_validate({variable: 0})

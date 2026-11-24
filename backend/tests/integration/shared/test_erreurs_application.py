@@ -11,11 +11,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
-from app.composition.parametres import Parametres
 from app.main import creer_application
 from app.shared.infrastructure.sql.moteur import creer_moteur
 from tests.conftest import url_sqlite
-from tests.integration.conftest import CHANTIER_A_CREER, CHEF
+from tests.integration.conftest import CHANTIER_A_CREER, CHEF, parametres_de_test
 
 TYPE_PROBLEME = "application/problem+json"
 LONGUEUR_CODE_POSTAL_MAX = 10
@@ -125,7 +124,7 @@ def base_verrouillee(fichier: Path) -> Iterator[None]:
 
 def test_une_base_verrouillee_donne_un_503_generique(tmp_path: Path) -> None:
     # `timeout=0` : la requête échoue tout de suite au lieu d'attendre le verrou plusieurs secondes.
-    parametres = Parametres(url_base=f"{url_sqlite(tmp_path)}?timeout=0")
+    parametres = parametres_de_test(tmp_path, url_base=f"{url_sqlite(tmp_path)}?timeout=0")
 
     with (
         TestClient(creer_application(parametres)) as client,
@@ -153,7 +152,7 @@ def supprimer_les_tables(dossier: Path) -> None:
 def test_une_table_absente_donne_un_500_et_non_un_503(tmp_path: Path) -> None:
     # Un schéma incomplet est un défaut du programme ou du déploiement : le présenter comme une
     # panne passagère inviterait à réessayer sans fin, et cacherait la vraie cause au serveur.
-    application = creer_application(Parametres(url_base=url_sqlite(tmp_path)))
+    application = creer_application(parametres_de_test(tmp_path))
     with TestClient(application, raise_server_exceptions=False) as client:
         supprimer_les_tables(tmp_path)
 
