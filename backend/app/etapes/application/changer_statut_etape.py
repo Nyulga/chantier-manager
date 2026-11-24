@@ -3,9 +3,14 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from app.etapes.application.plafonds import (
+    LIMITE_TRANSITIONS_PAR_ETAPE,
+    MESSAGE_LIMITE_TRANSITIONS,
+)
 from app.etapes.application.ports import UnitOfWorkEtapes
 from app.etapes.application.vues import EtapeVue, vue_etape
 from app.etapes.domain.cycle import lire_action
+from app.shared.application.plafond import exiger_place_sous_le_plafond
 from app.shared.application.ports import Horloge
 from app.shared.domain.acteur import Acteur
 
@@ -40,12 +45,22 @@ class ChangerStatutEtape:
     un état périmé est un conflit (409), même si elle serait aussi interdite dans
     l'état actuel. C'est ce que l'acteur doit apprendre en premier : recharger.
 
+    Le plafond de la démo (`LIMITE_TRANSITIONS_PAR_ETAPE`) est vérifié ensuite, avant
+    la transition et donc avant toute écriture. Il est vérifié ici, et non dans chaque
+    action, parce que toutes les transitions passent par ce cas d'usage. Il vient après
+    le chargement de l'étape, pour qu'une étape inconnue reste inconnue, et après la
+    version, pour que l'acteur apprenne d'abord à recharger. Il précède aussi le
+    contrôle du cycle : une étape pleine refuse toute action, permise ou non. Son
+    historique est déjà chargé avec elle : le nombre d'entrées sert au plafond sans
+    seconde lecture, et cette lecture reste légère puisque le plafond la borne.
+
     Lève :
         ValeurInvalideError : l'action est inconnue, ou le commentaire est absent alors
             qu'il est obligatoire, ou trop long.
         NonTrouveError : l'étape n'existe pas.
         ConflitVersionError : l'étape a changé depuis la version attendue, ou une autre
             transaction l'a modifiée en même temps.
+        PlafondAtteintError : l'étape a déjà `LIMITE_TRANSITIONS_PAR_ETAPE` transitions.
         TransitionInterditeError : l'action n'est pas permise à ce rôle dans l'état actuel.
     """
 
@@ -59,6 +74,9 @@ class ChangerStatutEtape:
         with self._uow:
             etape = self._uow.etapes.obtenir(commande.etape_id)
             etape.verifier_version(commande.version_attendue)
+            exiger_place_sous_le_plafond(
+                len(etape.historique), LIMITE_TRANSITIONS_PAR_ETAPE, MESSAGE_LIMITE_TRANSITIONS
+            )
             etape.appliquer(action, acteur, self._horloge.maintenant(), commande.commentaire)
             vue = vue_etape(etape, acteur)
             self._uow.valider()
