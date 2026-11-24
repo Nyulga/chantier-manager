@@ -1,4 +1,4 @@
-// Suite de tests commune aux hooks de lecture : ils appliquent tous la règle de nouvelle tentative de `src/api/reessai.ts`.
+// Suite de tests commune aux hooks de lecture : ils suivent tous la règle de nouvelle tentative de `src/api/reessai.ts`.
 import { renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse, type JsonBodyType } from 'msw';
 import { expect, it } from 'vitest';
@@ -18,9 +18,10 @@ type Parametres = {
 };
 
 /**
- * Prouve que le hook pose `retry: reessayerRequete`. Le cache de test n'a pas de nouvelle tentative
- * par défaut : seule l'option du hook peut donc faire rejouer une requête. On lit l'état de la
- * requête dans le cache, car certains hooks (le compteur de la navigation) ne rendent que leur valeur.
+ * Prouve que le hook ne rejoue pas un refus de l'API et rejoue une panne. La règle vient du client
+ * de requêtes (le cache de test reprend celui de l'application) : le test échoue si un hook la
+ * remplace par une autre. On lit l'état de la requête dans le cache, car certains hooks (le compteur
+ * de la navigation) ne rendent que leur valeur.
  */
 export function testerReessai({ serveur, chemin, corps, utiliser }: Parametres) {
   function observer() {

@@ -1,5 +1,6 @@
-// Règle de nouvelle tentative des requêtes de lecture, posée hook par hook (`retry: reessayerRequete`) :
-// un hook qui l'oublie retombe sur la valeur par défaut de TanStack Query, qui rejoue même un 403 ou un 404.
+// Règle de nouvelle tentative des requêtes de lecture, posée une seule fois dans les options par défaut
+// du client de requêtes (`src/app/providers.tsx`) : aucun hook ne peut l'oublier, alors que la valeur
+// par défaut de TanStack Query rejoue même un 403 ou un 404. Le client des tests la reprend aussi.
 import type { ErreurApi } from './erreurApi';
 
 /** Nombre de tentatives de plus après un échec : c'est la valeur par défaut de TanStack Query. */

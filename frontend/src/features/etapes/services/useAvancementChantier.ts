@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 
 import { lireChantier } from '@/api/chantiers';
 import { clesRequetes } from '@/api/clesRequetes';
-import { reessayerRequete } from '@/api/reessai';
 
 /**
  * Lit le chantier et n'en garde que ce que la page des étapes affiche : son avancement et le droit
@@ -16,7 +15,6 @@ import { reessayerRequete } from '@/api/reessai';
 export function useAvancementChantier(chantierId: string) {
   return useQuery({
     queryKey: clesRequetes.chantier(chantierId),
-    retry: reessayerRequete,
     queryFn: () => lireChantier(chantierId),
     select: (chantier) => ({
       avancement: chantier.avancement,

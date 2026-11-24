@@ -1,7 +1,12 @@
 // Tests des fournisseurs globaux : ils affichent leurs enfants et fournissent TanStack Query.
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
-import { expect, it, vi } from 'vitest';
+import { http, HttpResponse } from 'msw';
+import { describe, expect, it, vi } from 'vitest';
+
+import { reponseProbleme } from '@/test/reponseProbleme';
+import { SondeLectureChantiers } from '@/test/SondeLectureChantiers';
+import { installerServeurApi } from '@/test/serveurApiSimule';
 
 import { Providers } from './providers';
 
@@ -74,4 +79,64 @@ it('relit la donnée une fois la durée de fraîcheur dépassée', async () => {
     expect(lecture).toHaveBeenCalledTimes(2);
   });
   vi.useRealTimers();
+});
+
+describe('nouvelle tentative par défaut des requêtes de lecture', () => {
+  const serveur = installerServeurApi();
+
+  /**
+   * Attente maximale d'une requête qui réussit à la deuxième tentative : TanStack Query laisse
+   * une seconde avant de rejouer. L'horloge n'est pas simulée, car les réponses du faux serveur
+   * (MSW) passent par de vraies entrées-sorties que des minuteries figées feraient attendre sans fin.
+   */
+  const ATTENTE_PREMIERE_REPRISE_MS = 3_000;
+
+  /** Réponse de l'API à chaque appel, dans l'ordre ; la dernière se répète. Renvoie le compteur d'appels. */
+  function repondreDans(reponses: readonly (() => Response)[]) {
+    const compteur = { appels: 0 };
+    serveur.use(
+      http.get('/api/chantiers', () => {
+        const reponse = reponses[Math.min(compteur.appels, reponses.length - 1)];
+        compteur.appels += 1;
+        return reponse?.();
+      }),
+    );
+    return compteur;
+  }
+
+  /** Affiche une requête nue (sans option `retry`) : seul le client de `Providers` décide. */
+  function lireAvecProviders() {
+    render(
+      <Providers>
+        <SondeLectureChantiers />
+      </Providers>,
+    );
+  }
+
+  it.each([403, 404])(
+    "ne rejoue pas une requête sans option `retry` que l'API refuse (%i)",
+    async (statut) => {
+      const compteur = repondreDans([() => reponseProbleme(statut, 'Refusé.')]);
+
+      lireAvecProviders();
+
+      // L'état « erreur » n'arrive qu'une fois les reprises épuisées : sans règle, il faudrait 7 s.
+      expect(await screen.findByText('error')).toBeVisible();
+      expect(compteur.appels).toBe(1);
+    },
+  );
+
+  it('rejoue une requête sans option `retry` lors d’une panne du serveur (503)', async () => {
+    const compteur = repondreDans([
+      () => reponseProbleme(503, 'Indisponible.'),
+      () => HttpResponse.json([]),
+    ]);
+
+    lireAvecProviders();
+
+    expect(
+      await screen.findByText('success', {}, { timeout: ATTENTE_PREMIERE_REPRISE_MS }),
+    ).toBeVisible();
+    expect(compteur.appels).toBe(2);
+  });
 });

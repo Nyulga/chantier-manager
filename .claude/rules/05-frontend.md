@@ -25,6 +25,7 @@ src/
 
 | Sous-couche | Peut importer | Ne peut **pas** |
 |---|---|---|
+| `app` | les `pages` (routes), `ui` (cadre), et `api` pour configurer le client de requêtes (options par défaut comme `reessayerRequete`) | contenir une règle de données propre à un écran |
 | `pages` | `services` et `components` de la même fonctionnalité, `ui` | appeler `api`, utiliser du HTML brut ou des classes CSS |
 | `components` | `ui`, les types de `services` | appeler `api` ou `services` (ils reçoivent tout par leurs props), utiliser du HTML brut ou des classes CSS |
 | `services` | `api` | importer `ui`, `components` ou `pages` |

@@ -2,7 +2,6 @@
 import { clesRequetes } from './clesRequetes';
 import { creerClientApi } from './client';
 import { donneesOuErreur } from './erreurApi';
-import { reessayerRequete } from './reessai';
 import type { components } from './schema';
 
 /** Chantier tel que l'API le renvoie : budget `null` pour un ouvrier, avancement déjà calculé. */
@@ -44,15 +43,13 @@ export type ChantierDeListe = ReturnType<typeof resumerChantier>;
 
 /**
  * Options de lecture de la liste, partagées par les hooks qui la lisent (page des chantiers,
- * tableau de bord, navigation) : même clé de cache, un seul appel à l'API, et la même règle de
- * nouvelle tentative. Le compteur de la navigation remplace `select` pour ne garder que le nombre.
- * Les hooks reçoivent des résumés prêts pour la carte.
+ * tableau de bord, navigation) : même clé de cache et un seul appel à l'API. Le compteur de la
+ * navigation remplace `select` pour ne garder que le nombre. Les hooks reçoivent des résumés prêts
+ * pour la carte.
  */
 export const optionsListeChantiers = {
   queryKey: clesRequetes.listeChantiers(),
   queryFn: listerChantiers,
-  // Une liste refusée par l'API (403, 404) n'est pas rejouée : seules les pannes le sont.
-  retry: reessayerRequete,
   select: (chantiers: readonly Chantier[]) => chantiers.map(resumerChantier),
 };
 
