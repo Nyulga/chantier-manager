@@ -29,7 +29,13 @@ chantier-ultra.ddns.net {
 	# Cette liste doit rester celle de `app/shared/api/pieges.py` (le même test le vérifie).
 	@pieges path /wp-admin /wp-admin/* /wp-login.php /wp-login.php/* /.env /.env/* /.git/config /.git/config/* /phpmyadmin /phpmyadmin/* /xmlrpc.php /xmlrpc.php/*
 	handle @pieges {
-		reverse_proxy chantier-api:8000
+		reverse_proxy chantier-api:8000 {
+			# Adresse réelle du visiteur, imposée ici : la limite de débit et le blocage de
+			# l'API comptent par adresse. Sans cette ligne, la valeur dépendrait de la
+			# configuration globale du Caddy (`trusted_proxies`) et un visiteur pourrait
+			# changer d'adresse à chaque requête (ADR 0016).
+			header_up X-Forwarded-For {remote_host}
+		}
 	}
 
 	handle /api/* {
@@ -43,7 +49,13 @@ chantier-ultra.ddns.net {
 		request_body {
 			max_size 64KB
 		}
-		reverse_proxy chantier-api:8000
+		reverse_proxy chantier-api:8000 {
+			# Adresse réelle du visiteur, imposée ici : la limite de débit et le blocage de
+			# l'API comptent par adresse. Sans cette ligne, la valeur dépendrait de la
+			# configuration globale du Caddy (`trusted_proxies`) et un visiteur pourrait
+			# changer d'adresse à chaque requête (ADR 0016).
+			header_up X-Forwarded-For {remote_host}
+		}
 	}
 
 	handle {
