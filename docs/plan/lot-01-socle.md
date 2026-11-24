@@ -1,6 +1,6 @@
 # Lot 01 – Socle
 
-**Dépend de** : — · **Statut** : à faire · **Issue** : #1 · **Références** : [ADR 0001](../adr/0001-monolithe-modulaire-hexagonal.md), [ADR 0005](../adr/0005-design-patterns-et-garde-fous.md)
+**Dépend de** : — · **Statut** : à faire · **Issue** : #1 · **Références** : [ADR 0001](../decisions/0001-monolithe-modulaire-hexagonal.md), [ADR 0005](../decisions/0005-design-patterns-et-garde-fous.md)
 
 ## Objectif
 Disposer d'un dépôt outillé où un squelette backend et frontend démarre, avec une CI qui fait respecter **dès le premier jour** toutes les exigences de qualité, d'architecture et de sécurité.

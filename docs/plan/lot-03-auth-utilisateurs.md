@@ -1,6 +1,6 @@
 # Lot 03 – Auth et utilisateurs
 
-**Dépend de** : 02 · **Statut** : à faire · **Issue** : #3 · **Référence** : [ADR 0003](../adr/0003-authentification.md)
+**Dépend de** : 02 · **Statut** : à faire · **Issue** : #3 · **Référence** : [ADR 0003](../decisions/0003-authentification.md)
 
 ## Objectif
 Des comptes sécurisés : le premier chef créé en CLI, les invitations, la connexion, des sessions avec rotation, et le mot de passe oublié.

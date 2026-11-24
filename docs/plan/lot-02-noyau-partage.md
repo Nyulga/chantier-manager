@@ -1,6 +1,6 @@
 # Lot 02 – Noyau partagé
 
-**Dépend de** : 01 · **Statut** : à faire · **Issue** : #2 · **Références** : [ADR 0002](../adr/0002-persistance-sqlalchemy-imperatif-uow.md), règle [06](../../.claude/rules/06-composition-et-shared.md)
+**Dépend de** : 01 · **Statut** : à faire · **Issue** : #2 · **Références** : [ADR 0002](../decisions/0002-persistance-sqlalchemy-imperatif-uow.md), règle [06](../../.claude/rules/06-composition-et-shared.md)
 
 ## Objectif
 Fournir au module `shared` les briques techniques communes, avec leurs ports, leurs implémentations SQL et leurs implémentations mémoire, pour que les lots métier n'aient plus qu'à s'y brancher.

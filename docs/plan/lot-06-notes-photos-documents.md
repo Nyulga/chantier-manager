@@ -1,6 +1,6 @@
 # Lot 06 – Notes, photos, documents
 
-**Dépend de** : 04 · **Statut** : à faire · **Issue** : #6 · **Référence** : [ADR 0004](../adr/0004-traitement-des-fichiers.md) · Peut se mener **en parallèle du lot 05**.
+**Dépend de** : 04 · **Statut** : à faire · **Issue** : #6 · **Référence** : [ADR 0004](../decisions/0004-traitement-des-fichiers.md) · Peut se mener **en parallèle du lot 05**.
 
 ## Objectif
 Centraliser les informations du terrain sur chaque chantier, avec une chaîne de contrôle des fichiers sans faille.

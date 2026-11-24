@@ -1,6 +1,6 @@
 # Intent
 
-> Documents liés : [décisions d'architecture (ADR)](docs/adr/) · [plan de développement par lots](docs/plan/README.md) · [règles par couche](.claude/rules/)
+> Documents liés : [décisions d'architecture (ADR)](docs/decisions/) · [plan de développement par lots](docs/plan/README.md) · [règles par couche](.claude/rules/)
 
 ## 1. Produit
 
@@ -40,7 +40,7 @@ La V1 couvre **uniquement l'application web**. L'application mobile viendra plus
 
 ## 2. Architecture
 
-Les décisions détaillées, avec les alternatives écartées, sont dans [`docs/adr/`](docs/adr/).
+Les décisions détaillées, avec les alternatives écartées, sont dans [`docs/decisions/`](docs/decisions/).
 
 ### 2.1 Principe général
 - Un **backend** qui expose une API REST et porte **toutes** les règles métier.
@@ -133,7 +133,7 @@ Les fichiers ne sont servis que par l'API, après vérification des droits. Les 
 
 ### 2.9 Design patterns et principes
 - Les principes **SOLID** sont obligatoires, avec une traduction vérifiable pour chacun (voir [`.claude/rules/00-principes.md`](.claude/rules/00-principes.md)).
-- Chaque couche a sa **règle**, avec ses patterns obligatoires et ses interdits, dans [`.claude/rules/`](.claude/rules/). Ces règles s'appliquent à **chaque lot**. Justification : [ADR 0005](docs/adr/0005-design-patterns-et-garde-fous.md).
+- Chaque couche a sa **règle**, avec ses patterns obligatoires et ses interdits, dans [`.claude/rules/`](.claude/rules/). Ces règles s'appliquent à **chaque lot**. Justification : [ADR 0005](docs/decisions/0005-design-patterns-et-garde-fous.md).
 - Chaque couche a un rôle unique :
   - la présentation (`api` et frontend) n'appelle que la couche service ;
   - la couche service (`application`), s'appuyant sur le `domain`, porte les règles métier, et ses tests sont écrits avant le code ;

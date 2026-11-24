@@ -61,7 +61,7 @@ En plus :
 
 ## 5. Design patterns
 
-Les patterns imposés sont listés dans chaque règle de couche et justifiés dans [`docs/adr/0005-design-patterns-et-garde-fous.md`](../../docs/adr/0005-design-patterns-et-garde-fous.md).
+Les patterns imposés sont listés dans chaque règle de couche et justifiés dans [`docs/decisions/0005-design-patterns-et-garde-fous.md`](../../docs/decisions/0005-design-patterns-et-garde-fous.md).
 
 **Anti-patterns interdits partout** :
 - Singleton et état global mutable ;
