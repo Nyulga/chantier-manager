@@ -1,4 +1,8 @@
-"""Plafond du nombre de transitions par étape : 20, vérifié avant d'écrire quoi que ce soit."""
+"""Plafond du nombre de transitions par étape : 20, vérifié avant d'écrire quoi que ce soit.
+
+La validation en est exemptée : elle mène à un statut final et ne peut donc pas
+servir à boucler, alors qu'une étape pleine et non validable resterait à vie « À valider ».
+"""
 
 import pytest
 
@@ -8,7 +12,7 @@ from app.etapes.domain.cycle import StatutEtape
 from app.etapes.domain.etape import Etape, HistoriqueEtape
 from app.shared.application.erreurs import PlafondAtteintError
 from app.shared.domain.acteur import Acteur, Role
-from app.shared.domain.erreurs import ConflitVersionError
+from app.shared.domain.erreurs import ConflitVersionError, TransitionInterditeError
 from tests.application.etapes.contexte import Contexte
 from tests.fabriques.etapes import INSTANT, id_etape, une_etape
 
@@ -62,11 +66,10 @@ def test_la_derniere_transition_sous_le_plafond_est_acceptee() -> None:
     [
         (StatutEtape.A_FAIRE, ChangementStatut(ETAPE, "demarrer"), OUVRIER),
         (StatutEtape.EN_COURS, ChangementStatut(ETAPE, "signaler_terminee"), OUVRIER),
-        (StatutEtape.TERMINEE_A_VALIDER, ChangementStatut(ETAPE, "valider"), CHEF),
         (StatutEtape.TERMINEE_A_VALIDER, ChangementStatut(ETAPE, "refuser", "Non."), CHEF),
     ],
 )
-def test_au_plafond_toute_transition_est_refusee_sans_rien_ecrire(
+def test_au_plafond_toute_transition_sauf_la_validation_est_refusee_sans_rien_ecrire(
     statut: StatutEtape, commande: ChangementStatut, acteur: Acteur
 ) -> None:
     contexte = un_contexte_avec(statut, LIMITE_TRANSITIONS_PAR_ETAPE)
@@ -79,6 +82,33 @@ def test_au_plafond_toute_transition_est_refusee_sans_rien_ecrire(
     assert (etape.statut, etape.version, len(etape.historique), contexte.uow.validations) == (
         statut,
         1,
+        LIMITE_TRANSITIONS_PAR_ETAPE,
+        0,
+    )
+
+
+def test_au_plafond_le_chef_peut_encore_valider() -> None:
+    contexte = un_contexte_avec(StatutEtape.TERMINEE_A_VALIDER, LIMITE_TRANSITIONS_PAR_ETAPE)
+
+    vue = contexte.changer_statut().executer(ChangementStatut(ETAPE, "valider"), CHEF)
+
+    etape = contexte.uow.etapes.obtenir(ETAPE)
+    assert (vue.statut, len(etape.historique), contexte.uow.validations) == (
+        "validee",
+        LIMITE_TRANSITIONS_PAR_ETAPE + 1,
+        1,
+    )
+
+
+def test_au_plafond_l_ouvrier_ne_peut_toujours_pas_valider() -> None:
+    contexte = un_contexte_avec(StatutEtape.TERMINEE_A_VALIDER, LIMITE_TRANSITIONS_PAR_ETAPE)
+
+    with pytest.raises(TransitionInterditeError):
+        contexte.changer_statut().executer(ChangementStatut(ETAPE, "valider"), OUVRIER)
+
+    etape = contexte.uow.etapes.obtenir(ETAPE)
+    assert (etape.statut, len(etape.historique), contexte.uow.validations) == (
+        StatutEtape.TERMINEE_A_VALIDER,
         LIMITE_TRANSITIONS_PAR_ETAPE,
         0,
     )

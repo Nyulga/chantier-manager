@@ -11,6 +11,7 @@ from app.etapes.domain.cycle import (
     StatutEtape,
     actions_permises,
     lire_action,
+    mene_a_un_statut_final,
     trouver_transition,
 )
 from app.shared.domain.acteur import Role
@@ -110,3 +111,18 @@ def test_une_action_inconnue_designe_le_champ_action() -> None:
         lire_action("supprimer")
 
     assert erreur.value.champ == "action"
+
+
+# Seule la validation mène à « Validée », d'où ne part aucune transition : c'est la
+# seule action qui ne peut pas servir à faire tourner le cycle en boucle.
+@pytest.mark.parametrize(
+    ("action", "finale"),
+    [
+        (ActionEtape.DEMARRER, False),
+        (ActionEtape.SIGNALER_TERMINEE, False),
+        (ActionEtape.VALIDER, True),
+        (ActionEtape.REFUSER, False),
+    ],
+)
+def test_seule_la_validation_mene_a_un_statut_final(action: ActionEtape, finale: bool) -> None:
+    assert mene_a_un_statut_final(action) is finale

@@ -9,7 +9,7 @@ from app.etapes.application.plafonds import (
 )
 from app.etapes.application.ports import UnitOfWorkEtapes
 from app.etapes.application.vues import EtapeVue, vue_etape
-from app.etapes.domain.cycle import lire_action
+from app.etapes.domain.cycle import lire_action, mene_a_un_statut_final
 from app.shared.application.plafond import exiger_place_sous_le_plafond
 from app.shared.application.ports import Horloge
 from app.shared.domain.acteur import Acteur
@@ -50,9 +50,17 @@ class ChangerStatutEtape:
     action, parce que toutes les transitions passent par ce cas d'usage. Il vient après
     le chargement de l'étape, pour qu'une étape inconnue reste inconnue, et après la
     version, pour que l'acteur apprenne d'abord à recharger. Il précède aussi le
-    contrôle du cycle : une étape pleine refuse toute action, permise ou non. Son
-    historique est déjà chargé avec elle : le nombre d'entrées sert au plafond sans
-    seconde lecture, et cette lecture reste légère puisque le plafond la borne.
+    contrôle du cycle : une étape pleine refuse toute action qui la fait boucler,
+    permise ou non. Son historique est déjà chargé avec elle : le nombre d'entrées
+    sert au plafond sans seconde lecture, et cette lecture reste légère puisque le
+    plafond la borne.
+
+    La validation échappe au plafond, parce qu'elle mène à un statut final (règle du
+    domaine, `mene_a_un_statut_final`). Elle ne peut donc arriver qu'une fois et ne
+    fait pas grossir l'historique sans limite : 21 entrées au plus. Sans cette
+    exemption, une étape remplie par des refus resterait à vie « À valider », et son
+    chantier ne pourrait plus atteindre 100 %. Le cycle s'applique toujours : un
+    ouvrier qui tente de valider une étape pleine reçoit `TransitionInterditeError`.
 
     Lève :
         ValeurInvalideError : l'action est inconnue, ou le commentaire est absent alors
@@ -60,7 +68,8 @@ class ChangerStatutEtape:
         NonTrouveError : l'étape n'existe pas.
         ConflitVersionError : l'étape a changé depuis la version attendue, ou une autre
             transaction l'a modifiée en même temps.
-        PlafondAtteintError : l'étape a déjà `LIMITE_TRANSITIONS_PAR_ETAPE` transitions.
+        PlafondAtteintError : l'étape a déjà `LIMITE_TRANSITIONS_PAR_ETAPE` transitions,
+            et l'action n'est pas la validation.
         TransitionInterditeError : l'action n'est pas permise à ce rôle dans l'état actuel.
     """
 
@@ -74,9 +83,10 @@ class ChangerStatutEtape:
         with self._uow:
             etape = self._uow.etapes.obtenir(commande.etape_id)
             etape.verifier_version(commande.version_attendue)
-            exiger_place_sous_le_plafond(
-                len(etape.historique), LIMITE_TRANSITIONS_PAR_ETAPE, MESSAGE_LIMITE_TRANSITIONS
-            )
+            if not mene_a_un_statut_final(action):
+                exiger_place_sous_le_plafond(
+                    len(etape.historique), LIMITE_TRANSITIONS_PAR_ETAPE, MESSAGE_LIMITE_TRANSITIONS
+                )
             etape.appliquer(action, acteur, self._horloge.maintenant(), commande.commentaire)
             vue = vue_etape(etape, acteur)
             self._uow.valider()

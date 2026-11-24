@@ -59,6 +59,9 @@ MESSAGE_LIMITE_ETAPES = f"Ce chantier a atteint sa limite de {LIMITE_ETAPES_PAR_
 # étape normale en fait de 3 à 6 (démarrer, signaler, puis valider, avec quelques
 # refus). Sans plafond, une boucle « signaler terminée, refuser, signaler terminée… »
 # ferait grossir l'historique sans limite sur la démo publique (ADR 0016).
+# La validation finale n'est pas comptée : elle reste toujours possible, même au
+# plafond, pour qu'une étape pleine puisse encore être validée. Comme elle mène à un
+# statut final, elle n'arrive qu'une fois, et l'historique compte 21 entrées au plus.
 LIMITE_TRANSITIONS_PAR_ETAPE = 20
 MESSAGE_LIMITE_TRANSITIONS = (
     f"Cette étape a atteint sa limite de {LIMITE_TRANSITIONS_PAR_ETAPE} changements de statut."
