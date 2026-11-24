@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
+from app.chantiers.application.plafonds import LIMITE_CHANTIERS, MESSAGE_LIMITE_CHANTIERS
 from app.chantiers.application.ports import RESUME_SANS_ETAPE, UnitOfWorkChantiers
 from app.chantiers.application.vues import ChantierVue, vue_chantier
 from app.chantiers.domain.adresse import Adresse
@@ -11,6 +12,7 @@ from app.chantiers.domain.chantier import Chantier, FicheChantier
 from app.chantiers.domain.montant import Montant
 from app.chantiers.domain.politiques import peut_creer_chantier
 from app.shared.application.acces import exiger_acces
+from app.shared.application.plafond import exiger_place_sous_le_plafond
 from app.shared.application.ports import GenerateurId, Horloge
 from app.shared.domain.acteur import Acteur
 
@@ -37,9 +39,15 @@ class CreerChantier:
     L'horloge sert au délai de la vue : une échéance déjà passée est acceptée, et le
     chantier apparaît alors aussitôt en retard.
 
+    Le plafond de la démo (`LIMITE_CHANTIERS`) est vérifié après le droit : un ouvrier
+    reçoit toujours son refus de droit, et n'apprend rien du nombre de chantiers. Il
+    l'est aussi après la validation de la saisie, qui ne lit rien, et dans la même
+    transaction que l'ajout, avant toute écriture : un refus n'enregistre rien.
+
     Lève :
         AccesRefuseError : l'acteur n'est pas chef.
         ValeurInvalideError : une information du chantier viole un invariant du domaine.
+        PlafondAtteintError : la démo compte déjà `LIMITE_CHANTIERS` chantiers.
     """
 
     def __init__(
@@ -64,6 +72,11 @@ class CreerChantier:
             budget=Montant(commande.budget),
         )
         with self._uow:
+            # Le nombre de chantiers vient de la liste complète : c'est acceptable tant que
+            # ce même plafond la borne à 100 chantiers. Si le plafond montait, un comptage
+            # par la base serait à ajouter au port, avec ses implémentations (`dev-donnees`).
+            existants = len(self._uow.chantiers.lister())
+            exiger_place_sous_le_plafond(existants, LIMITE_CHANTIERS, MESSAGE_LIMITE_CHANTIERS)
             chantier = Chantier.creer(self._generateur_id.nouveau(), fiche)
             self._uow.chantiers.ajouter(chantier)
             self._uow.valider()

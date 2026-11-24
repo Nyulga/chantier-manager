@@ -1,11 +1,12 @@
-"""Plafonds de volume des lectures du tableau de bord : « À valider » et fil d'activité.
+"""Plafonds de volume du module étapes : lectures du tableau de bord et étapes par chantier.
 
 Ce ne sont pas des règles métier : aucune règle du produit ne dit qu'un chef ne
-peut avoir que 50 étapes à valider. Ce sont des choix techniques, qui bornent le
-coût d'une lecture et la taille d'une réponse quelle que soit la demande. La
-démonstration est publique et ouverte en écriture : sans plafond, n'importe qui
-pourrait faire grossir sans limite ces lectures. Ils vivent donc dans la couche
-application, à côté des cas d'usage qui les appliquent, et non dans le domaine.
+peut avoir que 50 étapes à valider, ni qu'un chantier n'a que 30 étapes. Ce sont
+des choix techniques, qui bornent le coût d'une lecture, la taille d'une réponse et
+le volume de la base, quelle que soit la demande. La démonstration est publique et
+ouverte en écriture : sans plafond, n'importe qui pourrait faire grossir sans limite
+ces lectures et la base elle-même. Ils vivent donc dans la couche application, à
+côté des cas d'usage qui les appliquent, et non dans le domaine.
 """
 
 from dataclasses import dataclass
@@ -45,3 +46,11 @@ class LimiteActivite:
                 f"à {LIMITE_ACTIVITE_MAX} entrées.",
                 "limite",
             )
+
+
+# Nombre maximal d'étapes d'un même chantier. Il protège la démonstration publique,
+# sans compte, contre un remplissage sans fin ; la démo n'est pas remise à zéro, et
+# un chantier plein le reste (décision du propriétaire, journal du lot S6). Trente
+# étapes suffisent largement à décrire un vrai chantier.
+LIMITE_ETAPES_PAR_CHANTIER = 30
+MESSAGE_LIMITE_ETAPES = f"Ce chantier a atteint sa limite de {LIMITE_ETAPES_PAR_CHANTIER} étapes."
