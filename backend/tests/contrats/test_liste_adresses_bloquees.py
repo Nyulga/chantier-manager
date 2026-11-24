@@ -1,6 +1,6 @@
 """Contrat du port `ListeAdressesBloquees`, joué sur toutes ses implémentations.
 
-Il n'y en a qu'une pour l'instant, en mémoire (ADR 0015 : un seul processus API).
+Il n'y en a qu'une pour l'instant, en mémoire (ADR 0016 : un seul processus API).
 Pour en brancher une autre (Redis, base de données) le jour où l'API tournera sur
 plusieurs processus, il suffit d'ajouter son nom dans `IMPLEMENTATIONS` et sa
 construction dans la fixture `liste` : les mêmes tests s'appliquent, avec la même

@@ -62,7 +62,7 @@ EXPOSE 8000
 # Options d'uvicorn, une par ligne pour que chacune garde son explication :
 # - `--no-server-header` : la réponse ne nomme pas le serveur (constat I1 du test d'intrusion) ;
 # - `--workers 1` : le limiteur de débit et la liste des adresses bloquées vivent en mémoire du
-#   processus (ADR 0015). Avec deux processus, chacun compterait de son côté et les limites
+#   processus (ADR 0016). Avec deux processus, chacun compterait de son côté et les limites
 #   seraient doublées ; la base SQLite n'admet de toute façon qu'un seul écrivain ;
 # - `--proxy-headers` : l'adresse du client est celle que le proxy a mise dans `X-Forwarded-For`
 #   (sans cela, tous les visiteurs auraient l'adresse du proxy et partageraient limites et
