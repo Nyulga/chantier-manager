@@ -105,6 +105,7 @@ Les étapes s'enchaînent **une par une**, parce que chacune s'appuie sur la pr�
 5. **Ne jamais fusionner** : la fusion appartient à l'utilisateur.
 
 ## Nomenclature des commits
+Format complet, types et portées hors lot : skill `git-conventional`.
 - `feat(lot-N): <étape>` : une étape d'un lot.
 - `fix(lot-N): <ce qui est corrigé>` : une correction.
 - `chore: <quoi>` : mise en place, outillage hors lot.

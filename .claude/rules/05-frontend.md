@@ -25,6 +25,7 @@ src/
 
 | Sous-couche | Peut importer | Ne peut **pas** |
 |---|---|---|
+| `app` | les `pages` (routes), `ui` (cadre), et `api` pour configurer le client de requêtes (options par défaut comme `reessayerRequete`) | contenir une règle de données propre à un écran |
 | `pages` | `services` et `components` de la même fonctionnalité, `ui` | appeler `api`, utiliser du HTML brut ou des classes CSS |
 | `components` | `ui`, les types de `services` | appeler `api` ou `services` (ils reçoivent tout par leurs props), utiliser du HTML brut ou des classes CSS |
 | `services` | `api` | importer `ui`, `components` ou `pages` |
@@ -32,7 +33,7 @@ src/
 | `api` | openapi-fetch, les types générés, les types de TanStack Query (fonctions d'appel, options de requête, clés de cache, invalidations, erreur `ErreurApi` et capacités partagées, voir l'ADR 0006) | importer quoi que ce soit d'autre du projet, contenir un hook ou un composant |
 | `features/A` | — | importer `features/B` (le code partagé descend dans `ui` ou `api`) |
 
-Ces règles sont **vérifiées par ESLint** (`eslint-plugin-boundaries`, `no-restricted-imports`, `react/forbid-elements`, `react/forbid-dom-props`, `import/no-cycle`), configuré au lot 01.
+Ces règles sont **vérifiées par ESLint** (`eslint-plugin-boundaries`, `no-restricted-imports`, `react/forbid-elements`, `react/forbid-dom-props`, `import/no-cycle`), dans `frontend/eslint/`.
 
 ## Composants du design system uniquement
 - Hors de `src/ui`, sont interdits :
@@ -58,6 +59,14 @@ Ces règles sont **vérifiées par ESLint** (`eslint-plugin-boundaries`, `no-res
 | **Provider** | Session, thème et client TanStack Query, déclarés dans `src/app`. Aucun store global de type Redux : l'état serveur vit dans TanStack Query, l'état local dans les composants. |
 | **Adapter** | `src/api/client.ts` enveloppe le client généré (base `/api`, cookies, en-tête CSRF, rafraîchissement de session). `fetch` et `axios` sont interdits ailleurs. |
 
+## Données serveur (TanStack Query, ADR 0009)
+- **Un seul client**, créé dans `src/app/providers.tsx`. Ses options par défaut s'appliquent à toutes les lectures :
+  - **fraîcheur de 30 s** (`staleTime`) : changer d'écran ne relit pas une donnée qui vient d'arriver ; le retour sur l'onglet la relit ;
+  - **nouvelle tentative** (`reessayerRequete`, `src/api/reessai.ts`) : un refus de l'API (4xx) n'est jamais rejoué, une panne (5xx, réseau) l'est. Un hook ne la redéfinit pas sans raison écrite.
+- **Clés de cache** : uniquement celles de `src/api/clesRequetes.ts`. Après une action, le hook invalide ce qu'elle change, avec les fonctions partagées de `src/api/rafraichissement.ts`.
+- **Droits affichés** : ils viennent de `GET /api/moi` (capacités de l'acteur) ou des `actions_permises` de la ressource (ADR 0008). Un nouveau droit affiché demande un nouveau drapeau dans l'API, jamais une condition dans le frontend.
+- **Erreurs** : `ErreurApi` porte le statut, le message global et le message de chaque champ d'un 422.
+
 ## Typage
 - Les types de l'API sont **générés** depuis OpenAPI, jamais écrits à la main.
 - `any`, `as` (sauf `as const`), `!` (non-null assertion) et `@ts-ignore` sont interdits.
@@ -71,3 +80,12 @@ Ces règles sont **vérifiées par ESLint** (`eslint-plugin-boundaries`, `no-res
 - Vitest et Testing Library, avec une couverture **≥ 90 %**. On interroge l'interface par rôle et par libellé (`getByRole`), jamais par classe CSS.
 - Chaque composant `ui` a un test d'accessibilité (axe).
 - Les `services` sont testés en simulant l'API au niveau réseau (MSW), à partir des types générés.
+
+## Comment vérifier
+- **Automatique** (`just verifier`) :
+  - ESLint (`frontend/eslint/`) : frontières entre sous-couches, éléments HTML et `className` interdits hors `ui`, valeurs arbitraires Tailwind, `any`, `as`, `!`, limites de taille ;
+  - `tsc` strict, Prettier, build ;
+  - Vitest avec 90 % de couverture au moins, tests axe sur chaque composant `ui`, MSW pour les `services` ;
+  - `just e2e` : Playwright à 360 et 1280 px, contrastes vérifiés avec axe.
+- **Par un agent** : `conformite` (design system Balise, tutoiement, aucune règle métier), `revue`, `pentest` (ce que le navigateur reçoit vraiment).
+- **Pas encore vérifié** : l'affichage à 768 px n'a pas de test ; les formulaires zod n'existent pas encore (ADR 0012).

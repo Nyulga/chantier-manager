@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Documents de référence
 
 - **`intent.md`** est la source de vérité : produit, architecture, contraintes, hors périmètre (section 4, à ne jamais réaliser) et critères d'acceptation (section 5).
-- **`.claude/rules/`** : les règles **strictes** par couche. `00-principes.md` s'applique toujours (SOLID, limites chiffrées, commentaires en français, TDD) ; les règles `01` à `07` couvrent les couches `domain`, `application`, `infrastructure` et `api`, le frontend, la composition root avec `shared`, ainsi que les tests et migrations ; la règle `08` fixe les règles d'engagement des tests d'intrusion (périmètre, charge, rapports). **Avant de coder dans une couche, relis sa règle**, à chaque lot. Si une demande contredit une règle, signale-le au lieu de la contourner.
+- **`.claude/rules/`** : les règles **strictes** par couche. `00-principes.md` s'applique toujours (SOLID, limites chiffrées, commentaires en français, TDD) ; les règles `01` à `07` couvrent les couches `domain`, `application`, `infrastructure` et `api`, le frontend, la composition root avec `shared`, ainsi que les tests et migrations ; la règle `08` fixe les règles d'engagement des tests d'intrusion (périmètre, charge, rapports), et la règle `09` encadre le déploiement et l'outillage (`deploy/`, CI, `justfile`, hooks git). **Avant de coder dans une couche, relis sa règle**, à chaque lot. Si une demande contredit une règle, signale-le au lieu de la contourner.
 - **`docs/decisions/`** : les décisions d'architecture et leurs justifications. Toute décision structurante nouvelle ou modifiée donne lieu à un nouvel ADR.
 - **`docs/design-system.md`** : le design system « Balise », validé. Toute interface l'applique, et ses tokens ne passent que par le thème Tailwind ; aucune couleur ni taille en dur. Le jaune haute visibilité et les rayures sont réservés aux étapes à valider (le jaune aussi au bouton principal sur mobile et à l'élément actif de la navigation).
 - **`docs/plan/`** : le plan de développement en 9 lots verticaux (`README.md`, puis un fichier `lot-XX-*.md` par lot). Avant de travailler sur un lot, lis son fichier et respecte sa « définition de terminé ».
@@ -41,7 +41,7 @@ Toutes passent par le `justfile` de la racine (Windows et Linux) :
 |---|---|
 | `just installer` | `uv sync --locked` (backend), puis `pnpm install --frozen-lockfile` (frontend) |
 | `just lancer` | l'API sur le port 8000 (avec `--reload`) et Vite, qui relaie `/api` vers l'API |
-| `just verifier` | tous les contrôles de la CI : ruff, format, mypy, import-linter, limites de taille, bandit, pytest et couverture (100 % sur domain et application) ; ESLint, tsc, Prettier, Vitest et build ; duplication de code (`just doublons`) |
+| `just verifier` | tous les contrôles de la CI : ruff, format, mypy, import-linter, limites de taille et d'imbrication, désactivations interdites (`noqa`, `type: ignore`, `cast`…), bandit, pytest et couverture (100 % sur domain et application) ; ESLint, tsc, Prettier, Vitest et build ; duplication de code (`just doublons`) |
 | `just test-back <chemin ou -k nom>` | un test backend précis, sans couverture (par exemple `just test-back tests/domain/etapes/test_cycle.py`) |
 | `just test-front <motif>` | un test frontend précis (`vitest run <motif>`) |
 | `just e2e` | Playwright à 360 et 1280 px, contre l'API réelle sur une base SQLite temporaire |
@@ -54,7 +54,7 @@ Sous Windows, uv et just viennent de winget : si le shell ne les trouve pas, raf
 
 ## Architecture
 
-- `backend/` : API REST en Python 3.12+ avec FastAPI. `frontend/` : SPA React, TypeScript et Vite, servie sur le même domaine que l'API (`/api`). La future application mobile utilisera la même API, donc **aucune règle métier dans le frontend**.
+- `backend/` : API REST en Python 3.13+ avec FastAPI. `frontend/` : SPA React, TypeScript et Vite, servie sur le même domaine que l'API (`/api`). La future application mobile utilisera la même API, donc **aucune règle métier dans le frontend**.
 - Le backend est un **monolithe modulaire** : modules `auth`, `chantiers`, `etapes`, `documents`, `rgpd`, plus `shared` pour le code technique transverse.
 - Chaque module est découpé en 4 parties :
   - `domain` : Python pur, sans FastAPI, SQLAlchemy ni Pydantic ;

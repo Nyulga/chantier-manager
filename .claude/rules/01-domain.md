@@ -39,7 +39,16 @@ Porter **toutes** les règles métier : les invariants, la machine à états des
 
 ## Tests (voir aussi `07-tests-et-migrations.md`)
 - **TDD strict** : le test existe et échoue avant le code.
-- **100 %** de couverture des lignes et des branches, et un score de mutation **≥ 90 %**.
+- **100 %** de couverture des lignes et des branches, et un score de mutation **≥ 90 %** (phase 2 : mutmut n'est pas encore installé ni en CI).
 - **hypothesis** sur la machine à états : aucune suite d'actions ne doit mener à un état non prévu.
 - Une **matrice exhaustive** rôle × action × affectation teste les politiques d'accès : chaque cellule est un cas de test paramétré.
 - Les tests n'utilisent ni base de données, ni mock : uniquement des objets du domaine.
+
+## Comment vérifier
+- **Automatique** (`just verifier`) :
+  - import-linter : « Le domaine n'importe aucune bibliothèque technique » et « Couches de chaque module » ;
+  - couverture de 100 % sur `*/domain/*` ;
+  - mypy strict, ruff (tailles, complexité, docstrings) ;
+  - tests dans `backend/tests/domain/` (hypothesis compris).
+- **Par un agent** : `conformite` (pas de modèle anémique, pas de `datetime.now()` ni de `uuid7()`, pas de `float` pour l'argent, objets valeur figés), puis `revue`.
+- **Pas encore vérifié** : le score de mutation (phase 2) ; import-linter ne liste que les bibliothèques connues, une nouvelle bibliothèque tierce dans le domaine n'est repérée que par `conformite`.

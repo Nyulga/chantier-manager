@@ -28,8 +28,9 @@ backend/tests/
 ├── contrats/                  # une suite par port, jouée sur SQL ET mémoire
 ├── integration/<module>/      # routes API + PostgreSQL réel (testcontainers ; SQLite pendant le squelette, ADR 0007)
 ├── migrations/                # application, annulation et réapplication des migrations
-└── architecture/              # contrats import-linter et limites de taille
+└── architecture/              # contrats import-linter, limites de taille et désactivations de règles
 ```
+Les tests des outils eux-mêmes vivent aussi à côté d'eux, dans `backend/tools/tests/` (déclaré dans `testpaths`).
 Un fichier de test va dans le dossier de la couche **du code qu'il teste**. S'il en exerce plusieurs, on choisit la couche la plus haute. Une aide de test (espion, contexte) reste à côté des tests qui l'utilisent ; une fabrique utilisée par plusieurs couches va dans `fabriques/`.
 
 Côté frontend : un fichier `*.test.tsx` à côté du fichier testé, et les tests Playwright dans `frontend/e2e/`.
@@ -46,7 +47,7 @@ Côté frontend : un fichier `*.test.tsx` à côté du fichier testé, et les te
 - Interdit de supprimer, d'ignorer (`skip`, `xfail`) ou d'affaiblir un test pour faire passer la CI.
 
 ### Seuils (bloquants en CI)
-- Domaine et services : 100 % des lignes et des branches, et un score de mutation ≥ 90 %.
+- Domaine et services : 100 % des lignes et des branches. Le score de mutation ≥ 90 % est prévu en **phase 2** (mutmut n'est pas encore installé ni en CI).
 - Backend global : ≥ 95 % des lignes et des branches. Frontend : ≥ 90 %.
 - Exclure du code de la mesure de couverture (`pragma: no cover`) est interdit, sauf accord de l'utilisateur.
 
@@ -72,3 +73,11 @@ Côté frontend : un fichier `*.test.tsx` à côté du fichier testé, et les te
 - On ne modifie **jamais** une migration déjà poussée sur `dev` : on en ajoute une nouvelle.
 - Contraintes en base en plus du domaine (défense en profondeur) : `NOT NULL`, clés étrangères, `CHECK` sur les montants positifs et les statuts, index sur les clés de recherche.
 - Un test vérifie que le schéma issu des migrations correspond aux tables déclarées (`alembic check`).
+
+## Comment vérifier
+- **Automatique** (`just verifier`, et en CI) :
+  - seuils de couverture : `pytest` (95 % sur le backend, dans `pyproject.toml`), `coverage report --fail-under=100` sur domain et application, Vitest (90 %) ;
+  - migrations : `backend/tests/migrations/` (montée, descente, remontée, `alembic check`, migration rejouable) ;
+  - `just e2e` dans le job Frontend de la CI.
+- **Par un agent** : `revue` (le test a été vu en rouge, et pour la bonne raison ; un test = un comportement), `conformite` (nommage en français, Arrange / Act / Assert, pas de logique dans un test, pas de `unittest.mock` sur notre code, données fictives).
+- **Pas encore vérifié** : le score de mutation (phase 2) ; les tests sur un vrai PostgreSQL (après le squelette, ADR 0007).

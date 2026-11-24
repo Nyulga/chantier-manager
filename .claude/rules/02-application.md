@@ -39,12 +39,25 @@ Exécuter les **cas d'usage**. Pour chaque cas d'usage, le service :
 | **Chain of Responsibility** | La chaîne de contrôle des fichiers : chaque maillon (taille, format réel, antivirus, réencodage, stockage) est une classe qui implémente le même port `ControleFichier`. L'ordre est fixé dans la composition root. |
 | **Vue (read model)** | `@dataclass(frozen=True)` renvoyée au lieu de l'entité. **Le service décide des champs visibles selon l'acteur** : le budget n'est présent dans la vue que si l'acteur est chef du chantier. Les **actions permises** (`peut_valider`, `peut_refuser`…) sont calculées ici, à partir des politiques, et incluses dans la vue. Le frontend n'a ainsi jamais à recalculer une règle. |
 
+## Valeurs publiques, plafonds et ports entre modules
+- **Valeurs publiques** : `application/valeurs_publiques.py` republie, avec `__all__`, les seules constantes de saisie (longueurs maximales) et les types de valeur immuables (`Role`) dont la couche `api` a besoin. Il ne contient jamais d'entité, de règle ni de fonction (ADR 0008).
+- **Plafonds de volume** : toute liste renvoyée a une borne nommée, définie dans `application/plafonds.py` (`LIMITE_A_VALIDER = 50`, `LIMITE_ACTIVITE_MAX = 50`…). Une liste coupée le dit dans sa vue (`tronquee`), pour que l'API puisse l'annoncer (`X-Liste-Tronquee`, ADR 0008).
+- **Port entre modules** : quand un module a besoin d'un autre, il déclare un petit port dans ses propres `ports.py` (`DroitCreationChantier`, `FournisseurResumeEtapes`…). La composition root le branche sur un cas d'usage public de l'autre module. Le module ne connaît ainsi que son besoin, pas l'autre module.
+
 ## Règles de sécurité
 - **Chaque** cas d'usage vérifie les droits, même pour une simple lecture.
 - Un chantier hors du périmètre de l'acteur lève `NonTrouve` (et non `AccesRefuse`), pour ne pas révéler son existence.
 - L'acteur (`Acteur` : identifiant et rôle) est toujours un paramètre explicite, jamais une variable globale.
 
 ## Tests (voir aussi `07-tests-et-migrations.md`)
-- **TDD strict**, avec **100 %** de couverture des lignes et des branches, et un score de mutation **≥ 90 %**.
+- **TDD strict**, avec **100 %** de couverture des lignes et des branches, et un score de mutation **≥ 90 %** (phase 2 : mutmut n'est pas encore installé ni en CI).
 - Les tests utilisent **uniquement les implémentations mémoire** des ports (repositories, UoW, horloge fixe, stockage, antivirus factice). Pas de `unittest.mock`.
 - Chaque cas d'usage teste au minimum : le cas nominal ; chaque refus de droit ; chaque erreur métier ; l'annulation de la transaction en cas d'échec.
+
+## Comment vérifier
+- **Automatique** (`just verifier`) :
+  - import-linter : « Couches de chaque module », « Seules la composition et les commandes importent une infrastructure », et les contrats entre `chantiers` et `etapes` ;
+  - couverture de 100 % sur `*/application/*` ;
+  - tests dans `backend/tests/application/`, sur les fakes mémoire ; suites de contrat dans `backend/tests/contrats/`.
+- **Par un agent** : `conformite` (une classe par cas d'usage, vue figée renvoyée, droits vérifiés même en lecture, `NonTrouve` hors périmètre, plafonds nommés), puis `revue`.
+- **Pas encore vérifié** : le score de mutation (phase 2) ; les ports `VerificationChantier`, `DroitCreationChantier` et `AutorisationAjoutEtape` n'ont pas encore de suite de contrat.

@@ -53,7 +53,12 @@ const POLITIQUES_DEPENDANCES = [
       to: { element: { type: ['api', 'ui', 'services', 'components', 'pages'] } },
     },
   },
-  { from: { element: { type: 'app' } }, allow: { to: { element: { type: ['pages', 'ui'] } } } },
+  {
+    from: { element: { type: 'app' } },
+    // `api` : les fournisseurs règlent le client de requêtes avec le code partagé de `src/api`
+    // (par exemple la règle de nouvelle tentative), au lieu de le répéter dans chaque hook.
+    allow: { to: { element: { type: ['pages', 'ui', 'api'] } } },
+  },
   {
     from: { element: { type: 'pages' } },
     allow: [

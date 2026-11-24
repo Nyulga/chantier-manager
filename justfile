@@ -27,7 +27,7 @@ _lancer-web:
 # Lance toutes les vérifications du projet : c'est la porte d'entrée de la CI.
 verifier: verifier-back verifier-front doublons
 
-# Vérifications du backend : style, typage, architecture, tailles, sécurité, tests et couverture.
+# Vérifications du backend : style, typage, architecture, tailles, désactivations de règles, sécurité, tests et couverture.
 [working-directory: 'backend']
 verifier-back: && _couverture-back
     uv run ruff check .
@@ -35,6 +35,7 @@ verifier-back: && _couverture-back
     uv run mypy
     uv run lint-imports
     uv run python tools/verifier_tailles.py
+    uv run python -m tools.verifier_desactivations
     uv run bandit -c pyproject.toml -r app tools -q
 
 # Tests du backend avec leurs seuils : 95 % partout (dans pyproject.toml), 100 % sur domain et application.

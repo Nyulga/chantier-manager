@@ -1,9 +1,11 @@
-"""Vérifie les limites de taille du code Python : fichiers et fonctions.
+"""Vérifie les limites de taille et de forme du code Python : fichiers et fonctions.
 
-Un fichier ne dépasse pas 300 lignes et une fonction ne dépasse pas 40 lignes
-(règle 00, §4). Ruff mesure la complexité et le nombre d'instructions, mais pas
-les lignes : ce script complète ce contrôle (ADR 0005). Il ne dépend que de la
-bibliothèque standard, pour pouvoir tourner partout, y compris dans la CI.
+Un fichier ne dépasse pas 300 lignes, une fonction ne dépasse pas 40 lignes et
+ses blocs (`if`, `for`, `while`, `with`, `try`, `match`) ne s'imbriquent pas sur
+plus de 3 niveaux (règle 00, §4). Ruff mesure la complexité et le nombre
+d'instructions, mais ni les lignes ni la profondeur : ce script complète ce
+contrôle (ADR 0005). Il ne dépend que de la bibliothèque standard, pour pouvoir
+tourner partout, y compris dans la CI.
 
 Usage : python tools/verifier_tailles.py [chemin ...]
 Sans argument, il examine `app`, `tools` et `tests`. Le code de sortie vaut 0
@@ -18,6 +20,7 @@ from pathlib import Path
 
 MAX_LIGNES_FICHIER = 300
 MAX_LIGNES_FONCTION = 40
+MAX_PROFONDEUR = 3
 RACINES_PAR_DEFAUT = ("app", "tools", "tests")
 DOSSIERS_IGNORES = frozenset({".venv", "__pycache__", ".mypy_cache", ".ruff_cache"})
 CODE_VIOLATION = 1
@@ -64,7 +67,11 @@ def verifier_fichier(chemin: Path) -> list[Violation]:
         # Un fichier illisible ne doit jamais passer pour conforme.
         message = f"syntaxe invalide, mesure impossible : {erreur.msg}"
         return [*violations, Violation(chemin, erreur.lineno or 1, message)]
-    return [*violations, *_fonctions_trop_longues(arbre, chemin)]
+    return [
+        *violations,
+        *_fonctions_trop_longues(arbre, chemin),
+        *_fonctions_trop_imbriquees(arbre, chemin),
+    ]
 
 
 def _fonctions_trop_longues(arbre: ast.AST, chemin: Path) -> list[Violation]:
@@ -81,6 +88,85 @@ def _fonctions_trop_longues(arbre: ast.AST, chemin: Path) -> list[Violation]:
                 f"(maximum {MAX_LIGNES_FONCTION})"
             )
             violations.append(Violation(chemin, noeud.lineno, message))
+    return sorted(violations, key=lambda violation: violation.ligne)
+
+
+def _est_un_bloc(instruction: ast.stmt) -> bool:
+    """Dit si l'instruction ouvre un bloc qui compte dans la profondeur d'imbrication."""
+    return isinstance(
+        instruction,
+        ast.If
+        | ast.For
+        | ast.AsyncFor
+        | ast.While
+        | ast.With
+        | ast.AsyncWith
+        | ast.Try
+        | ast.TryStar
+        | ast.Match,
+    )
+
+
+def _sous_blocs(instruction: ast.stmt) -> list[list[ast.stmt]]:
+    """Liste les suites d'instructions contenues dans un bloc (corps, `else`, `except`, `case`)."""
+    suites: list[list[ast.stmt]] = []
+    for nom in ("body", "orelse", "finalbody"):
+        suites.append(getattr(instruction, nom, []))
+    suites.extend(gestionnaire.body for gestionnaire in getattr(instruction, "handlers", []))
+    suites.extend(cas.body for cas in getattr(instruction, "cases", []))
+    return suites
+
+
+def _est_un_elif(instruction: ast.stmt, parent: ast.stmt) -> bool:
+    """Reconnaît un `elif` : un `if` seul dans le `else`, écrit à la colonne de son parent.
+
+    L'arbre syntaxique range un `elif` dans le `else` du `if` précédent. Il ne doit
+    pas compter comme un niveau de plus, sinon une simple chaîne de `elif` serait
+    sanctionnée alors qu'elle se lit à plat. Un vrai `else:` suivi d'un `if` est
+    forcément indenté plus à droite : il garde son niveau.
+    """
+    return (
+        isinstance(parent, ast.If)
+        and isinstance(instruction, ast.If)
+        and instruction.col_offset == parent.col_offset
+        and parent.orelse == [instruction]
+    )
+
+
+def _bloc_trop_profond(
+    suite: list[ast.stmt], profondeur: int, parent: ast.stmt | None = None
+) -> ast.stmt | None:
+    """Renvoie le premier bloc de la suite qui dépasse la profondeur maximale, s'il y en a un.
+
+    Les fonctions et classes internes sont ignorées : elles sont mesurées à part,
+    avec leur propre profondeur de départ.
+    """
+    for instruction in suite:
+        if not _est_un_bloc(instruction):
+            continue
+        niveau = profondeur if parent and _est_un_elif(instruction, parent) else profondeur + 1
+        if niveau > MAX_PROFONDEUR:
+            return instruction
+        for sous_suite in _sous_blocs(instruction):
+            fautif = _bloc_trop_profond(sous_suite, niveau, instruction)
+            if fautif is not None:
+                return fautif
+    return None
+
+
+def _fonctions_trop_imbriquees(arbre: ast.AST, chemin: Path) -> list[Violation]:
+    """Repère les fonctions et méthodes dont les blocs s'imbriquent au-delà de la limite."""
+    violations: list[Violation] = []
+    for noeud in ast.walk(arbre):
+        if not isinstance(noeud, ast.FunctionDef | ast.AsyncFunctionDef):
+            continue
+        fautif = _bloc_trop_profond(noeud.body, 0)
+        if fautif is not None:
+            message = (
+                f"fonction « {noeud.name} » : blocs imbriqués sur plus de "
+                f"{MAX_PROFONDEUR} niveaux ; utiliser un retour anticipé ou extraire une fonction"
+            )
+            violations.append(Violation(chemin, fautif.lineno, message))
     return sorted(violations, key=lambda violation: violation.ligne)
 
 

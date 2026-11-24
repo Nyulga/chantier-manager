@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 
 import { clesRequetes } from '@/api/clesRequetes';
 import { listerEtapesAValider } from '@/api/etapesAValider';
-import { reessayerRequete } from '@/api/reessai';
 import type { components } from '@/api/schema';
 
 /** Étape qui attend une décision, avec la date de son dernier signalement. */
@@ -20,8 +19,6 @@ export function useEtapesAValider(autorisee: boolean) {
   return useQuery({
     queryKey: clesRequetes.etapesAValider(),
     enabled: autorisee,
-    // Un refus de l'API (403, 422…) n'est pas rejoué : la réponse serait la même.
-    retry: reessayerRequete,
     queryFn: listerEtapesAValider,
   });
 }

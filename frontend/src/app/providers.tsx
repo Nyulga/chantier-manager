@@ -4,6 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { BrowserRouter } from 'react-router';
 
+import { reessayerRequete } from '@/api/reessai';
+
 /**
  * Durée pendant laquelle une donnée lue est considérée comme fraîche : 30 secondes.
  *
@@ -29,7 +31,20 @@ type ProvidersProps = {
  */
 export function Providers({ children }: ProvidersProps) {
   const [clientRequetes] = useState(
-    () => new QueryClient({ defaultOptions: { queries: { staleTime: DUREE_FRAICHEUR_DONNEES } } }),
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: DUREE_FRAICHEUR_DONNEES,
+            // La règle de nouvelle tentative est posée ici, une seule fois, et non hook par hook :
+            // un hook qui l'aurait oubliée retomberait sur la valeur par défaut de TanStack Query,
+            // qui rejoue même un 403 ou un 404 et fait attendre l'écran qui doit afficher l'erreur.
+            // Rien ne pouvait détecter un tel oubli. Un hook ne la redéfinit pas sans raison écrite.
+            // Le client des tests reprend cette même fonction (`src/test/enveloppeRequetes.tsx`).
+            retry: reessayerRequete,
+          },
+        },
+      }),
   );
 
   return (

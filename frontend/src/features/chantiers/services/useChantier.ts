@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 
 import { clesRequetes } from '@/api/clesRequetes';
 import { lireChantier } from '@/api/chantiers';
-import { reessayerRequete } from '@/api/reessai';
 
 /** Chantier tel que l'API le renvoie : budget `null` pour un ouvrier, avancement déjà calculé. */
 export type { Chantier } from '@/api/chantiers';
@@ -12,8 +11,6 @@ export type { Chantier } from '@/api/chantiers';
 export function useChantier(id: string) {
   return useQuery({
     queryKey: clesRequetes.chantier(id),
-    // Un 404 n'est pas rejoué : la page « introuvable » doit s'afficher tout de suite.
-    retry: reessayerRequete,
     queryFn: () => lireChantier(id),
   });
 }
