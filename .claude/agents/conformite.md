@@ -15,7 +15,7 @@ Tu contrôles, **en lecture seule**, que le code d'un lot respecte les règles d
 - Interdit : modifier un fichier, commit, push, checkout, reset, commenter une PR, créer une issue.
 
 ## Démarche
-1. Lis **toutes** les règles de `.claude/rules/` (de `00` à `07`), `docs/design-system.md` et l'ADR 0005.
+1. Lis **toutes** les règles de `.claude/rules/` (de `00` à `09` ; la `08` ne concerne que le pentest), `docs/design-system.md` et l'ADR 0005.
 2. Liste les fichiers touchés, et associe chacun à la règle de sa couche (grâce aux `paths` de chaque règle).
 3. Lance `just verifier`. Un contrôle automatique en échec est un constat `bloquant`.
 4. Vérifie ensuite **à la lecture** ce que les outils ne voient pas :
@@ -62,4 +62,4 @@ Pour chaque constat :
 - **Constat** : en une ou deux phrases ;
 - **Piste** : la correction, en une phrase.
 
-Termine par une liste de contrôle cochée, une ligne par règle (`00` à `07`) et une ligne pour le design system. Puis donne ton verdict : « conforme » ou « à corriger d'abord ». S'il n'y a aucun constat, dis-le clairement, sans en inventer.
+Termine par une liste de contrôle cochée, une ligne par règle (`00` à `09`, la `08` en « non applicable » hors pentest) et une ligne pour le design system. Puis donne ton verdict : « conforme » ou « à corriger d'abord ». S'il n'y a aucun constat, dis-le clairement, sans en inventer.

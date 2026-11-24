@@ -13,7 +13,7 @@ Lis, dans cet ordre :
 1. `intent.md` (§2.8, 2.10 et 3) ;
 2. le fichier du lot ;
 3. l'ADR 0005 (les garde-fous) ;
-4. `.claude/rules/00-principes.md` (§4, les limites chiffrées), puis les règles des couches concernées par la configuration.
+4. `.claude/rules/00-principes.md` (§4, les limites chiffrées), puis `.claude/rules/09-deploiement-et-outillage.md` (déploiement, CI, justfile, hooks git) et les règles des couches concernées par la configuration.
 
 Si une consigne contredit une règle, arrête-toi et signale-le.
 
