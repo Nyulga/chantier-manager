@@ -99,3 +99,11 @@ Les suites de contrat sont prêtes à recevoir une seconde implémentation (base
 **Vérifié sur la copie locale** (puis `down -v`) : en-têtes présents et aucun nom de logiciel ; documentation en 404 ; 71 Ko → 413 ; `/api/chantiers/` → 404 sans redirection ; après `GET /wp-admin`, écriture → 403 même avec un `X-Forwarded-For` falsifié, lecture → 200, et une autre adresse peut toujours écrire ; CSP sans violation dans Chromium.
 
 **Vert** (`just verifier`, coordinateur) : `948 passed`, couverture 100 %, `488` tests frontend. Aucun conteneur ni volume `chantier` restant.
+
+## Étape 6 – Test de bout en bout du champ piège (`dev-frontend`, Sonnet, effort élevé)
+
+**Livré** : `frontend/e2e/protections.spec.ts`, joué à 360 et 1280 px, sur la création de chantier et l'ajout d'étape. Un tour complet au clavier ne pose jamais le focus sur le champ piège ; il est absent de l'arbre d'accessibilité et ne prend pas de place ; un humain qui envoie le formulaire crée bien l'objet, sans `site_web` dans la requête.
+
+**Rouge** : sur une copie volontairement dégradée du champ (rendu tabulable, puis visible et libellé), le test échoue (« le focus s'est posé sur le champ piège au pas 15 », puis `toHaveCount(0)` reçu 1). **Vert** : `just e2e` `44 passed`, `just verifier` vert.
+
+**Instabilité constatée** (coordinateur, trois passages de `just e2e` en local : vert, 1 échec, vert) : deux tests anciens échouent parfois, sur des délais d'affichage (`robustesse` : le formulaire d'étape se vide après le premier ajout alors que le second titre est déjà saisi ; `parcours` : bouton attendu plus de 30 s). La CI rejoue deux fois les tests e2e, ce qui masque ces échecs. Le premier cas est un vrai défaut d'ergonomie antérieur au lot (la remise à zéro du formulaire arrive après l'affichage de l'étape) : il devient une issue.
