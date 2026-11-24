@@ -19,7 +19,7 @@ from app.etapes.application.changer_statut_etape import ChangerStatutEtape
 from app.etapes.application.lister_etapes import ListerEtapes
 from app.shared.api.acteur import ActeurCourant
 from app.shared.api.champ_piege import dependances_champ_piege
-from app.shared.api.documentation_erreurs import erreurs_documentees
+from app.shared.api.documentation_erreurs import CORPS_TROP_VOLUMINEUX, erreurs_documentees
 from app.shared.application.ports import ListeAdressesBloquees
 
 # Les erreurs possibles, documentées dans OpenAPI pour le client généré. Leur corps
@@ -30,6 +30,7 @@ ERREURS = erreurs_documentees(
     HTTPStatus.NOT_FOUND,
     HTTPStatus.CONFLICT,
     HTTPStatus.UNPROCESSABLE_ENTITY,
+    HTTPStatus.TOO_MANY_REQUESTS,
     HTTPStatus.SERVICE_UNAVAILABLE,
 )
 
@@ -95,6 +96,7 @@ def _creer_routeur_etapes_du_chantier(
         response_model=EtapeReponse,
         summary="Ajoute une étape en fin de liste",
         dependencies=gardes,
+        responses=CORPS_TROP_VOLUMINEUX,
     )
     def ajouter(
         chantier_id: UUID,
@@ -117,6 +119,7 @@ def _creer_routeur_transitions(cas_usages: CasUsagesEtapes) -> APIRouter:
         status_code=HTTPStatus.OK,
         response_model=EtapeReponse,
         summary="Fait avancer, valide ou refuse",
+        responses=CORPS_TROP_VOLUMINEUX,
     )
     def changer_statut(
         etape_id: UUID,

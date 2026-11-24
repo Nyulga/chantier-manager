@@ -72,11 +72,19 @@ def test_le_probleme_de_validation_ajoute_la_liste_des_erreurs_au_probleme(
 @pytest.mark.parametrize(
     ("chemin", "statuts"),
     [
-        ("/api/chantiers", {"400", "403", "409", "422", "503"}),
-        ("/api/chantiers/{chantier_id}/etapes", {"400", "403", "404", "409", "422", "503"}),
-        ("/api/chantiers/{chantier_id}", {"400", "404", "503"}),
-        ("/api/etapes/{etape_id}/transitions", {"400", "403", "404", "409", "422", "503"}),
-        ("/api/moi", {"400", "503"}),
+        ("/api/chantiers", {"400", "403", "409", "413", "422", "429", "503"}),
+        (
+            "/api/chantiers/{chantier_id}/etapes",
+            {"400", "403", "404", "409", "413", "422", "429", "503"},
+        ),
+        ("/api/chantiers/{chantier_id}", {"400", "404", "429", "503"}),
+        (
+            "/api/etapes/{etape_id}/transitions",
+            {"400", "403", "404", "409", "413", "422", "429", "503"},
+        ),
+        ("/api/moi", {"400", "429", "503"}),
+        ("/api/etapes/a-valider", {"400", "403", "429", "503"}),
+        ("/api/activite", {"400", "403", "429", "503"}),
     ],
 )
 def test_les_erreurs_possibles_de_chaque_route_sont_documentees(
@@ -86,3 +94,47 @@ def test_les_erreurs_possibles_de_chaque_route_sont_documentees(
     documentes = {statut for operation in operations.values() for statut in operation["responses"]}
 
     assert statuts <= documentes
+
+
+def test_les_429_annoncent_l_en_tete_retry_after(client: TestClient) -> None:
+    reponses = [
+        reponse
+        for _, _, statut, reponse in reponses_declarees(schema_openapi(client))
+        if statut == "429"
+    ]
+
+    assert reponses
+    assert all("Retry-After" in reponse["headers"] for reponse in reponses)
+
+
+def test_les_413_ne_sont_declares_que_sur_les_routes_qui_recoivent_un_corps(
+    client: TestClient,
+) -> None:
+    routes_413 = {
+        (chemin, methode)
+        for chemin, methode, statut, _ in reponses_declarees(schema_openapi(client))
+        if statut == "413"
+    }
+
+    assert routes_413 == {
+        ("/api/chantiers", "post"),
+        ("/api/chantiers/{chantier_id}/etapes", "post"),
+        ("/api/etapes/{etape_id}/transitions", "post"),
+    }
+
+
+def test_la_sonde_de_sante_n_est_pas_limitee(client: TestClient) -> None:
+    operation = schema_openapi(client)["paths"]["/api/health"]["get"]
+
+    assert "429" not in operation["responses"]
+
+
+def test_les_descriptions_des_400_et_403_couvrent_les_middlewares(client: TestClient) -> None:
+    descriptions = {
+        statut: reponse["description"]
+        for _, _, statut, reponse in reponses_declarees(schema_openapi(client))
+        if statut in {"400", "403"}
+    }
+
+    assert "nom d'hôte" in descriptions["400"]
+    assert "adresse bloquée" in descriptions["403"]
