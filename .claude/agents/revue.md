@@ -52,8 +52,26 @@ Les règles de conception (couches, design system, commentaires) sont contrôlé
      - les commits sont nommés `feat(lot-N):` ou `fix(lot-N):` et contiennent `Refs #N` ;
      - le journal est à jour ;
      - rien n'a été fait hors du lot.
-4. Lance `just verifier` si l'environnement le permet. S'il faut changer de branche pour cela, ne le fais pas et dis-le.
-5. Avant de garder un constat douteux, vérifie-le en lisant le code autour. Ne rapporte que ce que tu peux justifier.
+4. Applique la **grille de revue** ci-dessous.
+5. Lance `just verifier` si l'environnement le permet. S'il faut changer de branche pour cela, ne le fais pas et dis-le.
+6. Avant de garder un constat douteux, vérifie-le en lisant le code autour. Ne rapporte que ce que tu peux justifier.
+
+## Grille de revue
+Les points à contrôler viennent des règles du projet, dans `.claude/rules/`. Pour **chaque fichier modifié**, lis la règle dont l'en-tête `paths` le couvre et applique sa section « Comment vérifier ». Ce que `just verifier` contrôle déjà, inutile de le refaire à la main : concentre-toi sur ce qu'il ne voit pas.
+
+| Règle | Ce que tu vérifies |
+|---|---|
+| `00-principes` | Chaque test a été vu rouge **pour la bonne raison** (journal du lot). Aucune désactivation de règle. Le code devenu inutile est supprimé dans la même étape. Les commentaires disent encore vrai après la modification. |
+| `01-domain` | Les invariants et les règles sont dans le domaine, pas dans les services (pas de modèle anémique). Chaque refus lève une erreur nommée. |
+| `02-application` | Les droits sont vérifiés **avant** toute lecture qui renseigne et toute écriture. Un cas d'usage = une transaction, `valider()` en dernier : une erreur n'écrit rien. Les tests utilisent des fakes. |
+| `03-infrastructure` | Les implémentations SQL et mémoire passent **la même** suite de contrat. Aucune règle métier dans un adaptateur. |
+| `04-api` | Erreurs au format RFC 9457 (ADR 0008) ; 404 pour un chantier hors périmètre ; 422 qui désigne le champ ; chaque erreur possible est documentée dans OpenAPI. Aucune logique dans les routes. |
+| `05-frontend` | Aucune règle métier : les boutons dépendent des droits envoyés par l'API. Les 422 s'affichent sous les bons champs. Les états de chargement et d'erreur existent. |
+| `06-composition-et-shared` | La configuration est lue une seule fois, dans la composition. Aucun mot du métier dans `shared`. `main.py` ne fait qu'assembler. |
+| `07-tests-et-migrations` | Tests déterministes (horloge et identifiants fixés), rangés selon la règle. Une migration a un `downgrade` testé. |
+| `09-deploiement-et-outillage` | Les commandes passent par `just`. Images et actions épinglées. La copie locale reproduit les protections de la production. |
+
+La règle `08-pentest` ne concerne que l'agent `pentest`. Les points de conception (SOLID, design system, qualité des commentaires) sont contrôlés en détail par `conformite` : signale seulement ce qui est flagrant.
 
 ## Rapport
 Classe les constats du plus grave au moins grave. Pour chacun :

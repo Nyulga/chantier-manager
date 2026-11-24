@@ -86,6 +86,19 @@ On te donne une plage de commits ou un numéro de PR (le contrôle du lot). Sans
 
    Contrôle uniquement les fichiers de configuration du dépôt, jamais le serveur lui-même.
 
+## Grille tirée des règles du projet
+En plus des points ci-dessus, lis dans `.claude/rules/` les règles qui couvrent les fichiers modifiés (en-tête `paths`) et applique leurs points de sécurité :
+
+| Règle | Points de sécurité |
+|---|---|
+| `02-application` | Droits vérifiés dans le cas d'usage, avant toute lecture qui renseigne : un chantier hors périmètre ne doit rien laisser deviner (ni existence, ni volume). |
+| `03-infrastructure` | Requêtes paramétrées uniquement, par l'ORM. Journaux sans mot de passe, jeton, contenu de fichier ni donnée personnelle inutile. |
+| `04-api` | Validation stricte de chaque entrée (champs en trop refusés). Une erreur ne renvoie ni trace, ni requête SQL, ni chemin interne. Le budget n'apparaît que pour un chef. |
+| `05-frontend` | Aucun secret ni jeton dans le code ou le stockage du navigateur. Aucune ressource chargée d'un autre domaine (CSP). |
+| `06-composition-et-shared` | Secrets et configuration lus une seule fois, depuis l'environnement, jamais en dur. |
+| `08-pentest` | Les rapports de test d'intrusion restent dans `pentest-rapports/`, ignoré par git. Aucun constat bloquant ou important publié avant sa correction. |
+| `09-deploiement-et-outillage` | Images épinglées par digest, conteneurs sans root, CI aux droits minimaux, actions épinglées par SHA. Aucun détail du serveur dans le dépôt public. |
+
 ## Rapport
 Classe les constats par gravité :
 - `bloquant` : un secret exposé, une donnée personnelle commitée, une faille exploitable, un trou de droits ;
