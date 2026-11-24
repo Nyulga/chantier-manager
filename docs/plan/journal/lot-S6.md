@@ -131,3 +131,17 @@ Le propriétaire a validé, le 2026-11-24, les corrections des constats importan
 - Rouge : `assert 111 == 100` (111, 111, 104, 111, 111, puis 111, 111, 111, 110, 111, 111 chantiers).
 - Vert : 20 lancements consécutifs, 3,06 s au plus ; `just verifier-back` → 960 passed, couverture 100 %.
 - À retenir pour le retour de PostgreSQL (ADR 0007) : réserver l'écouteur au dialecte SQLite.
+
+### Pièges réservés aux robots, `/.git` piégé, erreurs documentées (`dev-api`, Sonnet, effort moyen ; Caddy : `dev-socle`)
+- Une fausse adresse ne bloque que si `Sec-Fetch-Site` est absent ; le champ piège n'est examiné que pour un `Content-Type` JSON (paramètres et casse ignorés). `CHEMINS_PIEGES` contient `/.git` au lieu de `/.git/config`, et la ligne `@pieges` de `protections.caddy` et `Caddyfile.extrait` suit (`caddy validate` passe). Commit `8c8c4e9`.
+  - Rouges : `test_un_piege_touche_par_un_navigateur_repond_404_sans_bloquer` (adresse bloquée), `test_tout_chemin_sous_git_est_un_piege` (adresse non bloquée), `test_un_corps_qui_n_est_pas_du_json_n_est_jamais_une_raison_de_bloquer` (403 au lieu de 422) ; puis `test_les_fausses_adresses_du_proxy_sont_celles_de_l_api` rouge tant que le Caddy n'était pas aligné.
+  - Couverture : `champ_piege.py` 79-80 n'était plus couvert ; `test_un_corps_json_illisible_est_refuse_en_422_sans_bloquer` ajouté.
+- 413 (trois `POST`) et 429 avec `Retry-After` (toutes les routes limitées, pas `/api/health`) dans OpenAPI ; descriptions des 400 et 403 à jour. Rouge : 413 et 429 absents du schéma. Commit `1309b8f`.
+- Vert : `just verifier-back` → 983 passed, couverture 100 %.
+
+### Constats mineurs
+Issues #47 à #59 (label `relecture`), créées par `backlog` (Sonnet, effort faible).
+
+### Client API régénéré (`dev-frontend`, Sonnet, effort élevé)
+`just client` : 429 sur les 8 routes limitées, 413 sur les 3 `POST`, descriptions des 400 et 403 ; aucun schéma de données changé, aucun autre fichier du frontend touché (`erreurApi.ts` couvrait déjà 413 et 429).
+- Vert : `just verifier` → 983 tests backend, 488 tests frontend ; `just e2e` → 44 passed, sans relance.
