@@ -54,7 +54,48 @@ Les règles de conception (couches, design system, commentaires) sont contrôlé
      - rien n'a été fait hors du lot.
 4. Applique la **grille de revue** ci-dessous.
 5. Lance `just verifier` si l'environnement le permet. S'il faut changer de branche pour cela, ne le fais pas et dis-le.
-6. Avant de garder un constat douteux, vérifie-le en lisant le code autour. Ne rapporte que ce que tu peux justifier.
+6. Applique les examens « Tests manquants » et « Erreurs silencieuses », puis passe chaque constat au **filtre de confiance** avant de le garder.
+
+## Tests manquants : une note de 1 à 10
+Pour chaque comportement nouveau ou modifié du diff, demande-toi : quel test échouerait si ce comportement cassait demain ? S'il n'y en a pas, c'est un test manquant. Note-le selon ce qu'il éviterait :
+
+| Note | Ce que le test manquant aurait évité |
+|---|---|
+| 9-10 | perte de données, faille de sécurité, trou de droits, panne |
+| 7-8 | erreur visible par l'utilisateur sur une règle métier |
+| 5-6 | cas limite qui sème la confusion ou un défaut mineur |
+| 1-4 | complétude seulement |
+
+- Note 8 et plus : constat `bloquant`. De 5 à 7 : `important`. En dessous : ne le rapporte pas.
+- Pour chaque test proposé : ce qu'il vérifie, et la régression précise qu'il attraperait.
+- Signale aussi les tests **trop collés à l'implémentation** : ceux qui casseraient à la moindre réécriture sans que le comportement change.
+- Pas de test réclamé pour une ligne sans logique (accesseur, simple transfert).
+
+## Erreurs silencieuses
+Une erreur qui disparaît sans bruit coûte des heures plus tard. Repère dans le diff :
+- un bloc `catch` (ou `except`) **vide**, ou qui se contente de journaliser puis continue comme si de rien n'était ;
+- un `catch` trop large, qui attraperait aussi des erreurs sans rapport : liste lesquelles ;
+- une valeur par défaut (`null`, liste vide, `0`) renvoyée sur erreur, sans trace et sans prévenir l'utilisateur ;
+- un repli (« si ça échoue, on fait autre chose ») que ni `INTENT.md` ni le lot ne demandent ;
+- un accès conditionnel (`?.`, `??`) qui saute en silence une opération qui aurait dû réussir ;
+- une nouvelle tentative qui s'épuise sans le dire ;
+- une implémentation factice (fake, bouchon) utilisée hors des tests ;
+- un message d'erreur vague, qui ne dit ni ce qui a échoué ni quoi faire.
+
+Un `catch` vide ou une erreur avalée dans le code de production est `bloquant` ; un repli non demandé ou un message inutilisable est `important`.
+
+## Filtre de confiance
+Les faux constats font perdre confiance dans la revue. Pour chacun :
+1. **Relis le code autour** (appelants, tests existants, rule concernée) et cherche ce qui le contredirait.
+2. Donne-lui une **confiance** de 0 à 100 : la probabilité que ce soit un vrai problème, introduit par ce lot.
+3. **Garde seulement ceux à 80 ou plus.** Les autres disparaissent du rapport ; s'ils te semblent quand même utiles, cite-les en une ligne dans « À surveiller », sans gravité.
+
+Ne rapporte pas :
+- un problème qui existait avant le lot (il peut devenir une issue, hors de ce rapport) ;
+- ce que `just verifier` attrape déjà (lint, typage, format) ;
+- une préférence de style ou une remarque qu'un développeur expérimenté ne ferait pas ;
+- un « problème » qui dépend d'entrées hypothétiques que le code ne peut pas recevoir ;
+- une règle qu'une ligne du code désactive avec l'accord noté de l'utilisateur.
 
 ## Grille de revue
 Les points à contrôler viennent des règles du projet, dans `.claude/rules/`. Pour **chaque fichier modifié**, lis la règle dont l'en-tête `paths` le couvre et applique sa section « Comment vérifier ». Ce que `just verifier` contrôle déjà, inutile de le refaire à la main : concentre-toi sur ce qu'il ne voit pas.
@@ -76,9 +117,10 @@ La règle `08-pentest` ne concerne que l'agent `pentest`. Les points de concepti
 ## Rapport
 Classe les constats du plus grave au moins grave. Pour chacun :
 - **Gravité** :
-  - `bloquant` : un critère non tenu, un bug, un trou de droits ;
+  - `bloquant` : un critère non tenu, un bug, un trou de droits, un test manquant noté 8 ou plus, une erreur avalée ;
   - `important` ;
   - `mineur`.
+- **Confiance** : de 80 à 100.
 - **Emplacement** : `fichier:ligne`.
 - **Constat** : en une ou deux phrases.
 - **Scénario** : les entrées concrètes, puis le résultat faux.
@@ -89,3 +131,5 @@ Termine par :
 - ton verdict : « lot conforme » ou « à corriger d'abord ».
 
 S'il n'y a aucun constat, dis-le clairement, sans en inventer.
+
+<!-- Méthode reprise du kit-projet : tests manquants, erreurs silencieuses et filtre de confiance, inspirés des plugins officiels Anthropic pr-review-toolkit et code-review (Apache-2.0), reformulés. -->

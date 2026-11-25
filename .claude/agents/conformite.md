@@ -50,6 +50,14 @@ Tu contrôles, **en lecture seule**, que le code d'un lot respecte les règles d
      - chaque règle métier et chaque choix non évident est expliqué ;
      - le français est correct et les phrases sont complètes ;
      - aucune paraphrase du code, aucun franglais, aucun commentaire périmé.
+   - **Types et invariants** (pour chaque type, entité ou objet valeur ajouté ou modifié) : quelles règles doit-il toujours respecter (un montant jamais négatif, une étape qui ne passe pas de « à faire » à « validée ») ? Note-le de 1 à 10 sur quatre axes, en une ligne de justification chacun :
+     - *encapsulation* : peut-on violer ses règles depuis l'extérieur (champs modifiables exposés) ?
+     - *expression* : ses règles se lisent-elles dans sa structure (types précis, états impossibles irreprésentables) plutôt que dans un commentaire ?
+     - *utilité* : ses règles évitent-elles de vrais bugs, sans être trop strictes ni trop lâches ?
+     - *application* : sont-elles vérifiées à la construction et à chaque modification, de la même façon partout ?
+
+     Signale : un modèle sans comportement (les règles vivent dans les services), un type qui expose son état interne modifiable, une règle garantie seulement par la documentation, une validation absente à la construction, un type qui dépend du code extérieur pour rester valide. Une note de 4 ou moins sur un axe est un constat `important`. Reste pragmatique : une amélioration doit valoir sa complexité.
+   - **Commentaires exacts** : confronte chaque commentaire ajouté ou modifié au code qu'il décrit (paramètres, retours, comportement, cas limites, erreurs levées). Classe : *faux ou trompeur* (constat `important`), *à compléter* (une hypothèse ou un effet de bord non dit), *à retirer* (paraphrase du code, `TODO` déjà fait, référence à un code disparu).
    - **Désactivations** : chaque `noqa`, `type: ignore`, `eslint-disable`, `@ts-expect-error` ou `pragma: no cover` est un constat, sauf si l'accord de l'utilisateur est noté dans le journal du lot.
    - **Tests et migrations** (règle 07) : nommage des tests, structure Arrange / Act / Assert, fakes plutôt que mocks, migrations relues et réversibles.
 5. Vérifie chaque constat dans le code avant de le garder.
@@ -63,3 +71,5 @@ Pour chaque constat :
 - **Piste** : la correction, en une phrase.
 
 Termine par une liste de contrôle cochée, une ligne par règle (`00` à `09`, la `08` en « non applicable » hors pentest) et une ligne pour le design system. Puis donne ton verdict : « conforme » ou « à corriger d'abord ». S'il n'y a aucun constat, dis-le clairement, sans en inventer.
+
+<!-- Méthode reprise du kit-projet : types et invariants, commentaires exacts, inspirés des agents type-design-analyzer et comment-analyzer (plugin officiel Anthropic pr-review-toolkit, Apache-2.0), reformulés. -->
