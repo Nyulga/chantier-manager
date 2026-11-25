@@ -3,7 +3,6 @@
   "permissions": {
     "allow": [
       "Bash(just verifier)",
-      "Bash(just verifier *)",
       "Bash(just test-back *)",
       "Bash(just test-front *)",
       "Bash(just e2e)",
@@ -23,9 +22,15 @@
       "Bash(git push * main)",
       "Bash(git push --force *)",
       "Bash(git push -f *)",
+      "Bash(git push *:main*)",
+      "Bash(git push *--force*)",
+      "Bash(git diff *--no-index*)",
+      "Bash(git * --output*)",
+      "Bash(gh api *merge*)",
       "Read(**/.env)",
       "Read(**/.env.local)",
-      "Read(~/.claude.json)"
+      "Read(~/.claude.json)",
+      "Read(~/.ssh/**)"
     ]
   },
   "hooks": {
