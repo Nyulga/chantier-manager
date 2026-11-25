@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python -I \"$CLAUDE_PROJECT_DIR/backend/tools/garde_agents.py\"",
+            "command": "python -I \"$CLAUDE_PROJECT_DIR/backend/tools/garde_agents.py\" || exit 2",
             "timeout": 10
           }
         ]

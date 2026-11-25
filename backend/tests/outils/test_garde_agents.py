@@ -3,7 +3,8 @@
 import pytest
 
 from tests.outils.appels_garde_agents import RACINE, ecriture
-from tools.garde_agents import chemin_relatif, decider
+from tools.garde.chemins import chemin_relatif
+from tools.garde.protocole import decider
 
 AGENTS_ECRIVAINS = ["dev-metier", "dev-donnees", "dev-api", "dev-frontend", "dev-socle"]
 SANS_ECRITURE = ("revue", "conformite", "securite", "pentest", "backlog")
@@ -18,6 +19,8 @@ SANS_ECRITURE = ("revue", "conformite", "securite", "pentest", "backlog")
         ("dev-metier", "backend/app/shared/infrastructure/horloge_fixe_memoire.py"),
         ("dev-metier", "backend/tests/domain/etapes/test_cycle.py"),
         ("dev-metier", "backend/tests/fabriques/etapes.py"),
+        ("dev-metier", "backend/tests/infrastructure/shared/test_limiteur_debit_memoire.py"),
+        ("dev-metier", "backend/tests/infrastructure/etapes/test_memoire.py"),
         ("dev-donnees", "backend/app/etapes/infrastructure/sql/x.py"),
         ("dev-donnees", "backend/migrations/versions/0003_x.py"),
         ("dev-donnees", "backend/alembic.ini"),
@@ -26,10 +29,12 @@ SANS_ECRITURE = ("revue", "conformite", "securite", "pentest", "backlog")
         ("dev-donnees", "backend/tests/conftest.py"),
         ("dev-api", "backend/app/etapes/api/routes.py"),
         ("dev-api", "backend/tests/api/etapes/test_routes.py"),
+        ("dev-api", "backend/tests/integration/etapes/test_routes_etapes.py"),
         ("dev-api", "frontend/src/api/schema.d.ts"),
         ("dev-api", "frontend/openapi.json"),
         ("dev-frontend", "frontend/src/pages/x.tsx"),
         ("dev-frontend", "frontend/e2e/parcours.spec.ts"),
+        ("dev-frontend", "frontend/tests/theme/x.test.ts"),
         ("dev-socle", "deploy/compose.prod.yaml"),
         ("dev-socle", ".github/workflows/ci.yml"),
         ("dev-socle", "justfile"),
@@ -41,6 +46,7 @@ SANS_ECRITURE = ("revue", "conformite", "securite", "pentest", "backlog")
         ("dev-socle", "frontend/package.json"),
         ("dev-socle", "frontend/eslint/limites.js"),
         ("dev-socle", "frontend/tsconfig.app.json"),
+        ("dev-socle", "frontend/tests/garde-fous/limites.test.ts"),
     ],
 )
 def test_un_agent_ecrit_dans_sa_couche(agent: str, relatif: str) -> None:
@@ -53,6 +59,7 @@ def test_un_agent_ecrit_dans_sa_couche(agent: str, relatif: str) -> None:
         ("dev-metier", "backend/app/shared/infrastructure/horloge_systeme.py"),
         ("dev-metier", "backend/app/etapes/infrastructure/sql/x.py"),
         ("dev-metier", "backend/app/etapes/api/routes.py"),
+        ("dev-metier", "backend/tests/infrastructure/shared/test_uow_sql.py"),
         ("dev-metier", "justfile"),
         ("dev-donnees", "backend/app/etapes/domain/etape.py"),
         ("dev-donnees", "backend/app/etapes/api/routes.py"),
@@ -61,6 +68,12 @@ def test_un_agent_ecrit_dans_sa_couche(agent: str, relatif: str) -> None:
         ("dev-frontend", "backend/app/main.py"),
         ("dev-frontend", "frontend/src/api/schema.d.ts"),
         ("dev-frontend", "frontend/openapi.json"),
+        ("dev-frontend", "frontend/eslint/limites.js"),
+        ("dev-frontend", "frontend/eslint.config.js"),
+        ("dev-frontend", "frontend/package.json"),
+        ("dev-frontend", "frontend/vite.config.ts"),
+        ("dev-frontend", "frontend/tsconfig.app.json"),
+        ("dev-frontend", "frontend/tests/garde-fous/limites.test.ts"),
         ("dev-socle", "backend/app/etapes/domain/etape.py"),
         ("dev-socle", "docs/plan/squelette.md"),
         ("dev-socle", "frontend/src/pages/x.tsx"),
@@ -75,23 +88,54 @@ def test_un_agent_ne_peut_pas_ecrire_hors_de_sa_couche(agent: str, relatif: str)
     assert "coordinateur" in raison
 
 
-@pytest.mark.parametrize("agent", AGENTS_ECRIVAINS)
+@pytest.mark.parametrize("agent", [*AGENTS_ECRIVAINS, "general-purpose"])
 @pytest.mark.parametrize(
-    "relatif",
+    "chemin",
     [
-        ".claude/settings.json",
-        ".claude/agents/dev-metier.md",
-        "backend/tools/garde_agents.py",
-        "backend/tests/outils/test_garde_agents.py",
-        "backend/tests/outils/test_garde_agents_bash.py",
-        "backend/tests/outils/appels_garde_agents.py",
+        f"{RACINE}/.claude/settings.json",
+        f"{RACINE}/.claude/agents/dev-metier.md",
+        f"{RACINE}/backend/tools/garde_agents.py",
+        f"{RACINE}/backend/tools/garde/droits.py",
+        f"{RACINE}/backend/tools/garde/__init__.py",
+        f"{RACINE}/backend/tests/outils/test_garde_agents.py",
+        f"{RACINE}/backend/tests/outils/test_garde_agents_bash.py",
+        f"{RACINE}/backend/tests/outils/appels_garde_agents.py",
+        "C:/Users/X/.claude/settings.json",
+        "C:/Users/X/.claude.json",
+        "/home/x/.claude/agents/a.md",
+        "/c/Users/X/Projet/.claude/settings.json",
     ],
 )
-def test_les_fichiers_de_garde_sont_proteges_pour_tous(agent: str, relatif: str) -> None:
-    raison = decider(ecriture(agent, relatif), RACINE)
+def test_la_garde_et_claude_sont_proteges_pour_tous(agent: str, chemin: str) -> None:
+    entree = {"agent_type": agent, "tool_name": "Write", "tool_input": {"file_path": chemin}}
+
+    raison = decider(entree, RACINE)
 
     assert raison is not None
     assert "protégé" in raison
+
+
+@pytest.mark.parametrize("agent", ["dev-socle", "general-purpose"])
+@pytest.mark.parametrize(
+    "chemin",
+    [
+        f"{RACINE}/backend/tools/garde_agents.py.",
+        f"{RACINE}/backend/tools/garde_agents.py ",
+        f"{RACINE}/backend/tools/garde_agents.py::$DATA",
+        f"{RACINE}/backend/tools./garde_agents.py",
+        "//serveur/partage/x.py",
+        "\\\\?\\C:\\Users\\X\\Projet\\justfile",
+    ],
+)
+def test_une_forme_de_chemin_que_windows_ramene_a_un_autre_fichier_est_refusee(
+    agent: str, chemin: str
+) -> None:
+    entree = {"agent_type": agent, "tool_name": "Write", "tool_input": {"file_path": chemin}}
+
+    raison = decider(entree, RACINE)
+
+    assert raison is not None
+    assert "forme de chemin" in raison
 
 
 def test_dev_metier_ne_sort_pas_de_sa_couche_par_des_points_points() -> None:
@@ -139,11 +183,13 @@ def test_un_chemin_qui_remonte_au_dessus_de_la_racine_est_hors_du_depot() -> Non
     [
         ("C:/Users/X/Projet/a/b.py", "a/b.py"),
         ("c:\\users\\x\\projet\\A\\B.py", "a/b.py"),
+        ("/c/Users/X/Projet/a/b.py", "a/b.py"),
         ("C:/Users/X/Projet", "."),
         ("C:/Users/X/Projet/a/../b.py", "b.py"),
         ("C:/Users/X/ProjetVoisin/a.py", None),
         ("C:/Users/X/Projet/../a.py", None),
         ("D:/Projet/a.py", None),
+        ("/d/Users/X/Projet/a.py", None),
     ],
 )
 def test_chemin_relatif_compare_comme_du_texte(chemin: str, attendu: str | None) -> None:
@@ -152,6 +198,11 @@ def test_chemin_relatif_compare_comme_du_texte(chemin: str, attendu: str | None)
 
 def test_chemin_relatif_accepte_une_racine_posix_et_une_racine_finie_par_un_separateur() -> None:
     assert chemin_relatif("/home/x/depot/a.py", "/home/x/depot/") == "a.py"
+
+
+def test_sous_linux_un_chemin_en_slash_lettre_nest_pas_converti() -> None:
+    assert chemin_relatif("/c/depot/a.py", "/c/depot") == "a.py"
+    assert chemin_relatif("/c/x.py", "/home/x/depot") is None
 
 
 @pytest.mark.parametrize("agent", SANS_ECRITURE)
@@ -174,10 +225,6 @@ def test_un_agent_inconnu_est_accepte_hors_du_depot() -> None:
     }
 
     assert decider(entree, RACINE) is None
-
-
-def test_un_agent_inconnu_ne_peut_pas_toucher_aux_fichiers_de_garde() -> None:
-    assert decider(ecriture("general-purpose", ".claude/settings.json"), RACINE) is not None
 
 
 @pytest.mark.parametrize("agent_type", [None, ""])

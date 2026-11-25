@@ -1,9 +1,9 @@
-"""Garde des sous-agents : commandes git interdites et commandes d'écriture des vérificateurs."""
+"""Garde des sous-agents : git en lecture seule, commandes gh et écritures des vérificateurs."""
 
 import pytest
 
 from tests.outils.appels_garde_agents import RACINE, commande
-from tools.garde_agents import decider
+from tools.garde.protocole import decider
 
 VERIFICATEURS = ("revue", "conformite", "securite")
 
@@ -17,18 +17,42 @@ VERIFICATEURS = ("revue", "conformite", "securite")
         "git checkout dev",
         "git reset --hard",
         "git stash",
+        "git stash list",
         "git switch main",
         "git restore f",
         "git rebase main",
         "git merge dev",
         "git clean -fd",
+        "git pull",
+        "git revert HEAD",
+        "git cherry-pick abc",
+        "git am correctif.patch",
+        "git apply correctif.diff",
+        "git add .",
+        "git rm f",
+        "git mv a b",
+        "git branch -D x",
+        "git branch x",
+        "git tag v1",
+        "git worktree add ../x",
+        "git update-ref refs/heads/x HEAD",
+        "git config core.hooksPath x",
+        "git remote add x y",
+        "git diff --output=x.txt",
+        "git log --output x.txt",
         "git -C backend push",
         "git -c user.name=x commit",
         "git --git-dir=.git --no-pager commit",
         "git --git-dir .git --work-tree . reset",
+        "git -C backend \\\ncommit -m x",
+        "git -C backend \\\r\ncommit -m x",
         "cd a && git reset --hard",
         'bash -c "git stash"',
         "sh -lc 'echo ok; git push'",
+        'bash --norc -c "git push"',
+        'powershell -Command "git commit -m x"',
+        "pwsh -c git push",
+        "cmd /c git push",
         "/usr/bin/git checkout dev",
         "git.exe commit -m x",
         "X=1 git rebase main",
@@ -41,10 +65,13 @@ VERIFICATEURS = ("revue", "conformite", "securite")
         "sleep 1 &\ngit push",
         "if true; then git commit -m x; fi",
         "env GIT_DIR=. git push",
+        "xargs git push",
+        "xargs -n 1 -I {} git push {}",
+        "timeout 60 git push",
+        "sudo git push",
         'echo "a;b"; git commit',
         'echo "ouvert; git commit',
         "git push \\",
-        'bash --norc -c "git push"',
     ],
 )
 def test_une_commande_git_qui_modifie_le_depot_est_refusee_aux_sous_agents(texte: str) -> None:
@@ -61,10 +88,21 @@ def test_une_commande_git_qui_modifie_le_depot_est_refusee_aux_sous_agents(texte
         "git status",
         "git diff --stat",
         "git log --oneline -3",
+        "git show HEAD",
+        "git ls-files",
+        "git rev-parse HEAD",
+        "git check-ignore -v x",
+        "git blame f",
+        "git grep x",
+        "git branch",
+        "git branch --show-current",
+        "git branch -a",
+        "git remote -v",
         "git -C backend status",
         "git",
         "git -c",
         "just verifier",
+        "timeout 60 just verifier",
         'grep -n "git push" docs/x.md',
         "echo commit",
         "echo 'git push; git commit'",
@@ -73,10 +111,24 @@ def test_une_commande_git_qui_modifie_le_depot_est_refusee_aux_sous_agents(texte
         "   ",
         "bash script.sh",
         "bash -c",
+        "powershell -Command Get-ChildItem",
+        "powershell",
+        "gh pr view 80",
+        "gh issue list",
+        "gh",
     ],
 )
 def test_les_commandes_sans_risque_sont_acceptees(texte: str) -> None:
     assert decider(commande("dev-api", texte), RACINE) is None
+
+
+@pytest.mark.parametrize("texte", ["gh pr checkout 80", "gh pr merge 80"])
+def test_gh_ne_change_pas_de_branche_et_ne_fusionne_pas(texte: str) -> None:
+    raison = decider(commande("revue", texte), RACINE)
+
+    assert raison is not None
+    assert "gh pr" in raison
+    assert "coordinateur" in raison
 
 
 def test_une_commande_ecriture_sans_effet_sur_le_depot_est_acceptee_pour_les_ecrivains() -> None:
@@ -98,6 +150,7 @@ def test_une_commande_ecriture_sans_effet_sur_le_depot_est_acceptee_pour_les_ecr
         "echo ok && rm f",
         "/bin/rm f",
         'bash -c "rm f"',
+        "xargs rm",
     ],
 )
 def test_les_verificateurs_ne_peuvent_pas_ecrire_par_commande(agent: str, texte: str) -> None:
@@ -127,4 +180,5 @@ def test_les_verificateurs_peuvent_lire(agent: str, texte: str) -> None:
 @pytest.mark.parametrize("agent", ["pentest", "backlog"])
 def test_pentest_et_backlog_ne_sont_limites_que_par_la_garde_git(agent: str) -> None:
     assert decider(commande(agent, "tee rapport.md"), RACINE) is None
+    assert decider(commande(agent, "gh issue create --title x"), RACINE) is None
     assert decider(commande(agent, "git push"), RACINE) is not None
