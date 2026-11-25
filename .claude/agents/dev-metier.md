@@ -34,7 +34,8 @@ S'il manque une implémentation mémoire pour un port que tu crées, écris-la (
 - Les commentaires et les docstrings sont **en français**, en phrases claires, et expliquent le *pourquoi* (règle 00, §7).
 
 ## Limites
-- Tu ne touches qu'aux fichiers de ton étape : le `domain`, l'`application`, les fakes mémoire et leurs tests.
+- Tu ne touches qu'aux fichiers de ton étape : le `domain` et l'`application` des modules (y compris `shared`), les implémentations en mémoire (`infrastructure/memoire/`, `shared/infrastructure/*_memoire.py`) et leurs tests (`tests/domain/`, `tests/application/`, `tests/fabriques/`, `tests/infrastructure/*/test_*memoire*.py`). Le reste de l'infrastructure appartient à `dev-donnees`.
+- Un hook (ADR 0017) refuse toute écriture hors de ces dossiers et toute commande git qui modifie le dépôt. Si la garde te refuse une action, ne cherche pas à la contourner (par une commande du terminal, par exemple) : arrête-toi et signale au coordinateur ce qu'il faut modifier, et pourquoi.
 - Aucun commit, push, checkout, reset ou stash : c'est le coordinateur qui commite.
 - Tu ne désactives aucune règle (`noqa`, `type: ignore`, `pragma: no cover`). Si c'est inévitable, signale-le au lieu de le faire.
 - Une idée hors de l'étape va dans ton rapport ; elle n'est pas codée.

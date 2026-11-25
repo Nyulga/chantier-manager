@@ -15,6 +15,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - Le skill fixe le modèle et l'effort de chaque agent.
   - Un commit `feat(lot-NN): <étape>` est fait par étape validée, sur `dev`. Tous les messages de commit suivent le skill `git-conventional` (Conventional Commits, portées du projet).
   - À la fin du lot, la PR vers `main` est **proposée**, jamais ouverte sans accord.
+- **Garde des sous-agents** (ADR 0017) : un hook `PreToolUse` (`backend/tools/garde_agents.py`) refuse à chaque sous-agent une écriture hors de sa couche et toute commande git qui modifie le dépôt. Il ne s'applique pas à la session principale. Un nouveau dossier ou un nouvel agent demande de mettre à jour `backend/tools/garde/droits.py` ; seul le coordinateur modifie la garde, avec l'accord de l'utilisateur.
 - Le backlog vit dans les GitHub Issues (skill et agent `backlog`). Une idée ou un constat hors lot y devient une issue ; on ne le code pas.
 - Dépôt : https://github.com/Nyulga/chantier-manager (public). N'y mets jamais de secret ni de donnée réelle de chantier ou de client.
 
@@ -31,7 +32,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S6). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
 
 
-Les lots S1 (socle), S2 (chantiers et étapes), S3 (mise en ligne), S4 (tableau de bord), S5 (corrections de relecture) et S6 (sécuriser la démo : limites de débit, pièges, plafonds, protections dans l'application, ADR 0016) sont livrés ; la base est **SQLite** pour l'instant (ADR 0007). Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
+Les lots S1 (socle), S2 (chantiers et étapes), S3 (mise en ligne), S4 (tableau de bord), S5 (corrections de relecture) S6 (sécuriser la démo : limites de débit, pièges, plafonds, protections dans l'application, ADR 0016) et S7 (garde-fous des sous-agents et du client généré, ADR 0017) sont livrés ; la base est **SQLite** pour l'instant (ADR 0007). Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
 
 ## Commandes
 
@@ -41,11 +42,12 @@ Toutes passent par le `justfile` de la racine (Windows et Linux) :
 |---|---|
 | `just installer` | `uv sync --locked` (backend), puis `pnpm install --frozen-lockfile` (frontend) |
 | `just lancer` | l'API sur le port 8000 (avec `--reload`) et Vite, qui relaie `/api` vers l'API |
-| `just verifier` | tous les contrôles de la CI : ruff, format, mypy, import-linter, limites de taille et d'imbrication, désactivations interdites (`noqa`, `type: ignore`, `cast`…), bandit, pytest et couverture (100 % sur domain et application) ; ESLint, tsc, Prettier, Vitest et build ; duplication de code (`just doublons`) |
+| `just verifier` | tous les contrôles de la CI : ruff, format, mypy, import-linter, limites de taille et d'imbrication, désactivations interdites (`noqa`, `type: ignore`, `cast`…), bandit, pytest et couverture (100 % sur domain et application) ; ESLint, tsc, Prettier, Vitest et build ; client généré à jour (`just verifier-client`) ; duplication de code (`just doublons`) |
 | `just test-back <chemin ou -k nom>` | un test backend précis, sans couverture (par exemple `just test-back tests/domain/etapes/test_cycle.py`) |
 | `just test-front <motif>` | un test frontend précis (`vitest run <motif>`) |
 | `just e2e` | Playwright à 360 et 1280 px, contre l'API réelle sur une base SQLite temporaire |
 | `just client` | régénère `frontend/src/api/schema.d.ts` depuis le schéma OpenAPI de l'API |
+| `just verifier-client` | échoue si le client généré n'est plus à jour (à corriger par `just client`, puis un commit) |
 | `just doublons` | duplication de code (jscpd) : 2 % au plus en production (Python et TypeScript), seuil séparé pour les tests TypeScript |
 | `just hooks` | installe les hooks git (`.pre-commit-config.yaml`) : contrôles rapides au commit, tests et duplication au push |
 | `just normaliser-fins-de-ligne` | réécrit en LF les fichiers restés en CRLF dans la copie de travail Windows (échoue s'il reste des modifications non indexées) |
