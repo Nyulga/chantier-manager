@@ -122,6 +122,14 @@ Le message est en français et ne contient aucun secret. Il se termine par la li
 | `just e2e` | tests Playwright |
 | `just client` | régénère le client API depuis OpenAPI |
 
+| `just verifier-client` | vérifie que le client généré est à jour |
+
+## Garde des sous-agents (ADR 0017)
+- Un hook refuse à chaque sous-agent une écriture hors de sa couche (table `backend/tools/garde/droits.py`) et toute commande git qui modifie le dépôt. La session principale n'est pas concernée.
+- Quand un agent rapporte un refus de la garde : vérifier d'abord que le travail appartient bien à sa couche. Sinon, confier la tâche à l'agent de la bonne couche. Si la table est fausse (nouveau dossier, nouvel agent), le coordinateur la corrige lui-même, en TDD, avec l'accord de l'utilisateur.
+- Les fichiers de la garde (`backend/tools/garde_agents.py`, `backend/tools/garde/`, leurs tests) et `.claude/` appartiennent au coordinateur : aucun sous-agent ne peut les modifier.
+- La garde ne voit pas une écriture faite par une commande du terminal (`python -c`, `>`) : la relecture reste nécessaire.
+
 Au lot 01, ces commandes n'existent pas encore : c'est `dev-socle` qui les crée, et le coordinateur vérifie leur fonctionnement avec les outils installés à ce moment-là.
 
 ## Règles

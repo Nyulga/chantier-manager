@@ -5,6 +5,10 @@
 ## Objectif
 Mettre l'application en ligne sur le serveur Ubuntu personnel, de façon sûre, sauvegardée et restaurable.
 
+## Déjà livré par le squelette
+- **Livré** (S3, S6) : images de production durcies, compose de production derrière le Caddy existant du serveur (et non Nginx, ADR 0015), HTTPS, procédure de mise en ligne et sauvegarde manuelle de la base (`deploy/README.md`).
+- **Reste** : PostgreSQL et ClamAV en production, sauvegarde chiffrée automatique hors du domicile, restauration testée, SMTP.
+
 ## Prérequis à préparer par l'utilisateur
 - **Un nom de domaine**, pour le TLS et pour les e-mails.
 - **Un DNS dynamique**, si l'adresse IP de la box change.

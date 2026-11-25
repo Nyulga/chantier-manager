@@ -5,6 +5,10 @@
 ## Objectif
 Des comptes sécurisés : le premier chef créé en CLI, les invitations, la connexion, des sessions avec rotation, et le mot de passe oublié.
 
+## Déjà livré par le squelette
+- **Livré** (S2, S5, S6) : chaque cas d'usage reçoit déjà un `Acteur` (choisi par le sélecteur de profil) ; `/api/moi` et `ConsulterCapacites` existent (ADR 0008) ; limite de débit par adresse.
+- **Reste** : tout le lot. L'`Acteur` viendra de la session au lieu du sélecteur de profil, sans toucher aux règles métier.
+
 ## Prérequis et points à trancher au démarrage
 - **Liste locale des mots de passe fuités** : choisir la source, sa taille et sa licence. Elle est embarquée dans le dépôt sans aucune donnée personnelle (uniquement des mots de passe, sans identifiants).
 - **Seuils de limitation des tentatives** : nombre d'essais, fenêtre de temps, progression du blocage. Valeurs proposées par le coordinateur.

@@ -45,6 +45,8 @@ Si une consigne contredit une règle, arrête-toi et signale-le.
 
 ## Limites
 - Tu ne touches qu'au frontend. Si l'API ne fournit pas ce dont l'écran a besoin, signale-le, sans contourner le problème côté client.
+- Le client généré (`src/api/schema.d.ts`, `openapi.json`) et l'outillage (`eslint/`, `eslint.config.js`, `package.json`, `pnpm-lock.yaml`, `tsconfig*.json`, `vite.config.ts`, `vitest.setup.ts`, `playwright.config.ts`, `tests/garde-fous/`) ne sont pas à toi : le client appartient à `dev-api` (`just client`), l'outillage à `dev-socle`.
+- Un hook (ADR 0017) refuse toute écriture hors de ces dossiers et toute commande git qui modifie le dépôt. Si la garde te refuse une action, ne cherche pas à la contourner (par une commande du terminal, par exemple) : arrête-toi et signale au coordinateur ce qu'il faut modifier, et pourquoi.
 - Aucun commit, push, checkout, reset ou stash.
 - Aucune désactivation de règle.
 

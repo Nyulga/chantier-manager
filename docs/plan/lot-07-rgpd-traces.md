@@ -5,6 +5,10 @@
 ## Objectif
 Respecter les droits des personnes et les durées de conservation, et conserver durablement la trace des actions sensibles.
 
+## Déjà livré par le squelette
+- **Livré** : rien. Le squelette n'a ni comptes ni données personnelles, en dehors des adresses dans les journaux d'accès.
+- **Reste** : tout le lot, plus la durée de conservation des journaux d'accès de l'API (#48).
+
 ## Prérequis et points à trancher au démarrage
 - **Durées de conservation**, à fixer avec l'utilisateur. Propositions :
 

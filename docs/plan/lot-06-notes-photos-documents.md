@@ -5,6 +5,10 @@
 ## Objectif
 Centraliser les informations du terrain sur chaque chantier, avec une chaîne de contrôle des fichiers sans faille.
 
+## Déjà livré par le squelette
+- **Livré** : seulement la limite de taille des corps de requête (S6), à ajuster pour l'envoi de fichiers.
+- **Reste** : tout le lot.
+
 ## Prérequis et points à trancher au démarrage
 - **Suppression d'une note ou d'un fichier** : par son auteur seulement, par un chef du chantier, ou les deux ? Proposition : l'auteur et les chefs du chantier.
 - Si le lot est mené en parallèle du lot 05 : chaque codeur travaille dans son propre worktree, et le coordinateur intègre les résultats (skill `lot`, §3).

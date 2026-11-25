@@ -32,6 +32,12 @@
 | **S4 – Tableau de bord** | Page d'accueil de la maquette Balise : « À valider », cartes de chantier avec compteurs et délai, activité récente ; Équipe, Invitation et Recherche affichées « Bientôt » (issue #28, journal `journal/lot-S4.md`) | `dev-metier`, `dev-donnees`, `dev-frontend` | S2 |
 | **S5 – Corrections de relecture** | Constats des issues #17 à #24, #29, #30 et #32 : verrou de version, unicité de l'ordre, erreurs RFC 9457 et 422 par champ, capacités via `/api/moi`, jscpd et pre-commit (issue #38, journal `journal/lot-S5.md`) | `dev-metier`, `dev-donnees`, `dev-frontend`, `dev-socle` | S4 |
 | **S6 – Sécuriser la démo** | Textes sans caractères de contrôle, plafonds de volume (100 chantiers, 30 étapes par chantier), limite de débit par adresse, pièges à robots, protections dans l'application (documentation masquée, taille des corps, en-têtes, hôtes), copie locale alignée sur la production ; plafond de 20 transitions par étape, la validation restant possible (issue #45, journal `journal/lot-S6.md`, ADR 0016) | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend`, `dev-socle`, puis `pentest` | S5 |
+| **S7 – Garde-fous** | Hook qui garde chaque sous-agent dans sa couche et limite git à la lecture (#46) ; contrôle en CI que le client généré est à jour (#43) ; recettes de test sans interprétation de leurs arguments (#81) — livré (issue #71, journal `journal/lot-S7.md`, ADR 0017) | `dev-socle`, puis le coordinateur pour la garde | S6 |
+| **S8 – Protections, la suite** | #49, #50, #60, #63, #64, #66, #67, #68, #69 ; pentest local ; issue #72 | `dev-metier`, `dev-api`, `dev-socle`, puis `pentest` | S7 |
+| **S9 – Qualité et ergonomie** | #51 à #58, #61, #62, #65 ; issue #73 | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` | S8 |
+| **S10 – Modifier un chantier** | Modification d'un chantier avec verrou de version, réservée au chef ; l'archivage reste au lot 04 ; issue #74 | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` | S9 |
+| **S11 – Gérer les étapes** | Modifier, réordonner et supprimer des étapes (chef) ; issue #75 | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` | S10 |
+| **S12 – Historique affiché** | Historique de chaque étape : qui (le profil), quoi, quand ; issue #76 | `dev-metier`, `dev-api`, `dev-frontend` | S11 |
 
 Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `conformite` et `securite`, puis PR proposée.
 
@@ -71,4 +77,5 @@ Critères du premier socle : ceux de la section ci-dessus, **sauf** la modificat
 | S3 | 2 à 3 h, plus ce qui dépend de l'utilisateur (nom de domaine, accès à la box et au serveur) |
 | S4 | environ 2 h 30, vérifications et corrections comprises |
 | S5 | environ 3 h, vérifications et corrections comprises |
-| **Total** | **environ 1 à 1,5 jour de travail** |
+| **Total S1 à S5** | **environ 1 à 1,5 jour de travail** |
+| S7 à S12 (prévus le 2026-11-25) | environ 16 h : S7 1 h 30, S8 3 h, S9 2 h 30, S10 3 h, S11 4 h, S12 2 h |

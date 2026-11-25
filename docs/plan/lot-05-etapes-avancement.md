@@ -5,6 +5,10 @@
 ## Objectif
 Le cœur métier : des étapes qui suivent un cycle de validation contrôlé, avec leur historique, et l'avancement calculé du chantier.
 
+## Déjà livré par le squelette
+- **Livré** (S2, S4, S5, S6, puis S11 et S12 prévus) : table des transitions, historique écrit dans la même transaction, avancement calculé, verrou de version, plafond de transitions, tableau de bord, ajout, modification, réordonnancement et suppression des étapes (S11), historique affiché (S12). La règle de suppression d'une étape validée est tranchée au lot S11.
+- **Reste** : les droits selon l'affectation (ouvrier affecté, chef du chantier), l'écriture des validations dans `JournalAudit`, et les écrans de la maquette encore absents.
+
 ## Prérequis et points à trancher au démarrage
 - **Suppression d'une étape déjà validée** : est-elle autorisée ? Elle modifie l'avancement. Proposition : on l'interdit, et seule une étape non validée peut être supprimée.
 

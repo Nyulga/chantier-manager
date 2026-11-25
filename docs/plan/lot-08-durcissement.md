@@ -5,6 +5,10 @@
 ## Objectif
 Vérifier l'application complète par des audits, puis corriger chaque écart avant la mise en production.
 
+## Déjà livré par le squelette
+- **Livré** (S6, puis S8 prévu) : tests d'intrusion locaux (règle 08), en-têtes de sécurité, protections de la démo publique.
+- **Reste** : tout le lot, plus le thème sombre de la barre latérale (#39) et le durcissement du serveur (pare-feu, fail2ban), dont le détail reste hors du dépôt public.
+
 ## Prérequis et points à trancher au démarrage
 - Une instance **proche de la production** lancée en local (images de production, HTTPS local), préparée par `dev-socle`.
 

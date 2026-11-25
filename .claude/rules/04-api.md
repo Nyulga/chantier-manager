@@ -70,6 +70,7 @@ Elle déclare aussi :
 - **Automatique** (`just verifier`) :
   - import-linter : « L'api d'un module métier n'importe pas le domaine », « Couches de chaque module » ;
   - tests dans `backend/tests/integration/` (forme des erreurs, 422 par champ, 503, en-têtes) et `backend/tests/api/` (parité des `Literal`) ;
-  - le schéma OpenAPI est exporté par `just client` ; `tsc` échoue côté frontend si une route ou un champ change sans régénération.
+  - `just verifier-client` (aussi en CI) régénère le client depuis le schéma OpenAPI et échoue s'il diffère de `frontend/src/api/schema.d.ts` : un schéma modifié sans `just client` est refusé (issue #43) ;
+  - `tsc` échoue côté frontend si une route ou un champ utilisé change.
 - **Par un agent** : `conformite` (route de 15 lignes au plus, pas de `try/except`, DTO en `extra="forbid"`, conversions explicites), `pentest` (forme réelle des erreurs, méthodes, taille, en-têtes).
-- **Pas encore vérifié** : la longueur des routes et `extra="forbid"` n'ont pas de contrôle automatique ; la CI ne vérifie pas encore que le client généré est à jour (issue #43).
+- **Pas encore vérifié** : la longueur des routes et `extra="forbid"` n'ont pas de contrôle automatique.

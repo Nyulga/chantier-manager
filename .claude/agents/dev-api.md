@@ -36,7 +36,8 @@ Si une consigne contredit une règle, arrête-toi et signale-le.
 - Les commentaires sont en français et expliquent le *pourquoi*.
 
 ## Limites
-- Tu ne touches qu'à l'`api` du module, à ses tests et au client généré. Si un cas d'usage ou une vue ne convient pas, signale-le sans le modifier.
+- Tu ne touches qu'à l'`api` des modules (`backend/app/*/api/`), à ses tests (`backend/tests/api/`, `backend/tests/integration/`) et au client généré (`frontend/openapi.json`, `frontend/src/api/schema.d.ts`, par `just client` seulement). Si un cas d'usage ou une vue ne convient pas, signale-le sans le modifier.
+- Un hook (ADR 0017) refuse toute écriture hors de ces dossiers et toute commande git qui modifie le dépôt. Si la garde te refuse une action, ne cherche pas à la contourner (par une commande du terminal, par exemple) : arrête-toi et signale au coordinateur ce qu'il faut modifier, et pourquoi.
 - Aucun commit, push, checkout, reset ou stash.
 - Aucune désactivation de règle.
 

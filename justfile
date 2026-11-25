@@ -25,7 +25,7 @@ _lancer-web:
     pnpm dev
 
 # Lance toutes les vérifications du projet : c'est la porte d'entrée de la CI.
-verifier: verifier-back verifier-front doublons
+verifier: verifier-back verifier-front verifier-client doublons
 
 # Vérifications du backend : style, typage, architecture, tailles, désactivations de règles, sécurité, tests et couverture.
 [working-directory: 'backend']
@@ -120,25 +120,75 @@ normaliser-fins-de-ligne:
     git checkout-index --force --index -z --stdin < "$dossier/liste"
     exit "$echec"
 
+# Les arguments arrivent en positionnels (`"$@"`) et ne sont jamais recopiés dans le texte du script : un
+# argument contenant `;` ou `$(...)` reste un simple argument de pytest, il n'est pas exécuté comme une
+# commande. Cette recette est autorisée sans confirmation dans `.claude/settings.json`, d'où la précaution.
+# Recette à shebang (`sh`, présent avec Git pour Windows) : le shell PowerShell du reste du fichier n'offrirait
+# pas la même protection. `[working-directory]` s'applique aussi aux recettes à shebang.
+
 # Lance un test backend ciblé, sans seuil de couverture. Exemple : just test-back -k avancement
+[positional-arguments]
 [working-directory: 'backend']
 test-back *args:
-    uv run pytest --no-cov {{args}}
+    #!/usr/bin/env sh
+    set -eu
+    exec uv run pytest --no-cov "$@"
+
+# Même précaution que `test-back` : les arguments passent en positionnels, jamais recopiés dans le script.
 
 # Lance un test frontend ciblé, sans couverture. Exemple : just test-front useEtatApi
+[positional-arguments]
 [working-directory: 'frontend']
 test-front *args:
-    pnpm exec vitest run {{args}}
+    #!/usr/bin/env sh
+    set -eu
+    exec pnpm exec vitest run "$@"
 
 # Lance les tests de bout en bout (Playwright, Chromium) sur le site construit.
 [working-directory: 'frontend']
 e2e:
     pnpm e2e
 
-# Régénère les types TypeScript de l'API à partir du schéma OpenAPI du backend.
-client:
-    cd backend; uv run python -m tools.exporter_openapi ../frontend/openapi.json
-    cd frontend; pnpm exec openapi-typescript openapi.json -o src/api/schema.d.ts
+# Régénère les types TypeScript de l'API à partir du schéma OpenAPI du backend. Sans argument, le client
+# versionné (src/api/schema.d.ts) est réécrit ; `verifier-client` passe un autre chemin, relatif à `frontend/`.
+# `--no-dev` : l'export du schéma n'a besoin que des dépendances d'exécution. Sans lui, `uv run` ajouterait
+# le groupe `dev` à un environnement installé par `uv sync --no-dev` (job e2e de la CI). Avec lui, `uv run`
+# n'ajoute rien et ne retire rien (il ne fait pas de synchronisation exacte) : en local, pytest, ruff et les
+# autres outils restent installés.
+# Recette à shebang (`sh`, présent avec Git pour Windows) : le chemin arrive en argument positionnel (`$1`),
+# entre guillemets, et n'est jamais recopié dans le texte du script. Une valeur contenant `;`, `'` ou `$(...)`
+# reste un simple nom de fichier, que ce soit sous Windows ou sous Linux. `quote()` ne conviendrait pas :
+# il échappe pour `sh`, pas pour PowerShell, le shell des autres recettes sous Windows.
+[positional-arguments]
+client sortie="src/api/schema.d.ts":
+    #!/usr/bin/env sh
+    set -eu
+    (cd backend && uv run --no-dev python -m tools.exporter_openapi ../frontend/openapi.json)
+    cd frontend
+    exec pnpm exec openapi-typescript openapi.json -o "$1"
+
+# Le client généré est versionné (ADR 0013, issue #43) : un schéma d'API modifié sans `just client`
+# laisserait le frontend typé sur une ancienne API. La recette régénère donc le client dans un dossier
+# temporaire, hors des fichiers suivis, et le compare à la version commitée. La comparaison ignore le
+# retour chariot de fin de ligne (CRLF sous Windows, LF sous Linux) : seul le contenu compte. Recette à
+# shebang (`sh`, présent avec Git pour Windows), comme `normaliser-fins-de-ligne`.
+
+# Vérifie que le client TypeScript généré (src/api/schema.d.ts) correspond au schéma OpenAPI de l'API.
+verifier-client:
+    #!/usr/bin/env sh
+    set -eu
+    dossier="frontend/{{dossier_client_verifie}}"
+    mkdir -p "$dossier"
+    trap 'rm -rf "$dossier"' EXIT
+    "{{just_executable()}}" client "{{dossier_client_verifie}}/schema.d.ts"
+    if ! diff --strip-trailing-cr -u frontend/src/api/schema.d.ts "$dossier/schema.d.ts"; then
+        echo "Le client généré n'est pas à jour : lance 'just client' et commite frontend/src/api/schema.d.ts." >&2
+        exit 1
+    fi
+    echo "Le client généré est à jour."
+
+# Dossier (relatif à `frontend/`) où `verifier-client` régénère le client, hors des fichiers suivis.
+dossier_client_verifie := "node_modules/.cache/client-verifie"
 
 # Hooks pre-commit du frontend. Les fichiers arrivent depuis la racine du dépôt (`frontend/src/...`) :
 # on retire le préfixe, car les outils tournent dans `frontend/`. Le retrait se fait dans le shell, argument

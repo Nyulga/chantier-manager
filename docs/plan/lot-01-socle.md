@@ -5,6 +5,10 @@
 ## Objectif
 Disposer d'un dépôt outillé où un squelette backend et frontend démarre, avec une CI qui fait respecter **dès le premier jour** toutes les exigences de qualité, d'architecture et de sécurité.
 
+## Déjà livré par le squelette
+- **Livré** (S1, S4, S5, puis S7 prévu) : découpage en couches et contrats import-linter, ruff, mypy strict, ESLint (couches et design system), Vitest, Playwright, thème Balise, `/api/health`, `justfile`, hooks git, CI (Backend, Frontend avec l'e2e, Hooks git, Sécurité : gitleaks, pip-audit, pnpm audit, Trivy), duplication (jscpd), contrôle du client généré (#43, S7).
+- **Reste** : le job de mutation (mutmut), CodeQL, le Docker Compose de développement (PostgreSQL, ClamAV, Mailpit) et les checks obligatoires sur `main`.
+
 ## Prérequis et points à trancher au démarrage
 - **Poste de l'utilisateur** : Docker Desktop (avec WSL 2) installé et démarré, à installer par l'utilisateur. uv et just, installés avec son accord. Le coordinateur vérifie leur présence avant toute étape.
 - **Accord de l'utilisateur** requis pour modifier la protection de `main` (étape 6).

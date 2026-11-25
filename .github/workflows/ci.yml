@@ -1,7 +1,8 @@
 # Intégration continue : rejoue sur GitHub les vérifications du poste (`just verifier`).
-# Squelette : lint, typage, architecture, tailles, duplication, sécurité du code, tests et couverture,
-# plus les tests de bout en bout, le job `hooks` (les hooks git, rejoués sur tout le dépôt) et le job
-# `securite` (secrets, dépendances, Trivy). Les tests de mutation et CodeQL sont reportés à la phase 2.
+# Squelette : lint, typage, architecture, tailles, duplication, client généré à jour, sécurité du code,
+# tests et couverture, plus les tests de bout en bout, le job `hooks` (les hooks git, rejoués sur tout
+# le dépôt) et le job `securite` (secrets, dépendances, Trivy). Les tests de mutation et CodeQL sont
+# reportés à la phase 2.
 #
 # Toutes les actions sont épinglées par l'empreinte (SHA) d'un commit, la version restant en
 # commentaire : un tag peut être déplacé, pas un SHA. Dependabot propose les mises à jour.
@@ -82,6 +83,13 @@ jobs:
       - name: Installer les dépendances de l'API (versions verrouillées)
         working-directory: backend
         run: uv sync --locked --no-dev
+      # Le client TypeScript généré est versionné (ADR 0013, issue #43) : on régénère le schéma
+      # OpenAPI de l'API, puis le client, et on échoue s'ils diffèrent du fichier commité.
+      # L'environnement ne contient que les dépendances d'exécution (`--no-dev`), et la recette `client`
+      # lance l'export avec `uv run --no-dev` : `uv run` n'y ajoute donc pas le groupe `dev`, et l'étape
+      # suivante (e2e) tourne bien dans l'environnement de production.
+      - name: Vérifier que le client généré est à jour
+        run: just verifier-client
       - name: Installer Chromium pour Playwright
         working-directory: frontend
         run: pnpm exec playwright install --with-deps chromium
