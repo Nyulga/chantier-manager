@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Un lot se traite **toujours avec le skill `lot`** (`/lot NN`).
   - La session principale coordonne, en Opus 5.5 avec un effort élevé au minimum. Elle délègue le code aux sous-agents `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` et `dev-socle`, puis fait vérifier le travail par `revue`, `conformite` et `securite` ; l'agent `pentest` attaque ensuite l'application qui tourne (skill `pentest`, règle 08).
   - Le skill fixe le modèle et l'effort de chaque agent.
-  - Un commit `feat(lot-NN): <étape>` est fait par étape validée, sur `dev`.
+  - Un commit `feat(lot-NN): <étape>` est fait par étape validée, sur `dev`. Tous les messages de commit suivent le skill `git-conventional` (Conventional Commits, portées du projet).
   - À la fin du lot, la PR vers `main` est **proposée**, jamais ouverte sans accord.
 - Le backlog vit dans les GitHub Issues (skill et agent `backlog`). Une idée ou un constat hors lot y devient une issue ; on ne le code pas.
 - Dépôt : https://github.com/Nyulga/chantier-manager (public). N'y mets jamais de secret ni de donnée réelle de chantier ou de client.
@@ -28,10 +28,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## État du projet
 
-**Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S5). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
+**Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S6). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
 
 
-Les lots S1 (socle), S2 (chantiers et étapes), S3 (mise en ligne), S4 (tableau de bord) et S5 (corrections de relecture) sont livrés ; la base est **SQLite** pour l'instant (ADR 0007). Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
+Les lots S1 (socle), S2 (chantiers et étapes), S3 (mise en ligne), S4 (tableau de bord), S5 (corrections de relecture) et S6 (sécuriser la démo : limites de débit, pièges, plafonds, protections dans l'application, ADR 0016) sont livrés ; la base est **SQLite** pour l'instant (ADR 0007). Le déploiement est décrit dans `deploy/README.md` : deux conteneurs derrière le Caddy déjà présent sur le serveur.
 
 ## Commandes
 

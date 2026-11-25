@@ -37,7 +37,7 @@ Fournir le code **technique** transverse, sans aucun concept métier. Il suit le
 | `shared/domain` | `ErreurMetier` (classe de base), types d'identifiants, `Acteur` |
 | `shared/application` | Ports transverses : `UnitOfWork`, `Horloge`, `GenerateurId` |
 | `shared/infrastructure` | Moteur et session SQLAlchemy, UoW SQL et mémoire, horloge système, UUID v7, journalisation (règle 03) |
-| `shared/api` | Gestionnaire central des erreurs, middlewares de sécurité (en-têtes, CSRF) et identifiant de requête (à venir : pendant le squelette, Caddy pose les en-têtes), dépendance `acteur_courant` |
+| `shared/api` | Gestionnaire central des erreurs, middlewares de protection (en-têtes, hôtes acceptés, taille, blocage, débit : ADR 0016 ; CSRF et identifiant de requête à venir), dépendance `acteur_courant` |
 
 ### Règles
 - `shared` **n'importe aucun module métier** (`auth`, `chantiers`, `etapes`, `documents`, `rgpd`). Vérifié par import-linter.

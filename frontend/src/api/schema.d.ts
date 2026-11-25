@@ -220,6 +220,11 @@ export interface components {
          * @description Corps de l'ajout d'une étape en fin de liste.
          */
         AjouterEtapeRequete: {
+            /**
+             * Site Web
+             * @description Champ piège : ne pas remplir. Il doit rester vide ou absent.
+             */
+            site_web?: string | null;
             /** Titre */
             titre: string;
         };
@@ -300,12 +305,15 @@ export interface components {
         };
         /**
          * CreerChantierRequete
-         * @description Corps de la création d'un chantier ; le budget est en euros, au centime près.
+         * @description Corps de la création d'un chantier ; le budget est un texte décimal en euros.
          */
         CreerChantierRequete: {
             adresse: components["schemas"]["AdresseRequete"];
-            /** Budget */
-            budget: number | string;
+            /**
+             * Budget
+             * @example 1234.50
+             */
+            budget: string;
             /** Client */
             client: string;
             /**
@@ -320,6 +328,11 @@ export interface components {
             echeance: string;
             /** Nom */
             nom: string;
+            /**
+             * Site Web
+             * @description Champ piège : ne pas remplir. Il doit rester vide ou absent.
+             */
+            site_web?: string | null;
         };
         /**
          * ErreurChampReponse
@@ -504,7 +517,7 @@ export interface operations {
                     "application/json": components["schemas"]["ActiviteReponse"][];
                 };
             };
-            /** @description Profil `X-Profil` absent ou inconnu. */
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -513,7 +526,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil. */
+            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -529,6 +542,17 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse : réessayer après le délai de `Retry-After`. */
+            429: {
+                headers: {
+                    /** @description Nombre de secondes à attendre avant de réessayer. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
             /** @description Service momentanément indisponible : réessayer plus tard. */
@@ -563,7 +587,7 @@ export interface operations {
                     "application/json": components["schemas"]["ChantierReponse"][];
                 };
             };
-            /** @description Profil `X-Profil` absent ou inconnu. */
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -572,7 +596,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil. */
+            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -590,6 +614,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
             /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
@@ -597,6 +630,17 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse : réessayer après le délai de `Retry-After`. */
+            429: {
+                headers: {
+                    /** @description Nombre de secondes à attendre avant de réessayer. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
             /** @description Service momentanément indisponible : réessayer plus tard. */
@@ -635,7 +679,7 @@ export interface operations {
                     "application/json": components["schemas"]["ChantierReponse"];
                 };
             };
-            /** @description Profil `X-Profil` absent ou inconnu. */
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -644,7 +688,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil. */
+            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -662,6 +706,24 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
+            /** @description Corps de la requête trop volumineux. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
             /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
@@ -669,6 +731,17 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse : réessayer après le délai de `Retry-After`. */
+            429: {
+                headers: {
+                    /** @description Nombre de secondes à attendre avant de réessayer. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
             /** @description Service momentanément indisponible : réessayer plus tard. */
@@ -705,7 +778,7 @@ export interface operations {
                     "application/json": components["schemas"]["ChantierReponse"];
                 };
             };
-            /** @description Profil `X-Profil` absent ou inconnu. */
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -714,7 +787,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil. */
+            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -732,6 +805,15 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
             /** @description Données invalides : `erreurs` désigne les champs en cause. */
             422: {
                 headers: {
@@ -739,6 +821,17 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse : réessayer après le délai de `Retry-After`. */
+            429: {
+                headers: {
+                    /** @description Nombre de secondes à attendre avant de réessayer. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
             /** @description Service momentanément indisponible : réessayer plus tard. */
@@ -775,7 +868,7 @@ export interface operations {
                     "application/json": components["schemas"]["EtapeReponse"][];
                 };
             };
-            /** @description Profil `X-Profil` absent ou inconnu. */
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -784,7 +877,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil. */
+            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -802,7 +895,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action impossible dans l'état actuel, ou ressource modifiée entre-temps. */
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -818,6 +911,17 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse : réessayer après le délai de `Retry-After`. */
+            429: {
+                headers: {
+                    /** @description Nombre de secondes à attendre avant de réessayer. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
             /** @description Service momentanément indisponible : réessayer plus tard. */
@@ -858,7 +962,7 @@ export interface operations {
                     "application/json": components["schemas"]["EtapeReponse"];
                 };
             };
-            /** @description Profil `X-Profil` absent ou inconnu. */
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -867,7 +971,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil. */
+            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -885,8 +989,17 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action impossible dans l'état actuel, ou ressource modifiée entre-temps. */
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
+            /** @description Corps de la requête trop volumineux. */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -901,6 +1014,17 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse : réessayer après le délai de `Retry-After`. */
+            429: {
+                headers: {
+                    /** @description Nombre de secondes à attendre avant de réessayer. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
             /** @description Service momentanément indisponible : réessayer plus tard. */
@@ -937,7 +1061,7 @@ export interface operations {
                     "application/json": components["schemas"]["EtapeAValiderReponse"][];
                 };
             };
-            /** @description Profil `X-Profil` absent ou inconnu. */
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -946,7 +1070,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil. */
+            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -962,6 +1086,17 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse : réessayer après le délai de `Retry-After`. */
+            429: {
+                headers: {
+                    /** @description Nombre de secondes à attendre avant de réessayer. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
             /** @description Service momentanément indisponible : réessayer plus tard. */
@@ -1002,7 +1137,7 @@ export interface operations {
                     "application/json": components["schemas"]["EtapeReponse"];
                 };
             };
-            /** @description Profil `X-Profil` absent ou inconnu. */
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1011,7 +1146,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil. */
+            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1029,8 +1164,17 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action impossible dans l'état actuel, ou ressource modifiée entre-temps. */
+            /** @description Action impossible dans l'état actuel, ressource modifiée entre-temps ou plafond de volume de la démo atteint. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
+                };
+            };
+            /** @description Corps de la requête trop volumineux. */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1045,6 +1189,17 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse : réessayer après le délai de `Retry-After`. */
+            429: {
+                headers: {
+                    /** @description Nombre de secondes à attendre avant de réessayer. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
             /** @description Service momentanément indisponible : réessayer plus tard. */
@@ -1099,7 +1254,7 @@ export interface operations {
                     "application/json": components["schemas"]["CapacitesReponse"];
                 };
             };
-            /** @description Profil `X-Profil` absent ou inconnu. */
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -1115,6 +1270,17 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProblemeValidationReponse"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse : réessayer après le délai de `Retry-After`. */
+            429: {
+                headers: {
+                    /** @description Nombre de secondes à attendre avant de réessayer. */
+                    "Retry-After"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
             /** @description Service momentanément indisponible : réessayer plus tard. */

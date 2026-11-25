@@ -30,13 +30,14 @@ Traduire une requête HTTP en appel d'un cas d'usage, puis traduire le résultat
 | **DTO** | Des schémas Pydantic distincts pour l'entrée (`CreerChantierRequete`) et la sortie (`ChantierReponse`), avec `model_config = ConfigDict(extra="forbid", frozen=True)`. Ils sont rangés dans `schemas.py`. |
 | **Mapper** | Une fonction explicite par conversion, rangée dans `conversions.py` : requête → commande, vue → réponse. Pas de conversion implicite. |
 | **Exception Translation** | Un seul gestionnaire, dans `app.shared.api` : `NonTrouve` → 404, `AccesRefuse` → 403, `TransitionInterdite` → 409, `ValeurInvalide` → 422, indisponibilités techniques → 503. Les corps d'erreur ont un format unique, un message en français, et aucun détail interne. |
-| **Middleware** | En-têtes de sécurité, vérification CSRF et identifiant de requête, dans `app.shared.api`. Ils ne sont jamais réimplémentés dans une route. **Pendant le squelette**, il n'y en a pas encore : les en-têtes de sécurité et la limite de taille sont posés par Caddy (ADR 0015), et le CSRF arrivera au lot 03 avec les cookies de session. |
+| **Middleware** | En-têtes de sécurité, vérification CSRF et identifiant de requête, dans `app.shared.api`. Ils ne sont jamais réimplémentés dans une route. Depuis le lot S6 : en-têtes de sécurité, noms d'hôte acceptés, taille du corps, blocage des adresses piégées et limite de débit (ADR 0016), assemblés par la composition. Le CSRF arrivera au lot 03 avec les cookies de session. |
 | **Dependency Injection** | `Depends` pour obtenir l'acteur authentifié et le cas d'usage. |
 
 ## Contrat d'erreur (ADR 0008)
 - **Toute** erreur, y compris un 404 de route, un 405 ou un identifiant mal formé, répond en `application/problem+json` (RFC 9457) : `{type, title, status, detail}`, schéma `ProblemeReponse`.
 - **422** : il ajoute `erreurs: [{champ, message}]`. `champ` est un chemin pointé du corps (`adresse.code_postal`) ou un paramètre. Les messages sont fixes et ne recopient **jamais** la saisie.
-- **409** : transition interdite, version périmée (`ConflitVersionError`) ou ajout simultané.
+- **409** : transition interdite, version périmée (`ConflitVersionError`), ajout simultané ou plafond atteint (`PlafondAtteintError`, ADR 0016).
+- **400**, **403**, **413** et **429** (avec `Retry-After`) : réponses des middlewares de protection (ADR 0016), au même format.
 - **503** : réservé aux vraies indisponibilités de la base (verrou, fichier inaccessible, disque plein, connexion perdue). Une erreur de programmation reste une 500. La cause est journalisée, sans paramètres SQL.
 - **Liste plafonnée** : l'en-tête `X-Liste-Tronquee: true` annonce qu'il reste des éléments.
 - Les statuts et actions restent des `Literal` dans les schémas ; un test de parité les compare aux énumérations du domaine.

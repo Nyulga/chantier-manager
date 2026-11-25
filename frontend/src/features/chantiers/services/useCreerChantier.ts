@@ -20,6 +20,8 @@ export type SaisieChantier = {
   readonly dateDebut: string;
   readonly echeance: string;
   readonly budget: string;
+  /** Champ piège : un humain ne le voit pas, donc il reste vide (voir `ChampPiege`). */
+  readonly siteWeb: string;
 };
 
 /** Type de l'erreur que lève la création, pour les formulaires qui affichent ses erreurs par champ. */
@@ -43,6 +45,8 @@ export function useCreerChantier() {
             date_debut: saisie.dateDebut,
             echeance: saisie.echeance,
             budget: saisie.budget,
+            // Le champ piège part seulement s'il est rempli, pour que l'API repère le robot.
+            ...(saisie.siteWeb !== '' && { site_web: saisie.siteWeb }),
           },
         }),
       ),

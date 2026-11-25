@@ -14,7 +14,10 @@ from app.shared.api.documentation_erreurs import erreurs_documentees
 # Le 422 est déclaré par cohérence : FastAPI en ajoute un, au corps non typé, à toute route
 # qui lit un en-tête, et le client généré n'aurait alors pas la forme de l'erreur.
 ERREURS = erreurs_documentees(
-    HTTPStatus.BAD_REQUEST, HTTPStatus.UNPROCESSABLE_ENTITY, HTTPStatus.SERVICE_UNAVAILABLE
+    HTTPStatus.BAD_REQUEST,
+    HTTPStatus.UNPROCESSABLE_ENTITY,
+    HTTPStatus.TOO_MANY_REQUESTS,
+    HTTPStatus.SERVICE_UNAVAILABLE,
 )
 
 

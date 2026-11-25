@@ -22,6 +22,7 @@ const SAISIE: SaisieChantier = {
   dateDebut: '2026-03-02',
   echeance: '2026-09-30',
   budget: '18450.00',
+  siteWeb: '',
 };
 
 it("envoie le chantier à l'API sous la forme attendue et renvoie le chantier créé", async () => {
@@ -112,4 +113,64 @@ it.each([
     expect(result.current.error?.message).toBe(refus.message);
   });
   expect(result.current.error?.erreurs).toEqual(refus.erreurs);
+});
+
+it("envoie le budget en texte décimal, tel qu'il est saisi, jamais en nombre", async () => {
+  let corps: unknown = null;
+  serveur.use(
+    http.post('/api/chantiers', async ({ request }) => {
+      corps = await request.json();
+      return HttpResponse.json(chantierDeTest(), { status: 201 });
+    }),
+  );
+  const { result } = afficherHook(() => useCreerChantier());
+
+  act(() => {
+    result.current.mutate({ ...SAISIE, budget: '1234.50' });
+  });
+
+  await waitFor(() => {
+    expect(result.current.isSuccess).toBe(true);
+  });
+  expect(corps).toMatchObject({ budget: '1234.50' });
+});
+
+it("n'envoie pas le champ piège quand il est vide : un humain ne le remplit jamais", async () => {
+  let corps: unknown = null;
+  serveur.use(
+    http.post('/api/chantiers', async ({ request }) => {
+      corps = await request.json();
+      return HttpResponse.json(chantierDeTest(), { status: 201 });
+    }),
+  );
+  const { result } = afficherHook(() => useCreerChantier());
+
+  act(() => {
+    result.current.mutate(SAISIE);
+  });
+
+  await waitFor(() => {
+    expect(result.current.isSuccess).toBe(true);
+  });
+  expect(corps).not.toHaveProperty('site_web');
+});
+
+it("envoie le champ piège quand un robot l'a rempli : l'API le repère et bloque l'adresse", async () => {
+  let corps: unknown = null;
+  serveur.use(
+    http.post('/api/chantiers', async ({ request }) => {
+      corps = await request.json();
+      return reponseProbleme(403, "Cette action n'est pas permise.");
+    }),
+  );
+  const { result } = afficherHook(() => useCreerChantier());
+
+  act(() => {
+    result.current.mutate({ ...SAISIE, siteWeb: 'http://exemple.invalid' });
+  });
+
+  await waitFor(() => {
+    expect(result.current.isError).toBe(true);
+  });
+  expect(corps).toMatchObject({ site_web: 'http://exemple.invalid' });
 });

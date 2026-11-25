@@ -31,6 +31,7 @@ ERREURS = erreurs_documentees(
     HTTPStatus.BAD_REQUEST,
     HTTPStatus.FORBIDDEN,
     HTTPStatus.UNPROCESSABLE_ENTITY,
+    HTTPStatus.TOO_MANY_REQUESTS,
     HTTPStatus.SERVICE_UNAVAILABLE,
 )
 

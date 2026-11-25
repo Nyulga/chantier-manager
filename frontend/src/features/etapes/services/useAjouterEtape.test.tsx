@@ -26,7 +26,7 @@ it("envoie le titre à l'API et renvoie l'étape créée", async () => {
   const { result } = afficherHook(() => useAjouterEtape(CHANTIER));
 
   act(() => {
-    result.current.mutate('Fondations');
+    result.current.mutate({ titre: 'Fondations', siteWeb: '' });
   });
 
   await waitFor(() => {
@@ -62,7 +62,7 @@ it.each([
   });
 
   act(() => {
-    result.current.ajout.mutate('Fondations');
+    result.current.ajout.mutate({ titre: 'Fondations', siteWeb: '' });
   });
 
   await waitFor(() => {
@@ -81,7 +81,7 @@ it("expose le message de l'API et le champ en cause quand l'ajout est refusé (4
   const { result } = afficherHook(() => useAjouterEtape(CHANTIER));
 
   act(() => {
-    result.current.mutate('Fondations');
+    result.current.mutate({ titre: 'Fondations', siteWeb: '' });
   });
 
   await waitFor(() => {
@@ -97,10 +97,37 @@ it("expose le message de l'API quand l'ajout entre en conflit (409)", async () =
   const { result } = afficherHook(() => useAjouterEtape(CHANTIER));
 
   act(() => {
-    result.current.mutate('Fondations');
+    result.current.mutate({ titre: 'Fondations', siteWeb: '' });
   });
 
   await waitFor(() => {
     expect(result.current.error?.message).toBe(CONFLIT);
   });
+});
+
+it("envoie le champ piège seulement s'il est rempli (un robot, jamais un humain)", async () => {
+  const corps: unknown[] = [];
+  serveur.use(
+    http.post(`/api/chantiers/${CHANTIER}/etapes`, async ({ request }) => {
+      corps.push(await request.json());
+      return HttpResponse.json(etapeDeTest(), { status: 201 });
+    }),
+  );
+  const { result } = afficherHook(() => useAjouterEtape(CHANTIER));
+
+  act(() => {
+    result.current.mutate({ titre: 'Fondations', siteWeb: '' });
+  });
+  await waitFor(() => {
+    expect(corps).toHaveLength(1);
+  });
+  act(() => {
+    result.current.mutate({ titre: 'Fondations', siteWeb: 'http://exemple.invalid' });
+  });
+  await waitFor(() => {
+    expect(corps).toHaveLength(2);
+  });
+
+  expect(corps[0]).toEqual({ titre: 'Fondations' });
+  expect(corps[1]).toEqual({ titre: 'Fondations', site_web: 'http://exemple.invalid' });
 });

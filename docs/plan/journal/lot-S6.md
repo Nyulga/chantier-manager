@@ -1,0 +1,185 @@
+# Journal du lot S6 – Sécuriser la démo
+
+**Issue** : #45 · **Statut** : terminé le 2026-11-25 · **Plage** : `ee4b35a..` (clôture)
+
+Le lot fait suite au premier test d'intrusion local (règle 08) et à la demande du propriétaire de protéger la démo publique, où l'écriture est ouverte à tous. Le plan a été validé par le propriétaire le 2026-11-24.
+
+## Décisions du propriétaire
+
+- **Limites de débit** : 20 écritures et 120 lectures par minute et par adresse ; une adresse qui touche un piège est bloquée en écriture pendant 1 heure.
+- **Plafonds de volume** : 100 chantiers en tout, 30 étapes par chantier. La démo n'est **pas** remise à zéro : une fois le plafond atteint, plus aucune création n'est possible, et le propriétaire décidera de la suite.
+- **Mise en ligne** : étape séparée, après le lot, avec accord pour chaque commande sur le serveur (le bloc Caddy du serveur change).
+- **Hors lot** : fail2ban sur le serveur (lot 08) ; le code d'erreur d'un ouvrier qui tente de valider (issue à part).
+
+## Étape 1 – Domaine et services (`dev-metier`, Opus, effort élevé)
+
+**Textes propres (constat M4)** : nouvelle garde `app/shared/domain/caracteres.py`, appliquée à chaque champ texte. Sont refusés les caractères de contrôle (`Cc`), les demi-codets isolés (`Cs`) et les caractères bidirectionnels (U+202A–U+202E, U+2066–U+2069, risque d'usurpation d'affichage). Champs sur une ligne (nom, client, voie, code postal, ville, titre d'étape) : aucun contrôle admis. Commentaire d'une transition : `\n`, `\r` et `\t` admis. Le message d'erreur est fixe et désigne le champ (ADR 0008).
+
+**Plafonds** : `LIMITE_CHANTIERS = 100`, `LIMITE_ETAPES_PAR_CHANTIER = 30`, nouvelle `PlafondAtteintError` (`shared/application/erreurs.py`). Le droit est vérifié d'abord, puis le plafond, dans la transaction et avant toute écriture.
+
+**Découpage des couches** : une première version ajoutait un comptage au port et à l'infrastructure ; le propriétaire l'a refusé (pas d'entorse au découpage). Le comptage s'appuie sur les lectures existantes (`lister()`, et la lecture des étapes déjà faite pour l'ordre), bornées par ces mêmes plafonds. Infrastructure et tests de contrat intacts (`git diff --stat` vide). Le besoin d'un garde-fou automatique est suivi dans l'issue #46.
+
+**Donnée de test corrigée** : `tests/integration/etapes/test_api_tableau_de_bord.py` créait 51 étapes sur un seul chantier ; elle les répartit désormais sur plusieurs chantiers.
+
+**Rouge** : textes `115 failed, 10 passed` (`Failed: DID NOT RAISE ValeurInvalideError`) ; plafonds `4 failed, 10 passed` (`DID NOT RAISE PlafondAtteintError`).
+**Vert** (`just verifier`, coordinateur) : `797 passed`, couverture backend 100 %, domain et application `687 0 48 0 100%`, 8 contrats tenus, `458` tests frontend.
+
+**Reste pour l'étape 3 (`dev-api`)** : `PlafondAtteintError` → 409, tests d'intégration du 409 et du 422 sur un caractère nul.
+
+## Étape 2a – Ports de la limite de débit et des pièges (`dev-metier`, Opus, effort élevé)
+
+**Ajustement du plan** : pour qu'aucun agent ne sorte de sa couche, l'ancienne étape 2 est découpée. `dev-metier` écrit les ports (2a), `dev-donnees` leurs implémentations en mémoire (2b), `dev-api` les middlewares (3), puis `dev-donnees` les branche dans la composition (3b).
+
+**Livré** (`shared/application` seulement) : `CategorieAcces` (lecture, écriture), ports `LimiteurDebit.consommer(adresse, categorie) -> int | None` (délai en secondes entières, au moins 1) et `ListeAdressesBloquees` (`bloquer`, `est_bloquee`). Constantes des décisions du propriétaire dans `limites_debit.py` : fenêtre de 1 min, 20 écritures, 120 lectures, blocage de 1 h. Hypothèse écrite : stockage en mémoire, un seul processus API (ADR 0015).
+
+**TDD** : pas de phase rouge, car il n'y a pas de comportement (des `Protocol` et des constantes). Le test `test_limites_debit.py` fige les valeurs décidées.
+**Vert** (`just verifier`, coordinateur) : `799 passed`, couverture 100 %, 8 contrats tenus, `458` tests frontend.
+
+**Décision du coordinateur** : une adresse bloquée par un piège reçoit un 403 sur ses écritures, sans délai annoncé ; `est_bloquee` suffit.
+
+## Étape 2b – Limiteur et liste d'adresses bloquées en mémoire (`dev-donnees`, Sonnet, effort élevé)
+
+**Livré** (`shared/infrastructure`, `composition/parametres.py` et leurs tests seulement) :
+- `MemoireLimiteurDebit(horloge, seuils, fenetre, cles_max)` : fenêtre glissante, une file d'horodatages par adresse et catégorie, verrou, au plus 5 000 clés suivies (au-delà, la plus ancienne est évincée plutôt que de refuser les nouvelles adresses, ce qui serait un déni de service) ;
+- `MemoireListeAdressesBloquees(horloge, duree, adresses_max)` : au plus 10 000 adresses, éviction du blocage le plus proche de son terme ;
+- `HorlogeAvancable`, pour tester le temps sans attendre ;
+- `Parametres` : `documentation_exposee = False`, `hotes_acceptes = ["localhost", "127.0.0.1"]`, `taille_max_corps = 64 Ko`.
+
+Les suites de contrat sont prêtes à recevoir une seconde implémentation (base ou Redis) ; il n'y en a qu'une pendant le squelette (un seul processus API, ADR 0015).
+
+**Rouge** : `16 failed, 6 passed` avec une première version qui permettait tout (`assert None == 60`, `assert 400 == 50`, `est_bloquee` toujours faux) ; `AttributeError` sur les nouveaux paramètres.
+**Vert** (`just verifier`, coordinateur) : `840 passed`, couverture 100 %, 8 contrats tenus, `458` tests frontend.
+
+**Limite connue** : le test de concurrence passe aussi sans verrou (section critique trop courte face au GIL) ; le verrou est justifié par lecture.
+
+**Pour la suite** : `compose.prod.yaml` devra définir `CHANTIER_HOTES_ACCEPTES` (étape `dev-socle`) ; les tests de l'API construiront leurs `Parametres` avec l'hôte `testserver` et la documentation exposée.
+
+## Étape 3 – Protections HTTP (`dev-api`, Sonnet, effort moyen)
+
+**Livré** (`*/api/` et tests seulement), dans `shared/api/` : `MiddlewareEnTetesSecurite` (valeurs identiques au Caddyfile, vérifié par test), `MiddlewareTailleCorps` (413, y compris sans `Content-Length`), `MiddlewareLimiteDebit` (429 + `Retry-After`, `/api/health` exclu), `MiddlewareBlocageEcritures` (403 neutre sur les écritures d'une adresse bloquée), `creer_routeur_pieges` (fausses adresses : 404 identique à une adresse inconnue, et blocage), champ piège `site_web` (403 neutre avant la validation et le cas d'usage). `PlafondAtteintError` → 409, documenté dans OpenAPI. Budget accepté en texte décimal uniquement. `HEAD /api/health`.
+
+**Écarté** : nommer le champ en trop dans le 422. L'ADR 0008 interdit de renvoyer une clé inventée par le client (elle peut contenir une donnée personnelle) ; la demande du plan était une erreur du coordinateur.
+
+**Temporaire** : les routeurs acceptent encore une liste d'adresses bloquées absente, le temps que l'étape 3b la branche ; ce cas sera retiré ensuite.
+
+**Rouge** : `3 failed, 2 passed` sur les plafonds et le budget (`PlafondAtteintError` non traduite, `assert 201 == 422`) ; les autres tests échouaient à l'import des middlewares absents.
+**Vert** (`just verifier`, coordinateur) : `911 passed`, couverture 100 %, 8 contrats tenus, `458` tests frontend.
+
+## Étape 3c – Hôtes acceptés (`dev-api`, Sonnet, effort moyen)
+
+`MiddlewareHotesAcceptes(app, hotes)` dans `shared/api/hotes_acceptes.py` : un `Host` absent ou hors liste reçoit un 400 au format RFC 9457 (« Hôte non reconnu. », sans recopier l'hôte). Il remplace `TrustedHostMiddleware` de Starlette, qui répond en texte brut (contraire à l'ADR 0008). Comparaison sans le port et sans la casse ; le démarrage (`lifespan`) passe.
+
+**Ordre d'empilement retenu**, de l'extérieur vers l'intérieur : en-têtes de sécurité, hôtes, taille, blocage, débit.
+
+**Rouge** : `ModuleNotFoundError: app.shared.api.hotes_acceptes`. **Vert** (`just verifier`, coordinateur) : `922 passed`, couverture 100 %.
+
+## Étape 3b – Branchement dans la composition (`dev-donnees`, Sonnet, effort élevé)
+
+**Livré** : `composition/protections.py` crée une seule fois par application le limiteur et la liste d'adresses bloquées, et empile les middlewares (de l'extérieur vers l'intérieur : en-têtes, hôtes, taille, blocage, débit). `main.py` : documentation et `openapi.json` seulement si `documentation_exposee`, pas de redirection de la barre oblique finale, routeur des pièges à la racine, liste passée aux routeurs. `Parametres` gagne `ecritures_par_minute` et `lectures_par_minute`, par défaut égaux aux décisions du propriétaire (20 et 120) ; seuls les tests les relèvent.
+
+**Tests** : la fixture `client` relève les seuils et expose la documentation ; la nouvelle fixture `client_protege` garde les réglages de production. `test_protections_application.py` et `test_protections_enveloppe.py` prouvent chaque protection sur l'application réelle. `test_champ_piege_routes.py` est supprimé : il montait les routeurs à la main, ses cas sont repris sur l'application réelle.
+
+**Rouge** : `12 failed, 5 passed` (`openapi.json` en 200, `/api/chantiers/` en 307, 201 au lieu de 429 ou 403, ni 413 ni 400). **Vert** (`just verifier`, coordinateur) : `943 passed`, couverture 100 %. `just client` produit toujours le schéma complet.
+
+**À suivre** : `just e2e` demande `CHANTIER_ECRITURES_PAR_MINUTE` et `CHANTIER_LECTURES_PAR_MINUTE` relevés dans la configuration Playwright (étape 4) ; `deploy/` doit définir `CHANTIER_HOTES_ACCEPTES` (étape 5) ; le paramètre temporaire des routeurs devient obligatoire (`dev-api`).
+
+## Étape 4 – Frontend (`dev-frontend`, Sonnet, effort élevé)
+
+**Livré** (`frontend/` seulement) : client régénéré (`just client`) ; nouveau composant `ui/ChampPiege`, caché visuellement (`sr-only`, pour qu'un robot le voie et le remplisse), `aria-hidden`, hors tabulation, sans libellé ; branché dans les formulaires de chantier et d'étape, `site_web` n'est envoyé que s'il est rempli (jamais par un humain). Le budget partait déjà en texte (prouvé par un test). `erreurApi` affiche le détail de l'API, avec un message de repli par statut (413, 429) quand la réponse n'en a pas. Configuration Playwright : seuils relevés pour les parcours e2e.
+
+**Rouge** : composant absent (`Failed to resolve import "./ChampPiege"`), repli 413/429 absent, `site_web` non transmis, champ piège absent des pages.
+**Vert** (coordinateur) : `just verifier` vert, `488` tests frontend, couverture 99,76 % ; `just e2e` : `36 passed` à 360 et 1280 px.
+
+**Non testé** : la navigation au clavier réelle (pas de `user-event` installé) ; elle repose sur `tabindex=-1`, vérifié par test.
+
+## Étape 5 – Déploiement et copie locale alignés (`dev-socle`, Sonnet, effort élevé)
+
+**Livré** (`deploy/`, plus un test d'alignement) : `deploy/protections.caddy` décrit tout ce que le proxy applique (compression, en-têtes, retrait de `Server` et `Via`, documentation en 404, corps limité à 64 Ko, pièges envoyés à l'API) ; `Caddyfile.local` l'importe, `Caddyfile.extrait` (bloc du serveur) en garde une copie. `backend/tests/architecture/test_caddy_deploiement.py` fait échouer `just verifier` si l'extrait diverge, si la liste des pièges diffère de celle de l'API, si le site statique n'a pas les mêmes en-têtes ou si un port est publié en production. Le site statique pose aussi ses en-têtes. uvicorn : `--no-server-header`, `--workers 1` (limiteur en mémoire), `--proxy-headers --forwarded-allow-ips "*"` : sûr parce que le port 8000 n'est publié nulle part et que Caddy ignore par défaut les `X-Forwarded-*` reçus des clients. `CHANTIER_HOTES_ACCEPTES` défini en production et en local. README : procédure de mise en ligne et de test local.
+
+**Vérifié sur la copie locale** (puis `down -v`) : en-têtes présents et aucun nom de logiciel ; documentation en 404 ; 71 Ko → 413 ; `/api/chantiers/` → 404 sans redirection ; après `GET /wp-admin`, écriture → 403 même avec un `X-Forwarded-For` falsifié, lecture → 200, et une autre adresse peut toujours écrire ; CSP sans violation dans Chromium.
+
+**Vert** (`just verifier`, coordinateur) : `948 passed`, couverture 100 %, `488` tests frontend. Aucun conteneur ni volume `chantier` restant.
+
+## Étape 6 – Test de bout en bout du champ piège (`dev-frontend`, Sonnet, effort élevé)
+
+**Livré** : `frontend/e2e/protections.spec.ts`, joué à 360 et 1280 px, sur la création de chantier et l'ajout d'étape. Un tour complet au clavier ne pose jamais le focus sur le champ piège ; il est absent de l'arbre d'accessibilité et ne prend pas de place ; un humain qui envoie le formulaire crée bien l'objet, sans `site_web` dans la requête.
+
+**Rouge** : sur une copie volontairement dégradée du champ (rendu tabulable, puis visible et libellé), le test échoue (« le focus s'est posé sur le champ piège au pas 15 », puis `toHaveCount(0)` reçu 1). **Vert** : `just e2e` `44 passed`, `just verifier` vert.
+
+**Instabilité constatée** (coordinateur, trois passages de `just e2e` en local : vert, 1 échec, vert) : deux tests anciens échouent parfois, sur des délais d'affichage (`robustesse` : le formulaire d'étape se vide après le premier ajout alors que le second titre est déjà saisi ; `parcours` : bouton attendu plus de 30 s). La CI rejoue deux fois les tests e2e, ce qui masque ces échecs. Le premier cas est un vrai défaut d'ergonomie antérieur au lot (la remise à zéro du formulaire arrive après l'affichage de l'étape) : il devient une issue.
+
+## Corrections après vérification
+
+Le propriétaire a validé, le 2026-11-24, les corrections des constats importants de `revue`, `conformite` et `securite`, le plafond de 20 transitions par étape, le piège `/.git/…` et l'ADR 0016. Les constats mineurs deviennent des issues (label `relecture`).
+
+### ADR 0016 et règles (coordinateur)
+`docs/decisions/0016-protections-de-la-demo-publique.md` et son index ; renvois du code corrigés (ADR 0015 → 0016) ; règles 01 (`unicodedata`), 04 (middlewares, 409 plafond, 400/403/413/429), 06 (`shared/api`) et 09 (« Comment vérifier »). Commit `d6fc693`.
+
+### Adresse réelle du visiteur (`dev-socle`, Sonnet, effort élevé)
+`header_up X-Forwarded-For {remote_host}` dans les deux `reverse_proxy` vers l'API (`protections.caddy`, `Caddyfile.extrait`), vérification IPv4/IPv6 ajoutée à la procédure de mise en ligne. `caddy validate` passe sur les deux fichiers.
+- Rouge : `test_le_proxy_force_l_adresse_du_client_pour_l_api` → `AssertionError: protections.caddy`, `assert [[], []] == []` (aucun `header_up`).
+- Vert : `tests/architecture/test_caddy_deploiement.py` → 7 passed.
+- Commit `661cd29`.
+
+### Plafond de transitions (`dev-metier`, Opus, effort élevé)
+`LIMITE_TRANSITIONS_PAR_ETAPE = 20`, vérifié une fois dans `ChangerStatutEtape`, après le chargement et la version, avant toute écriture, avec `len(etape.historique)` (aucun port modifié). `tests/application/etapes/test_plafond_transitions.py` (8 tests).
+- Rouge : `Failed: DID NOT RAISE PlafondAtteintError` sur les 4 actions (4 failed, 4 passed).
+- Vert : `just verifier-back` → 958 passed, couverture 100 %.
+
+### Créations sous le même verrou (`dev-donnees`, Sonnet, effort élevé)
+`creer_moteur` ouvre chaque transaction par `BEGIN IMMEDIATE` (`isolation_level=None` côté pilote, écouteur `begin`, méthode de la documentation SQLAlchemy pour pysqlite) : le comptage d'un plafond et l'écriture se font sous le même verrou. Un verrou tenu plus de 5 s donne toujours une 503. `test_plafond_concurrent.py` (12 créations simultanées depuis 99 chantiers, moteur à délai d'attente de 30 s pour ne prouver que le plafond) ; `test_une_creation_pendant_qu_un_autre_ecrit_donne_un_503_apres_l_attente` ; le test du conflit de version est réécrit, car deux transactions imbriquées dans un même fil sont désormais impossibles (même propriété vérifiée : verrou optimiste par version).
+- Rouge : `assert 111 == 100` (111, 111, 104, 111, 111, puis 111, 111, 111, 110, 111, 111 chantiers).
+- Vert : 20 lancements consécutifs, 3,06 s au plus ; `just verifier-back` → 960 passed, couverture 100 %.
+- À retenir pour le retour de PostgreSQL (ADR 0007) : réserver l'écouteur au dialecte SQLite.
+
+### Pièges réservés aux robots, `/.git` piégé, erreurs documentées (`dev-api`, Sonnet, effort moyen ; Caddy : `dev-socle`)
+- Une fausse adresse ne bloque que si `Sec-Fetch-Site` est absent ; le champ piège n'est examiné que pour un `Content-Type` JSON (paramètres et casse ignorés). `CHEMINS_PIEGES` contient `/.git` au lieu de `/.git/config`, et la ligne `@pieges` de `protections.caddy` et `Caddyfile.extrait` suit (`caddy validate` passe). Commit `8c8c4e9`.
+  - Rouges : `test_un_piege_touche_par_un_navigateur_repond_404_sans_bloquer` (adresse bloquée), `test_tout_chemin_sous_git_est_un_piege` (adresse non bloquée), `test_un_corps_qui_n_est_pas_du_json_n_est_jamais_une_raison_de_bloquer` (403 au lieu de 422) ; puis `test_les_fausses_adresses_du_proxy_sont_celles_de_l_api` rouge tant que le Caddy n'était pas aligné.
+  - Couverture : `champ_piege.py` 79-80 n'était plus couvert ; `test_un_corps_json_illisible_est_refuse_en_422_sans_bloquer` ajouté.
+- 413 (trois `POST`) et 429 avec `Retry-After` (toutes les routes limitées, pas `/api/health`) dans OpenAPI ; descriptions des 400 et 403 à jour. Rouge : 413 et 429 absents du schéma. Commit `1309b8f`.
+- Vert : `just verifier-back` → 983 passed, couverture 100 %.
+
+### Constats mineurs
+Issues #47 à #59 (label `relecture`), créées par `backlog` (Sonnet, effort faible).
+
+### Client API régénéré (`dev-frontend`, Sonnet, effort élevé)
+`just client` : 429 sur les 8 routes limitées, 413 sur les 3 `POST`, descriptions des 400 et 403 ; aucun schéma de données changé, aucun autre fichier du frontend touché (`erreurApi.ts` couvrait déjà 413 et 429).
+- Vert : `just verifier` → 983 tests backend, 488 tests frontend ; `just e2e` → 44 passed, sans relance.
+
+## Second passage des vérificateurs
+
+- **conformite** : conforme ; trois renvois à l'ADR 0015 oubliés, corrigés (`6bb8163`).
+- **revue** : une étape pouvait rester bloquée à vie « À valider » au plafond de transitions. Décision du propriétaire : la validation reste toujours possible. Mineurs en issues #60 à #62.
+- **securite** : les limites se contournaient en IPv6 (issue #47, devenue importante : la démo est joignable en IPv6) ; le champ piège ignorait `application/…+json`.
+
+### Validation exemptée du plafond (`dev-metier`, Opus, effort élevé)
+`mene_a_un_statut_final(action)` dans le domaine, déduite de la table des transitions ; `ChangerStatutEtape` n'applique pas le plafond à une telle action. ADR 0016 complété (historique borné à 21 entrées). Commit `14ae3ff`.
+- Rouge : `PlafondAtteintError` levée pour `test_au_plafond_le_chef_peut_encore_valider` et `test_au_plafond_l_ouvrier_ne_peut_toujours_pas_valider` (2 failed, 7 passed).
+- Vert : `tests/domain tests/application` → 468 passed.
+
+### IPv6 par bloc /64, champ piège `+json` (`dev-api`, Sonnet, effort moyen)
+`cle_du_client` (ex-`adresse_du_client`) : IPv4 exacte, IPv6 → /64, IPv4 encapsulée → IPv4 ; champ piège examiné selon le critère JSON de FastAPI. `test_protections_par_prefixe.py` (10 tests), cas `+json` dans `test_champ_piege_api.py`. ADR 0016 complété. Commit `cf4475a`, qui ferme #47.
+- Rouge : 4 tests de préfixe (clé = adresse exacte) et 2 tests `+json` (200 au lieu de 403).
+- Vert : `just verifier-back` → 1001 passed, couverture 100 %.
+
+## Troisième passage des vérificateurs
+
+- **revue** : « lot conforme ». Mineur en issue #65 (test de `mene_a_un_statut_final` qui ne distingue pas `all` de `any`).
+- **securite** : « aucun risque bloquant ». Mineurs en issues #63 (bloc IPv6 plus large qu'un /64) et #64 (zone IPv6 contenant `/`).
+
+## Test d'intrusion local (`pentest`, Opus, effort élevé)
+
+2026-11-25, mode local, cible unique la copie locale (réglages de production) ; ZAP 2.17.0 épinglé par digest et `curl`, sans nuclei (image non épinglée). Environ 1 000 requêtes, aucune 5xx. Rapport et journal dans `pentest-rapports/2026-11-25-local/` (ignoré par git). Copie locale arrêtée par `down -v`.
+- **Verdict** : aucun constat bloquant ni important. Les constats M1 à M4, I1 et I2 du 2026-11-24 sont corrigés.
+- Protections du lot vérifiées sur l'application qui tourne : 429 dès la 19e écriture avec `Retry-After`, `X-Forwarded-For` inventé ignoré, blocage d'une heure après un piège sans `Sec-Fetch-Site` et aucun blocage avec, champ piège `text/plain` ignoré, 413, hôte inconnu en 400, plafonds 100 / 30 / 20 en 409 avec validation toujours possible, documentation fermée.
+- Constats mineurs et informatifs en issues (label `securite`) : #66 (erreurs du proxy sans en-têtes ni `problem+json`), #67 (casse des chemins pièges), #68 (champ piège décrit dans le schéma public), #69 (détails restés du 2026-11-24) ; écart de taille confirmé dans #50.
+
+## Clôture
+
+- **Définition de « terminé »** :
+  - CI verte sur `dev` (Backend, Frontend avec l'e2e, Hooks git, Sécurité) ;
+  - code relu par `revue`, `conformite` et `securite` contre les règles des couches touchées ;
+  - couverture backend 100 %, frontend au-dessus de 90 % ; le score de mutation n'est pas encore mesuré (phase 2) ;
+  - décisions dans l'ADR 0016 ; `CLAUDE.md`, `docs/plan/README.md` et `squelette.md` à jour.
+- Aucun critère d'`intent.md` §5 n'est rattaché à ce lot : il protège la démo du squelette.
+- **Mise en ligne** : étape séparée, avec l'accord du propriétaire pour chaque commande sur le serveur (`deploy/README.md`) ; le bloc `Caddyfile.extrait` du serveur change (adresse imposée, `/.git`).

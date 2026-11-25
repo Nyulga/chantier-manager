@@ -11,6 +11,8 @@ from app.composition.parametres import Parametres
 from app.main import creer_application
 from tests.conftest import url_sqlite
 
+HOTE_DE_TEST = "testserver"
+SEUIL_LARGE = 100_000
 CHEF = {"X-Profil": "chef"}
 OUVRIER = {"X-Profil": "ouvrier"}
 
@@ -24,9 +26,36 @@ CHANTIER_A_CREER: dict[str, Any] = {
 }
 
 
+def parametres_de_test(dossier: Path, **surcharges: Any) -> Parametres:
+    """Paramètres d'une application de test : base jetable, hôte du `TestClient`.
+
+    Le `TestClient` s'adresse à l'hôte `testserver`, que les paramètres par défaut (hôtes
+    locaux seulement) refusent en 400. Les surcharges permettent à un test de changer
+    le reste.
+    """
+    base: dict[str, Any] = {"url_base": url_sqlite(dossier), "hotes_acceptes": [HOTE_DE_TEST]}
+    return Parametres(**{**base, **surcharges})
+
+
 @pytest.fixture
 def client(tmp_path: Path) -> Iterator[TestClient]:
-    """Client de l'application complète ; le démarrage applique les migrations sur la base vide."""
-    application = creer_application(Parametres(url_base=url_sqlite(tmp_path)))
-    with TestClient(application) as client_http:
+    """Client de l'application complète ; le démarrage applique les migrations sur la base vide.
+
+    La documentation OpenAPI est ouverte, car des tests la lisent, et les seuils de débit
+    sont relevés : certains tests écrivent des centaines de fois depuis la même adresse.
+    """
+    parametres = parametres_de_test(
+        tmp_path,
+        documentation_exposee=True,
+        ecritures_par_minute=SEUIL_LARGE,
+        lectures_par_minute=SEUIL_LARGE,
+    )
+    with TestClient(creer_application(parametres)) as client_http:
+        yield client_http
+
+
+@pytest.fixture
+def client_protege(tmp_path: Path) -> Iterator[TestClient]:
+    """Client de l'application telle qu'en production : seuils, documentation fermée."""
+    with TestClient(creer_application(parametres_de_test(tmp_path))) as client_http:
         yield client_http

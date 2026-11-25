@@ -2,7 +2,7 @@
 
 from http import HTTPStatus
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 
 from app.shared.api.schemas import ReponseSante
 
@@ -17,3 +17,9 @@ def lire_sante() -> ReponseSante:
     redémarrer l'API pour rien.
     """
     return ReponseSante(statut="ok")
+
+
+@routeur.head("/health", status_code=HTTPStatus.OK, include_in_schema=False)
+def lire_sante_sans_corps() -> Response:
+    """Répond 200 sans corps : certaines sondes (proxy, supervision) testent en `HEAD`."""
+    return Response(status_code=HTTPStatus.OK)

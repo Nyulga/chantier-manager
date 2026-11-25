@@ -47,8 +47,8 @@ export function PageEtapesChantier() {
         <FormulaireAjoutEtape
           enCours={ajout.isPending}
           erreur={ajout.error}
-          onAjouter={(titre, apresSucces) => {
-            ajout.mutate(titre, { onSuccess: apresSucces });
+          onAjouter={(saisie, apresSucces) => {
+            ajout.mutate(saisie, { onSuccess: apresSucces });
           }}
         />
       )}

@@ -1,0 +1,59 @@
+# Protections du proxy : l'unique description de ce que le proxy applique devant l'application.
+#
+# Ce fichier est importé tel quel par `Caddyfile.local` (la copie locale). Le Caddy du serveur
+# ne peut pas l'importer, car il n'a pas accès au dépôt : son bloc, `Caddyfile.extrait`, en
+# contient une copie, et `backend/tests/architecture/test_caddy_deploiement.py` échoue si les
+# deux divergent. Toute modification se fait ici, puis se recopie dans `Caddyfile.extrait`.
+encode zstd gzip
+
+header {
+	Strict-Transport-Security "max-age=31536000"
+	X-Content-Type-Options nosniff
+	X-Frame-Options DENY
+	Referrer-Policy strict-origin-when-cross-origin
+	# Politique de contenu stricte : tout vient du site lui-même (polices auto-hébergées).
+	Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+	Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+	Cross-Origin-Opener-Policy same-origin
+	# Ni le proxy ni les serveurs derrière lui ne doivent annoncer leur logiciel.
+	-Server
+	-Via
+}
+
+# Fausses adresses que seuls les robots demandent. Elles vont à l'API (et non au site, qui
+# répondrait par sa page d'accueil) : elle répond 404 et bloque l'adresse en écriture.
+# Cette liste doit rester celle de `app/shared/api/pieges.py` (le même test le vérifie).
+@pieges path /wp-admin /wp-admin/* /wp-login.php /wp-login.php/* /.env /.env/* /.git /.git/* /phpmyadmin /phpmyadmin/* /xmlrpc.php /xmlrpc.php/*
+handle @pieges {
+	reverse_proxy chantier-api:8000 {
+		# Adresse réelle du visiteur, imposée ici : la limite de débit et le blocage de
+		# l'API comptent par adresse. Sans cette ligne, la valeur dépendrait de la
+		# configuration globale du Caddy (`trusted_proxies`) et un visiteur pourrait
+		# changer d'adresse à chaque requête (ADR 0016).
+		header_up X-Forwarded-For {remote_host}
+	}
+}
+
+handle /api/* {
+	# La documentation de l'API n'est pas exposée en production : le client TypeScript
+	# est généré au build, et la page Swagger chargerait des scripts externes.
+	@documentation path /api/docs* /api/openapi.json /api/redoc*
+	respond @documentation 404
+
+	# Les requêtes de l'API sont de petits JSON : on refuse tout corps plus gros,
+	# avant qu'il ne soit lu en mémoire par l'application.
+	request_body {
+		max_size 64KB
+	}
+	reverse_proxy chantier-api:8000 {
+		# Adresse réelle du visiteur, imposée ici : la limite de débit et le blocage de
+		# l'API comptent par adresse. Sans cette ligne, la valeur dépendrait de la
+		# configuration globale du Caddy (`trusted_proxies`) et un visiteur pourrait
+		# changer d'adresse à chaque requête (ADR 0016).
+		header_up X-Forwarded-For {remote_host}
+	}
+}
+
+handle {
+	reverse_proxy chantier-web:8080
+}

@@ -104,6 +104,24 @@ def actions_permises(statut: StatutEtape, role: Role) -> tuple[ActionEtape, ...]
     )
 
 
+def mene_a_un_statut_final(action: ActionEtape) -> bool:
+    """Dit si cette action ne mène qu'à des statuts finaux, d'où ne part aucune transition.
+
+    Le caractère final d'un statut se lit dans la table, et n'est pas écrit à part :
+    si une transition partait un jour de « Validée », ce statut cesserait d'être final
+    sans autre modification. Une telle action ne peut pas être répétée sur une même
+    étape, puisque rien ne permet d'en repartir : aujourd'hui, seule la validation est
+    dans ce cas. Une action absente de la table n'est jamais applicable, quelle que
+    soit la réponse donnée ici.
+    """
+    departs = {depart for depart, _ in TRANSITIONS}
+    return all(
+        transition.arrivee not in departs
+        for (_, action_de_la_ligne), transition in TRANSITIONS.items()
+        if action_de_la_ligne is action
+    )
+
+
 def lire_action(nom: str) -> ActionEtape:
     """Convertit le nom reçu de l'extérieur en action du cycle.
 

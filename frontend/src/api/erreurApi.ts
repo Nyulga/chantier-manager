@@ -4,6 +4,16 @@ import type { components } from './schema';
 /** Message affiché quand l'API ne donne pas de détail exploitable. */
 export const MESSAGE_ERREUR_PAR_DEFAUT = 'Une erreur est survenue. Réessaie dans un instant.';
 
+/**
+ * Messages de repli, par statut, pour les refus dont la réponse n'a pas de détail exploitable :
+ * le proxy (Caddy) ou un pare-feu répond parfois à la place de l'API, sans corps `problem+json`.
+ * Quand l'API a répondu, c'est toujours son `detail` qui s'affiche.
+ */
+const MESSAGES_PAR_STATUT: Readonly<Record<number, string>> = {
+  413: 'Ta demande est trop volumineuse.',
+  429: 'Trop de demandes. Réessaie dans quelques instants.',
+};
+
 /** Statut HTTP d'une ressource que l'API ne connaît pas (ou que l'acteur n'a pas le droit de voir). */
 const STATUT_INTROUVABLE = 404;
 
@@ -64,6 +74,13 @@ declare module '@tanstack/react-query' {
   }
 }
 
+/** Message à afficher quand la réponse n'a pas de détail : celui du statut s'il en a un, sinon le neutre. */
+function messageParDefaut(statut: number | undefined): string {
+  return (
+    (statut === undefined ? undefined : MESSAGES_PAR_STATUT[statut]) ?? MESSAGE_ERREUR_PAR_DEFAUT
+  );
+}
+
 function estErreurChamp(valeur: unknown): valeur is ErreurChamp {
   return (
     typeof valeur === 'object' &&
@@ -80,16 +97,18 @@ function estErreurChamp(valeur: unknown): valeur is ErreurChamp {
  *
  * Le `detail` est écrit en français par l'API pour être montré tel quel à l'utilisateur. Le corps
  * n'est pas typé par OpenAPI : on le lit avec prudence, et on retombe sur un message neutre si
- * le détail manque ou n'est pas un texte (par exemple une erreur de proxy sans corps). Les
+ * le détail manque ou n'est pas un texte (par exemple une erreur de proxy sans corps), propre au
+ * statut pour un 413 ou un 429. Les
  * entrées de `erreurs` mal formées sont ignorées.
  */
 export function erreurApi(corps: unknown, statut?: number): ErreurApi {
+  const messageDeRepli = messageParDefaut(statut);
   if (typeof corps !== 'object' || corps === null) {
-    return new ErreurApi(MESSAGE_ERREUR_PAR_DEFAUT, statut);
+    return new ErreurApi(messageDeRepli, statut);
   }
   const detail = 'detail' in corps && typeof corps.detail === 'string' ? corps.detail : undefined;
   const erreurs = 'erreurs' in corps && Array.isArray(corps.erreurs) ? corps.erreurs : [];
-  return new ErreurApi(detail ?? MESSAGE_ERREUR_PAR_DEFAUT, statut, erreurs.filter(estErreurChamp));
+  return new ErreurApi(detail ?? messageDeRepli, statut, erreurs.filter(estErreurChamp));
 }
 
 /**

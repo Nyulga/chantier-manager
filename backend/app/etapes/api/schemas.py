@@ -12,6 +12,7 @@ from app.etapes.application.valeurs_publiques import (
     VERSION_INITIALE,
     Role,
 )
+from app.shared.api.champ_piege import ChampPiege
 from app.shared.api.schemas import CONFIG_ENTREE, CONFIG_SORTIE
 
 # Les valeurs du cycle d'une étape, telles que l'API les expose : elles typent le
@@ -23,7 +24,7 @@ StatutReponse = Literal["a_faire", "en_cours", "terminee_a_valider", "validee"]
 ActionEtape = Literal["demarrer", "signaler_terminee", "valider", "refuser"]
 
 
-class AjouterEtapeRequete(BaseModel):
+class AjouterEtapeRequete(ChampPiege):
     """Corps de l'ajout d'une étape en fin de liste."""
 
     model_config = CONFIG_ENTREE

@@ -18,6 +18,8 @@ from tests.integration.etapes.scenario import (
 LIMITE_PAR_DEFAUT = 10
 # Le plafond de la liste « À valider » fixé par la couche application (`LIMITE_A_VALIDER`).
 LIMITE_A_VALIDER = 50
+# Le plafond d'étapes par chantier de la démo (`LIMITE_ETAPES_PAR_CHANTIER`).
+ETAPES_PAR_CHANTIER = 30
 VERSION_APRES_SIGNALEMENT = 3
 ETAPES_POUR_DEPASSER_LA_LIMITE = 6
 ECHEANCE_LOINTAINE = {**CHANTIER_A_CREER, "echeance": "2999-12-31"}
@@ -39,9 +41,15 @@ def activite(client: TestClient, parametres: dict[str, int] | None = None) -> li
 
 
 def etapes_signalees_dans_l_ordre(client: TestClient, nombre: int) -> list[str]:
-    """Crée `nombre` étapes sur un chantier, et les signale terminées dans l'ordre de création."""
-    chantier_id = creer_chantier(client)
-    etapes = [ajouter_etape(client, chantier_id) for _ in range(nombre)]
+    """Crée `nombre` étapes, et les signale terminées dans l'ordre de création.
+
+    Un chantier ne peut pas avoir plus de `ETAPES_PAR_CHANTIER` étapes : les étapes sont
+    donc réparties sur autant de chantiers qu'il en faut, créés au fur et à mesure.
+    """
+    chantiers = [creer_chantier(client) for _ in range(0, nombre, ETAPES_PAR_CHANTIER)]
+    etapes = [
+        ajouter_etape(client, chantiers[rang // ETAPES_PAR_CHANTIER]) for rang in range(nombre)
+    ]
     for etape_id in etapes:
         signaler_terminee(client, etape_id)
     return etapes

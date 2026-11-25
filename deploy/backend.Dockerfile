@@ -59,4 +59,22 @@ VOLUME /donnees
 USER chantier
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:creer_application", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+# Options d'uvicorn, une par ligne pour que chacune garde son explication :
+# - `--no-server-header` : la réponse ne nomme pas le serveur (constat I1 du test d'intrusion) ;
+# - `--workers 1` : le limiteur de débit et la liste des adresses bloquées vivent en mémoire du
+#   processus (ADR 0016). Avec deux processus, chacun compterait de son côté et les limites
+#   seraient doublées ; la base SQLite n'admet de toute façon qu'un seul écrivain ;
+# - `--proxy-headers` : l'adresse du client est celle que le proxy a mise dans `X-Forwarded-For`
+#   (sans cela, tous les visiteurs auraient l'adresse du proxy et partageraient limites et
+#   blocages) ;
+# - `--forwarded-allow-ips "*"` : uvicorn croit ces en-têtes quel que soit l'émetteur direct.
+#   C'est sûr ici à deux conditions, que `deploy/README.md` rappelle : le port 8000 n'est publié
+#   nulle part, et le seul qui peut le joindre est le proxy, sur le réseau interne
+#   `chantier-interne` (fermé à Internet, trois membres). Le proxy remplace `X-Forwarded-For`
+#   par l'adresse réelle de la connexion, il ne prolonge jamais celui du client. L'adresse du
+#   proxy n'est pas fixée à l'avance (l'autre projet qui héberge le Caddy du serveur le rattache
+#   au réseau avec une adresse que Docker attribue), d'où l'étoile plutôt qu'une liste.
+CMD ["uvicorn", "app.main:creer_application", "--factory", \
+     "--host", "0.0.0.0", "--port", "8000", \
+     "--no-server-header", "--workers", "1", \
+     "--proxy-headers", "--forwarded-allow-ips", "*"]
