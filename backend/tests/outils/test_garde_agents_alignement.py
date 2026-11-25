@@ -50,7 +50,11 @@ def test_les_verificateurs_font_partie_des_agents_sans_ecriture() -> None:
 def test_le_hook_du_projet_surveille_les_outils_de_la_garde_et_bloque_en_cas_de_panne() -> None:
     reglages = json.loads((DEPOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
 
-    (groupe,) = reglages["hooks"]["PreToolUse"]
+    (groupe,) = (
+        groupe
+        for groupe in reglages["hooks"]["PreToolUse"]
+        if any("garde_agents.py" in hook["command"] for hook in groupe["hooks"])
+    )
     (hook,) = groupe["hooks"]
 
     assert set(groupe["matcher"].split("|")) == OUTILS_SURVEILLES
