@@ -1,6 +1,6 @@
 # Journal du lot S6 – Sécuriser la démo
 
-**Issue** : #45 · **Statut** : en cours depuis le 2026-11-24 · **Plage** : `ee4b35a..`
+**Issue** : #45 · **Statut** : terminé le 2026-11-25 · **Plage** : `ee4b35a..` (clôture)
 
 Le lot fait suite au premier test d'intrusion local (règle 08) et à la demande du propriétaire de protéger la démo publique, où l'écriture est ouverte à tous. Le plan a été validé par le propriétaire le 2026-11-24.
 
@@ -161,3 +161,25 @@ Issues #47 à #59 (label `relecture`), créées par `backlog` (Sonnet, effort fa
 `cle_du_client` (ex-`adresse_du_client`) : IPv4 exacte, IPv6 → /64, IPv4 encapsulée → IPv4 ; champ piège examiné selon le critère JSON de FastAPI. `test_protections_par_prefixe.py` (10 tests), cas `+json` dans `test_champ_piege_api.py`. ADR 0016 complété. Commit `cf4475a`, qui ferme #47.
 - Rouge : 4 tests de préfixe (clé = adresse exacte) et 2 tests `+json` (200 au lieu de 403).
 - Vert : `just verifier-back` → 1001 passed, couverture 100 %.
+
+## Troisième passage des vérificateurs
+
+- **revue** : « lot conforme ». Mineur en issue #65 (test de `mene_a_un_statut_final` qui ne distingue pas `all` de `any`).
+- **securite** : « aucun risque bloquant ». Mineurs en issues #63 (bloc IPv6 plus large qu'un /64) et #64 (zone IPv6 contenant `/`).
+
+## Test d'intrusion local (`pentest`, Opus, effort élevé)
+
+2026-11-25, mode local, cible unique la copie locale (réglages de production) ; ZAP 2.17.0 épinglé par digest et `curl`, sans nuclei (image non épinglée). Environ 1 000 requêtes, aucune 5xx. Rapport et journal dans `pentest-rapports/2026-11-25-local/` (ignoré par git). Copie locale arrêtée par `down -v`.
+- **Verdict** : aucun constat bloquant ni important. Les constats M1 à M4, I1 et I2 du 2026-11-24 sont corrigés.
+- Protections du lot vérifiées sur l'application qui tourne : 429 dès la 19e écriture avec `Retry-After`, `X-Forwarded-For` inventé ignoré, blocage d'une heure après un piège sans `Sec-Fetch-Site` et aucun blocage avec, champ piège `text/plain` ignoré, 413, hôte inconnu en 400, plafonds 100 / 30 / 20 en 409 avec validation toujours possible, documentation fermée.
+- Constats mineurs et informatifs en issues (label `securite`) : #66 (erreurs du proxy sans en-têtes ni `problem+json`), #67 (casse des chemins pièges), #68 (champ piège décrit dans le schéma public), #69 (détails restés du 2026-11-24) ; écart de taille confirmé dans #50.
+
+## Clôture
+
+- **Définition de « terminé »** :
+  - CI verte sur `dev` (Backend, Frontend avec l'e2e, Hooks git, Sécurité) ;
+  - code relu par `revue`, `conformite` et `securite` contre les règles des couches touchées ;
+  - couverture backend 100 %, frontend au-dessus de 90 % ; le score de mutation n'est pas encore mesuré (phase 2) ;
+  - décisions dans l'ADR 0016 ; `CLAUDE.md`, `docs/plan/README.md` et `squelette.md` à jour.
+- Aucun critère d'`intent.md` §5 n'est rattaché à ce lot : il protège la démo du squelette.
+- **Mise en ligne** : étape séparée, avec l'accord du propriétaire pour chaque commande sur le serveur (`deploy/README.md`) ; le bloc `Caddyfile.extrait` du serveur change (adresse imposée, `/.git`).
