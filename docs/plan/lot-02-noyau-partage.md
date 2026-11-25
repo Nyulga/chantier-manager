@@ -5,6 +5,10 @@
 ## Objectif
 Fournir au module `shared` les briques techniques communes, avec leurs ports, leurs implémentations SQL et leurs implémentations mémoire, pour que les lots métier n'aient plus qu'à s'y brancher.
 
+## Déjà livré par le squelette
+- **Livré** (S2, S5, S6) : erreurs au format RFC 9457 (ADR 0008), `UnitOfWork` SQL et mémoire avec leur suite de contrat, horloge, identifiants UUID v7, `Parametres`, en-têtes de sécurité, taille des corps, hôtes acceptés, limite de débit (ADR 0016), sur SQLite (ADR 0007).
+- **Reste** : PostgreSQL (psycopg, testcontainers, suites de contrat et de migration, garde de dialecte du `PRAGMA` et de `BEGIN IMMEDIATE` : #39, #59), `JournalAudit`, CSRF, identifiant de requête, journaux structurés.
+
 ## Prérequis et points à trancher au démarrage
 - Aucun.
 

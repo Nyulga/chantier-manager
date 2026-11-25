@@ -5,6 +5,10 @@
 ## Objectif
 Gérer les chantiers et leurs affectations, avec un cloisonnement strict pour les chefs comme pour les ouvriers.
 
+## Déjà livré par le squelette
+- **Livré** (S2, S4, S6, puis S10 prévu) : création, liste et détail d'un chantier, budget en `Decimal` visible du seul chef, plafonds de la démo, port `FournisseurResumeEtapes`, modification avec verrou de version (S10).
+- **Reste** : affectations, cloisonnement (404), archivage, référence du chantier, pagination et politiques de lecture (#39).
+
 ## Prérequis et points à trancher au démarrage
 - **Format de la référence d'un chantier** (par exemple `CH-2026-014`, comme dans la maquette) : séquence annuelle, ou autre format.
 
