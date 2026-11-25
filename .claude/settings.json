@@ -27,5 +27,19 @@
       "Read(**/.env.local)",
       "Read(~/.claude.json)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -I \"$CLAUDE_PROJECT_DIR/backend/tools/garde_agents.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   }
 }
