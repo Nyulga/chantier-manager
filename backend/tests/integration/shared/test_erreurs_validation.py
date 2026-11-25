@@ -77,10 +77,10 @@ def erreurs_de(corps: dict[str, Any]) -> list[dict[str, str]]:
         ),
         ({**VALIDE, "age": "abc"}, "age", "Ce champ doit être un nombre entier."),
         ({**VALIDE, "age": 12}, "age", "Ce champ doit être supérieur ou égal à 18."),
-        ({**VALIDE, "pointure": 42}, "", "Ce champ n'est pas attendu."),
+        ({**VALIDE, "pointure": 42}, "pointure", "Ce champ n'est pas attendu."),
         (
             {**VALIDE, "adresse": {"code_postal": "69001", "pointure": 42}},
-            "adresse",
+            "adresse.pointure",
             "Ce champ n'est pas attendu.",
         ),
     ],
@@ -172,3 +172,27 @@ def test_une_cle_inventee_par_le_client_n_est_jamais_recopiee_dans_la_reponse(
 
     assert reponse.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert "jean.dupont" not in reponse.text
+
+
+@pytest.mark.parametrize(
+    "corps",
+    [
+        {**VALIDE, "jean@exemple.fr": 1},
+        {**VALIDE, "a" * 65: 1},
+        {**VALIDE, "1inconnu": 1},
+        {**VALIDE, "mon champ": 1},
+    ],
+    ids=["adresse-email", "65-caracteres", "commence-par-un-chiffre", "espace"],
+)
+def test_une_cle_qui_n_a_pas_la_forme_d_un_nom_de_champ_designe_l_objet_qui_la_contient(
+    corps: dict[str, Any],
+) -> None:
+    assert erreurs_de(corps) == [{"champ": "", "message": "Ce champ n'est pas attendu."}]
+
+
+def test_une_cle_de_64_caracteres_a_la_forme_d_un_nom_de_champ() -> None:
+    nom = "a" * 64
+
+    assert erreurs_de({**VALIDE, nom: 1}) == [
+        {"champ": nom, "message": "Ce champ n'est pas attendu."}
+    ]

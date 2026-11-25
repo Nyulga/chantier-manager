@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
@@ -179,3 +180,21 @@ def test_une_table_absente_donne_un_500_et_non_un_503(tmp_path: Path) -> None:
     assert reponse.headers["content-type"] == TYPE_PROBLEME
     assert "chantiers" not in reponse.text
     assert reponse.json()["detail"] == "Une erreur interne est survenue."
+
+
+@pytest.mark.parametrize(
+    ("methode", "chemin", "permises"),
+    [
+        ("delete", "/api/chantiers", {"GET", "POST"}),
+        ("delete", f"/api/chantiers/{UUID(int=1)}/etapes", {"GET", "POST"}),
+        ("get", f"/api/etapes/{UUID(int=1)}/transitions", {"POST"}),
+        ("delete", f"/api/chantiers/{UUID(int=1)}", {"GET"}),
+    ],
+)
+def test_le_405_annonce_les_methodes_de_toutes_les_routes_du_chemin(
+    client: TestClient, methode: str, chemin: str, permises: set[str]
+) -> None:
+    reponse = client.request(methode, chemin, headers=CHEF)
+
+    assert reponse.status_code == HTTPStatus.METHOD_NOT_ALLOWED
+    assert {m.strip() for m in reponse.headers["allow"].split(",")} == permises

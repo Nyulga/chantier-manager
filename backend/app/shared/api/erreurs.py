@@ -16,6 +16,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.shared.api.en_tetes_securite import EN_TETES_SECURITE
 from app.shared.api.erreurs_validation import concerne_le_chemin, erreurs_par_champ
+from app.shared.api.methodes_permises import methodes_permises
 from app.shared.api.schemas import (
     ErreurChampReponse,
     ProblemeReponse,
@@ -158,11 +159,14 @@ async def _traduire_requete_invalide(
     return reponse_validation(MESSAGE_REQUETE_INVALIDE, erreurs_par_champ(erreur))
 
 
-async def _traduire_erreur_http(_requete: Request, erreur: StarletteHTTPException) -> JSONResponse:
-    # Le texte natif est en anglais ; l'en-tête `Allow` d'un 405 est conservé, car le
-    # protocole HTTP l'exige.
+async def _traduire_erreur_http(requete: Request, erreur: StarletteHTTPException) -> JSONResponse:
+    # Le texte natif est en anglais. Le protocole HTTP exige l'en-tête `Allow` d'un 405 ; celui
+    # de Starlette ne cite que la première route du chemin, on le remplace par la liste complète.
     detail = DETAIL_HTTP_PAR_STATUT.get(erreur.status_code, MESSAGE_ERREUR_HTTP)
-    return reponse_probleme(erreur.status_code, detail, erreur.headers)
+    en_tetes = dict(erreur.headers or {})
+    if erreur.status_code == HTTPStatus.METHOD_NOT_ALLOWED:
+        en_tetes["Allow"] = methodes_permises(requete)
+    return reponse_probleme(erreur.status_code, detail, en_tetes)
 
 
 async def _traduire_service_indisponible(

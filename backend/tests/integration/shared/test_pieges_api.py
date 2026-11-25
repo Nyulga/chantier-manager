@@ -7,6 +7,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.shared.api.blocage_ecritures import MiddlewareBlocageEcritures
 from app.shared.api.erreurs import enregistrer_gestionnaires_erreurs
 from app.shared.api.pieges import CHEMINS_PIEGES, creer_routeur_pieges
 from app.shared.infrastructure.adresses_bloquees_memoire import MemoireListeAdressesBloquees
@@ -94,3 +95,42 @@ def test_les_pieges_sont_absents_du_schema_openapi() -> None:
     client, _ = une_application()
 
     assert client.get("/openapi.json").json()["paths"] == {}
+
+
+@pytest.mark.parametrize(
+    "chemin",
+    [
+        "/WP-ADMIN",
+        "/Wp-Login.PHP",
+        "/.ENV",
+        "/.GIT/config",
+        "/.Git/HEAD",
+        "/PhpMyAdmin/index.php",
+        "/XMLRPC.php",
+    ],
+)
+def test_un_piege_en_majuscules_repond_comme_une_adresse_inconnue_et_bloque(chemin: str) -> None:
+    client, liste = une_application()
+    inconnue = client.get("/rien-du-tout")
+
+    reponse = client.get(chemin)
+
+    assert reponse.status_code == HTTPStatus.NOT_FOUND
+    assert reponse.json() == inconnue.json()
+    assert liste.est_bloquee(ADRESSE)
+
+
+def test_un_piege_touche_par_une_adresse_deja_bloquee_garde_la_reponse_d_une_adresse_inconnue() -> (
+    None
+):
+    client, liste = une_application()
+    liste.bloquer(ADRESSE)
+    application = client.app
+    assert isinstance(application, FastAPI)
+    application.add_middleware(MiddlewareBlocageEcritures, liste=liste)
+    inconnue = client.post("/rien-du-tout")
+
+    reponse = client.post("/wp-admin", json={})
+
+    assert reponse.status_code == HTTPStatus.NOT_FOUND
+    assert reponse.json() == inconnue.json()

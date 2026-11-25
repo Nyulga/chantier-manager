@@ -220,10 +220,7 @@ export interface components {
          * @description Corps de l'ajout d'une étape en fin de liste.
          */
         AjouterEtapeRequete: {
-            /**
-             * Site Web
-             * @description Champ piège : ne pas remplir. Il doit rester vide ou absent.
-             */
+            /** Site Web */
             site_web?: string | null;
             /** Titre */
             titre: string;
@@ -328,10 +325,7 @@ export interface components {
             echeance: string;
             /** Nom */
             nom: string;
-            /**
-             * Site Web
-             * @description Champ piège : ne pas remplir. Il doit rester vide ou absent.
-             */
+            /** Site Web */
             site_web?: string | null;
         };
         /**
@@ -526,7 +520,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
+            /** @description Action non permise à ce profil, ou écriture refusée par les protections (adresse bloquée). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -596,7 +590,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
+            /** @description Action non permise à ce profil, ou écriture refusée par les protections (adresse bloquée). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -688,7 +682,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
+            /** @description Action non permise à ce profil, ou écriture refusée par les protections (adresse bloquée). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -787,7 +781,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
+            /** @description Action non permise à ce profil, ou écriture refusée par les protections (adresse bloquée). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -877,7 +871,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
+            /** @description Action non permise à ce profil, ou écriture refusée par les protections (adresse bloquée). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -971,7 +965,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
+            /** @description Action non permise à ce profil, ou écriture refusée par les protections (adresse bloquée). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1070,7 +1064,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
+            /** @description Action non permise à ce profil, ou écriture refusée par les protections (adresse bloquée). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1146,7 +1140,7 @@ export interface operations {
                     "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
-            /** @description Action non permise à ce profil, écriture refusée à une adresse bloquée ou champ piège rempli. */
+            /** @description Action non permise à ce profil, ou écriture refusée par les protections (adresse bloquée). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -1229,6 +1223,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReponseSante"];
+                };
+            };
+            /** @description Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemeReponse"];
                 };
             };
         };

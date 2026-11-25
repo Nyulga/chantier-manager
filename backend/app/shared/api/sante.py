@@ -4,12 +4,19 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Response
 
+from app.shared.api.documentation_erreurs import erreurs_documentees
 from app.shared.api.schemas import ReponseSante
 
 routeur = APIRouter(tags=["santé"])
 
 
-@routeur.get("/health", response_model=ReponseSante, status_code=HTTPStatus.OK)
+# Le middleware des noms d'hôte acceptés s'applique aussi à la sonde : il peut répondre 400.
+@routeur.get(
+    "/health",
+    response_model=ReponseSante,
+    status_code=HTTPStatus.OK,
+    responses=erreurs_documentees(HTTPStatus.BAD_REQUEST),
+)
 def lire_sante() -> ReponseSante:
     """Renvoie `{"statut": "ok"}` : elle ne touche ni la base ni aucun service externe.
 

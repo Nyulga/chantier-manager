@@ -138,3 +138,19 @@ def test_les_descriptions_des_400_et_403_couvrent_les_middlewares(client: TestCl
 
     assert "nom d'hôte" in descriptions["400"]
     assert "adresse bloquée" in descriptions["403"]
+
+
+def test_le_schema_openapi_ne_signale_aucun_piege_aux_robots(client: TestClient) -> None:
+    texte = client.get("/api/openapi.json").text.lower()
+
+    assert "piège" not in texte
+    assert "pi\u00e8ge" not in texte
+    assert "piege" not in texte
+
+
+def test_la_transition_d_etape_documente_le_403_du_refus_de_droit(client: TestClient) -> None:
+    operation = schema_openapi(client)["paths"]["/api/etapes/{etape_id}/transitions"]["post"]
+
+    assert operation["responses"]["403"]["content"]["application/json"]["schema"] == {
+        "$ref": PROBLEME
+    }

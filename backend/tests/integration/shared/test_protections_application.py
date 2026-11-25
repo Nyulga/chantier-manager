@@ -12,7 +12,11 @@ from fastapi.testclient import TestClient
 
 from app.main import creer_application
 from app.shared.api.champ_piege import NOM_CHAMP_PIEGE
-from app.shared.application.limites_debit import ECRITURES_PAR_FENETRE, LECTURES_PAR_FENETRE
+from app.shared.application.limites_debit import (
+    ECRITURES_PAR_FENETRE,
+    FACTEUR_BLOC_IPV6_48,
+    LECTURES_PAR_FENETRE,
+)
 from tests.integration.conftest import CHANTIER_A_CREER, CHEF, parametres_de_test
 from tests.integration.etapes.scenario import creer_chantier
 
@@ -95,6 +99,26 @@ def test_les_seuils_du_limiteur_viennent_des_parametres(tmp_path: Path) -> None:
         ]
 
     assert statuts == [HTTPStatus.CREATED, HTTPStatus.CREATED, HTTPStatus.TOO_MANY_REQUESTS]
+
+
+def test_des_blocs_64_differents_d_un_meme_bloc_48_sont_refuses_au_seuil_du_bloc(
+    tmp_path: Path,
+) -> None:
+    seuil_du_bloc = 2 * FACTEUR_BLOC_IPV6_48
+    parametres = parametres_de_test(tmp_path, ecritures_par_minute=2)
+    application = creer_application(parametres)
+    # Un seul /64 différent par requête : aucun n'atteint son propre seuil de 2 écritures.
+    adresses = [f"2001:db8:1:{bloc}::1" for bloc in range(1, seuil_du_bloc + 2)]
+
+    with TestClient(application):
+        statuts = [
+            TestClient(application, client=(adresse, 5000))
+            .post("/api/chantiers", json=CHANTIER_A_CREER, headers=CHEF)
+            .status_code
+            for adresse in adresses
+        ]
+
+    assert statuts == [HTTPStatus.CREATED] * seuil_du_bloc + [HTTPStatus.TOO_MANY_REQUESTS]
 
 
 def test_une_etape_avec_le_champ_piege_rempli_n_est_pas_creee(client_protege: TestClient) -> None:

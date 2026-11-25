@@ -25,16 +25,15 @@ class ChampPiege(BaseModel):
     """Base des schémas d'entrée qui portent le champ piège.
 
     Le champ est déclaré pour que `extra="forbid"` ne le refuse pas en 422 (un 422 ne
-    bloquerait personne), et pour le documenter dans OpenAPI : il ne sert qu'à piéger.
-    Les conversions vers les commandes ne le recopient jamais.
+    bloquerait personne). Il n'a volontairement aucune description dans OpenAPI, qui est
+    public : une description « piège » le signalerait aux robots (issue #68). Cette docstring
+    n'est pas publiée, car chaque schéma d'entrée a la sienne. Les conversions vers les
+    commandes ne recopient jamais ce champ.
     """
 
     model_config = CONFIG_ENTREE
 
-    site_web: str | None = Field(
-        default=None,
-        description="Champ piège : ne pas remplir. Il doit rester vide ou absent.",
-    )
+    site_web: str | None = Field(default=None)
 
 
 def creer_garde_champ_piege(liste: ListeAdressesBloquees) -> Callable[[Request], Awaitable[None]]:

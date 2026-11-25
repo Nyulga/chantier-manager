@@ -5,6 +5,7 @@ Le détail natif de FastAPI est en anglais et recopie la valeur envoyée, qui pe
 l'erreur, dont on tire un message écrit à la main.
 """
 
+import re
 from collections.abc import Mapping
 from typing import Any
 
@@ -20,6 +21,10 @@ IDENTIFIANT = "Ce champ doit être un identifiant valide."
 VALEUR_NON_PERMISE = "Cette valeur n'est pas permise."
 # Type d'erreur de pydantic pour une clé que le schéma n'attend pas (`extra="forbid"`).
 CLE_EN_TROP = "extra_forbidden"
+# Forme d'un nom de champ : lettres ASCII, chiffres et `_`, 64 caractères au plus. Une clé en
+# trop n'est nommée dans la réponse que si elle a cette forme : une saisie libre (une adresse
+# e-mail, un texte) n'y ressemble pas et ne doit jamais être recopiée (voir `_chemin`).
+FORME_NOM_DE_CHAMP = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}")
 
 # Message de chaque type d'erreur de pydantic. Les accolades sont remplies avec le
 # contexte de l'erreur (`max_length`, `ge`…), qui ne contient que des bornes.
@@ -65,8 +70,8 @@ def erreurs_par_champ(erreur: RequestValidationError) -> list[ErreurChampReponse
 
     Une erreur qui ne désigne aucun champ est omise : c'est le cas d'un corps qui
     n'est pas du JSON, dont l'emplacement n'est qu'une position dans le texte. La
-    réponse garde alors son `detail` global. Une clé en trop à la racine du corps
-    est, elle, listée avec un champ vide.
+    réponse garde alors son `detail` global. Une clé en trop qui n'a pas la forme d'un
+    nom de champ est listée avec le chemin de l'objet qui la contient (vide à la racine).
     """
     erreurs = []
     for detail in erreur.errors():
@@ -81,13 +86,15 @@ def _chemin(detail: Mapping[str, Any]) -> str | None:
 
     Renvoie `None` quand l'emplacement ne désigne aucun champ. Pour une clé en trop,
     l'emplacement se termine par la clé inventée par le client : elle peut être
-    n'importe quel texte, une adresse e-mail par exemple. On désigne donc l'objet
-    qui la contient, le chemin vide étant la racine du corps.
+    n'importe quel texte, une adresse e-mail par exemple. Elle n'est recopiée dans le
+    chemin que si elle a la forme d'un nom de champ (`FORME_NOM_DE_CHAMP`), ce qui aide
+    le client à corriger une faute de frappe. Sinon on désigne l'objet qui la contient,
+    le chemin vide étant la racine du corps.
     """
     parties = detail["loc"][1:]
     if not any(isinstance(partie, str) for partie in parties):
         return None
-    if detail["type"] == CLE_EN_TROP:
+    if detail["type"] == CLE_EN_TROP and not FORME_NOM_DE_CHAMP.fullmatch(str(parties[-1])):
         parties = parties[:-1]
     return ".".join(str(partie) for partie in parties)
 

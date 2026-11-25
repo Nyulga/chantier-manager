@@ -29,3 +29,10 @@ def test_le_schema_openapi_decrit_la_route_sante(client: TestClient) -> None:
     schema = client.get("/api/openapi.json").json()
 
     assert "/api/health" in schema["paths"]
+
+
+def test_le_schema_openapi_declare_le_400_de_la_sonde(client: TestClient) -> None:
+    schema = client.get("/api/openapi.json").json()
+
+    reponse = schema["paths"]["/api/health"]["get"]["responses"]["400"]
+    assert "nom d'hôte" in reponse["description"]

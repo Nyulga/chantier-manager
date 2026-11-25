@@ -8,6 +8,9 @@ Les toucher suffit à se désigner comme robot.
 from http import HTTPStatus
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.routing import APIRoute
+from starlette.routing import Match
+from starlette.types import Scope
 
 from app.shared.api.acces_http import cle_du_client
 from app.shared.application.ports import ListeAdressesBloquees
@@ -31,6 +34,32 @@ EN_TETE_NAVIGATEUR = "sec-fetch-site"
 METHODES_PIEGES = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
 
+def est_chemin_piege(chemin: str) -> bool:
+    """Dit si le chemin est un piège ou se trouve sous un piège, sans tenir compte de la casse.
+
+    Un robot essaie `/WP-ADMIN` aussi bien que `/wp-admin` : une variante en majuscules ne doit
+    échapper ni au blocage ni à la limite de débit. Les chemins légitimes (`/api/...`) ne
+    commencent par aucun piège, et `/wp-administrator` n'en est pas un.
+    """
+    minuscules = chemin.lower()
+    return any(
+        minuscules == piege or minuscules.startswith(f"{piege}/") for piege in CHEMINS_PIEGES
+    )
+
+
+class RoutePiege(APIRoute):
+    """Route piège : elle reconnaît son chemin sans tenir compte de la casse.
+
+    Les routes de FastAPI comparent les chemins en tenant compte de la casse. Plutôt que de
+    réécrire l'adresse demandée dans un middleware (qui toucherait toutes les routes), seule
+    la comparaison des pièges est assouplie, ici.
+    """
+
+    def matches(self, scope: Scope) -> tuple[Match, Scope]:
+        """Compare le chemin demandé, mis en minuscules, au chemin de la route."""
+        return super().matches({**scope, "path": scope["path"].lower()})
+
+
 def creer_routeur_pieges(liste: ListeAdressesBloquees) -> APIRouter:
     """Crée le routeur des pièges : chaque chemin, et ses sous-chemins, bloque l'adresse.
 
@@ -41,7 +70,7 @@ def creer_routeur_pieges(liste: ListeAdressesBloquees) -> APIRouter:
     page d'un site tiers (`<img src="https://démo/wp-admin">`) ferait bloquer le visiteur
     qui la consulte, à son insu. Le robot, lui, n'envoie pas `Sec-Fetch-Site` (ADR 0016).
     """
-    routeur = APIRouter(include_in_schema=False)
+    routeur = APIRouter(include_in_schema=False, route_class=RoutePiege)
 
     def piege(requete: Request) -> None:
         if EN_TETE_NAVIGATEUR not in requete.headers:

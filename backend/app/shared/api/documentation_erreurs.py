@@ -8,8 +8,7 @@ from app.shared.api.schemas import ProblemeReponse, ProblemeValidationReponse
 DESCRIPTION_PAR_STATUT: dict[HTTPStatus, str] = {
     HTTPStatus.BAD_REQUEST: "Profil `X-Profil` absent ou inconnu, ou nom d'hôte refusé.",
     HTTPStatus.FORBIDDEN: (
-        "Action non permise à ce profil, écriture refusée à une adresse bloquée "
-        "ou champ piège rempli."
+        "Action non permise à ce profil, ou écriture refusée par les protections (adresse bloquée)."
     ),
     HTTPStatus.NOT_FOUND: "Ressource introuvable, hors du périmètre ou identifiant mal formé.",
     HTTPStatus.CONFLICT: (

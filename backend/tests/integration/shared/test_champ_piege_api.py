@@ -134,10 +134,10 @@ def test_un_corps_json_illisible_est_refuse_en_422_sans_bloquer(contenu: bytes) 
     assert not liste.est_bloquee(ADRESSE)
 
 
-def test_le_champ_piege_est_documente_comme_a_ne_pas_remplir() -> None:
+def test_le_champ_piege_n_a_aucune_description_qui_le_signale_aux_robots() -> None:
     propriete = ChampPiege.model_json_schema()["properties"][NOM_CHAMP_PIEGE]
 
-    assert "ne pas remplir" in propriete["description"].lower()
+    assert "description" not in propriete
 
 
 @pytest.mark.parametrize("type_contenu", ["application/merge-patch+json", "application/vnd.x+json"])
