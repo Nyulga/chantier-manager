@@ -32,12 +32,12 @@
 | **S4 – Tableau de bord** | Page d'accueil de la maquette Balise : « À valider », cartes de chantier avec compteurs et délai, activité récente ; Équipe, Invitation et Recherche affichées « Bientôt » (issue #28, journal `journal/lot-S4.md`) | `dev-metier`, `dev-donnees`, `dev-frontend` | S2 |
 | **S5 – Corrections de relecture** | Constats des issues #17 à #24, #29, #30 et #32 : verrou de version, unicité de l'ordre, erreurs RFC 9457 et 422 par champ, capacités via `/api/moi`, jscpd et pre-commit (issue #38, journal `journal/lot-S5.md`) | `dev-metier`, `dev-donnees`, `dev-frontend`, `dev-socle` | S4 |
 | **S6 – Sécuriser la démo** | Textes sans caractères de contrôle, plafonds de volume (100 chantiers, 30 étapes par chantier), limite de débit par adresse, pièges à robots, protections dans l'application (documentation masquée, taille des corps, en-têtes, hôtes), copie locale alignée sur la production ; plafond de 20 transitions par étape, la validation restant possible (issue #45, journal `journal/lot-S6.md`, ADR 0016) | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend`, `dev-socle`, puis `pentest` | S5 |
-| **S7 – Garde-fous** | Hooks qui gardent chaque sous-agent dans sa couche et interdisent les commandes git (#46) ; contrôle en CI que le client généré est à jour (#43) | `dev-socle` | S6 |
-| **S8 – Protections, la suite** | #49, #50, #60, #63, #64, #66, #67, #68, #69 ; pentest local | `dev-metier`, `dev-api`, `dev-socle`, puis `pentest` | S7 |
-| **S9 – Qualité et ergonomie** | #51 à #58, #61, #62, #65 | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` | S8 |
-| **S10 – Modifier un chantier** | Modification d'un chantier avec verrou de version, réservée au chef ; l'archivage reste au lot 04 | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` | S9 |
-| **S11 – Gérer les étapes** | Modifier, réordonner et supprimer des étapes (chef) | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` | S10 |
-| **S12 – Historique affiché** | Historique de chaque étape : qui (le profil), quoi, quand | `dev-metier`, `dev-api`, `dev-frontend` | S11 |
+| **S7 – Garde-fous** | Hooks qui gardent chaque sous-agent dans sa couche et interdisent les commandes git (#46) ; contrôle en CI que le client généré est à jour (#43) ; issue #71 | `dev-socle` | S6 |
+| **S8 – Protections, la suite** | #49, #50, #60, #63, #64, #66, #67, #68, #69 ; pentest local ; issue #72 | `dev-metier`, `dev-api`, `dev-socle`, puis `pentest` | S7 |
+| **S9 – Qualité et ergonomie** | #51 à #58, #61, #62, #65 ; issue #73 | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` | S8 |
+| **S10 – Modifier un chantier** | Modification d'un chantier avec verrou de version, réservée au chef ; l'archivage reste au lot 04 ; issue #74 | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` | S9 |
+| **S11 – Gérer les étapes** | Modifier, réordonner et supprimer des étapes (chef) ; issue #75 | `dev-metier`, `dev-donnees`, `dev-api`, `dev-frontend` | S10 |
+| **S12 – Historique affiché** | Historique de chaque étape : qui (le profil), quoi, quand ; issue #76 | `dev-metier`, `dev-api`, `dev-frontend` | S11 |
 
 Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `conformite` et `securite`, puis PR proposée.
 
