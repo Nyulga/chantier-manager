@@ -17,9 +17,11 @@ case "$fichier" in
   *.ts|*.tsx|*.js|*.jsx) ;;
   *) exit 0 ;;
 esac
-# Les chemins Windows arrivent avec des `\` : on les compare avec des `/`, casse ignorée.
-projet=$(printf '%s' "${CLAUDE_PROJECT_DIR:-.}" | tr '\\' '/' | tr '[:upper:]' '[:lower:]')
-compare=$(printf '%s' "$fichier" | tr '\\' '/' | tr '[:upper:]' '[:lower:]')
+# Les chemins Windows arrivent avec des `\` : on les compare avec des `/`, casse ignorée, et la
+# forme Git Bash `/c/…` est ramenée à `c:/…`.
+comparable() { printf '%s' "$1" | tr '\\' '/' | tr '[:upper:]' '[:lower:]' | sed -E 's#^/([a-z])/#\1:/#'; }
+projet=$(comparable "${CLAUDE_PROJECT_DIR:-.}")
+compare=$(comparable "$fichier")
 case "$compare" in
   "$projet"/frontend/*) ;;
   *) exit 0 ;;
