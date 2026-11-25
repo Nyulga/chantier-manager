@@ -1,6 +1,6 @@
 # Journal du lot S7 – Garde-fous des agents et du client généré
 
-**Issue** : #71 (sous-issues #46 et #43) · **Statut** : en cours de clôture · **Plage** : `6238860..`
+**Issue** : #71 (sous-issues #46 et #43) · **Statut** : terminé le 2026-11-25 · **Plage** : `6238860..` (clôture)
 
 Pendant le lot S6, un comptage SQL a failli être confié à `dev-metier`, hors de sa couche. Le propriétaire veut que ce genre d'écart soit refusé automatiquement (#46). Le lot ajoute aussi le contrôle du client TypeScript généré (#43). Les choix sont consignés dans l'ADR 0017.
 
@@ -90,4 +90,57 @@ Le chemin de sortie arrive en argument positionnel et n'est plus recopié dans l
 
 ## Vérification, second passage
 
-_À compléter._
+Limité aux corrections (`24d6a8f..e45ca4e`).
+
+| Vérificateur | Bloquant | Important | Mineur |
+|---|---|---|---|
+| `revue` (Opus, élevé) | 0 | 1 (`dev-frontend` peut créer un fichier d'outillage absent des exclusions, par exemple un `vitest.config.ts` sans seuils) | 12 |
+| `conformite` (Sonnet, élevé) | 0 | 2 (un test remplaçait notre propre fonction par un double ; noms des vérificateurs écrits à deux endroits) | 7 |
+| `securite` (Opus, élevé) | 0 | 1 (arguments de `test-back` et `test-front` interprétés par le shell, recettes autorisées sans confirmation : issue #81) | 9 |
+
+Les cinq constats du premier passage sont confirmés corrigés par `revue`, et I1 par `securite`.
+
+## Corrections du second passage
+
+### Garde (coordinateur, TDD) · `0178453`
+
+- `dev-frontend` en liste blanche : `src`, `e2e`, `tests` (hors `garde-fous`), `public` et `index.html` ;
+- `git -c`, `--config-env` et `git grep -O` refusés : ils font lancer un programme même par une commande de lecture ;
+- `backend/tools/__init__.py`, chargé avec la garde, protégé ;
+- noms des vérificateurs et des agents sans écriture définis une seule fois (`tools/garde/agents.py`), test d'alignement par ensembles, fiche sans `tools` comptée comme écrivant ;
+- panne provoquée pour de vrai (pile d'appels réduite et commande imbriquée), sans double de notre propre code (règle 07) ;
+- un test par comportement, commentaires complétés.
+
+**Rouge** : d'abord `ModuleNotFoundError: No module named 'tools.garde.agents'` (3 fichiers de tests), puis, le module créé, `12 failed, 386 passed` : six écritures d'outillage par `dev-frontend` acceptées (`vitest.config.ts`, `.prettierrc`, `pnpm-workspace.yaml`, `.pnpmfile.cjs`, `.jscpd.json`, `node_modules`), et `backend/tools/__init__.py` non protégé pour six agents. Les tests de `git -c` et `grep -O` ont été vus en échec dans le même passage.
+**Vert** : `406 passed` ; ruff, format, mypy et limites de taille sans remarque. Le cas « `git -c` seul accepté » est devenu « `git --version` accepté », puisque `-c` est désormais refusé.
+
+### Recettes de test (`dev-socle`, Sonnet, effort élevé) · `b3fedbd`, ferme #81
+
+Arguments passés en positionnels (`"$@"`), dans une recette à shebang, comme pour `client`.
+- **Rouge** : `just test-back 'tests/outils/test_verifier_tailles.py; echo INJECTE'` lance les 13 tests puis affiche `INJECTE`, code 0 ; même chose pour `test-front`.
+- **Vert** : pytest reçoit le texte comme un seul chemin (`file or directory not found`, code 4) ; `x$(echo INJECTE2)` n'est pas exécuté ; usages normaux intacts (`-k avancement` : 18 tests ; `just test-front chantiers` : 71 tests).
+
+### Hook de lint (hors lot) · `3d79e8a`
+
+Entrée lue en UTF-8 (sous Windows, un « ” » faisait sauter le lint en silence), seul le dossier `frontend/` du projet contrôlé, `--max-warnings 0` comme en CI. Essais : fichier fautif avec « ” » et « ← » → code 2 ; fichier correct → 0 ; `frontend` hors du projet → ignoré.
+
+**`just verifier`** : code 0, `1391 passed`, couverture backend 99,81 %, 8 contrats tenus, `488` tests frontend, « Le client généré est à jour. »
+
+### Constats mineurs en issues (agent `backlog`, Sonnet, effort faible)
+
+#83 (`gh` : alias, options, `gh api`, `gh pr review` pour les vérificateurs), #84 (substitutions entre guillemets doubles), #85 (lanceurs et interpréteurs mal lus), #86 (le hook bloque aussi le coordinateur si le point d'entrée plante), #87 (`__init__.py` de module), #88 (découper `commandes.py`), #89 (trous de la liste `deny`, à modifier avec l'accord du propriétaire), #90 (empreinte de pnpm), #91 (lisibilité du `justfile`) ; faux positifs supplémentaires ajoutés à #79.
+
+## Test d'intrusion
+
+Non lancé : le lot ne touche ni l'API, ni le frontend, ni le déploiement (skill `lot`, §4.5). Il ne change que l'outillage des agents, la CI et le `justfile`.
+
+## Clôture
+
+- **Définition de « terminé »** :
+  - CI verte sur `dev` (`3d79e8a`, https://github.com/Nyulga/chantier-manager/actions/runs/45630700205) ;
+  - code relu deux fois par `revue`, `conformite` et `securite` ; aucun bloquant au second passage, les importants corrigés ;
+  - couverture backend 99,81 % (100 % sur domain et application), frontend au-dessus de 90 % ; le score de mutation n'est pas encore mesuré (phase 2) ;
+  - décisions dans l'ADR 0017 ; `CLAUDE.md`, règles 04 et 09, skill `lot`, fiches d'agents, `docs/plan/README.md` et `squelette.md` à jour.
+- **Critères de #71** : un sous-agent qui écrit hors de sa couche est refusé (tests et preuve réelle avec `dev-metier`) ; une commande git qui modifie le dépôt est refusée aux sous-agents ; un schéma d'API modifié sans `just client` fait échouer `just verifier` et la CI.
+- Aucun critère d'`intent.md` §5 n'est rattaché à ce lot : il protège la façon de développer.
+- **Mise en ligne** : rien à déployer, le lot ne change pas l'application.

@@ -4,7 +4,7 @@ Référence : [`intent.md`](../../intent.md) · Décisions : [`docs/decisions/`]
 
 ## Phase 1 : squelette (en cours)
 
-On livre d'abord le **[squelette](squelette.md)** (lots S1, S2 et S3, puis S4 pour le tableau de bord de la maquette, S5 pour les corrections de relecture et S6 pour sécuriser la démo publique) : chantiers, étapes, validation et avancement, sans authentification et en ligne comme démonstration publique, sans mot de passe. Les lots S7 à S12, prévus le 2026-11-25, finissent la phase 1 : garde-fous des agents, constats restants de S5 et S6, puis les trois fonctions reportées (modifier un chantier, gérer les étapes, afficher l'historique).
+On livre d'abord le **[squelette](squelette.md)** (lots S1, S2 et S3, puis S4 pour le tableau de bord de la maquette, S5 pour les corrections de relecture et S6 pour sécuriser la démo publique) : chantiers, étapes, validation et avancement, sans authentification et en ligne comme démonstration publique, sans mot de passe. Les lots S7 à S12, prévus le 2026-11-25, finissent la phase 1 : garde-fous des agents (S7, livré), constats restants de S5 et S6, puis les trois fonctions reportées (modifier un chantier, gérer les étapes, afficher l'historique).
 
 Les lots 01 à 09 ci-dessous forment la phase 2 : chacun repart de ce que le squelette a déjà livré. Chaque fichier de lot le précise dans sa section « Déjà livré par le squelette », avec les issues qui lui sont rattachées (#39, #48, #59).
 
