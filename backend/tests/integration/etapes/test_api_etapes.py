@@ -73,7 +73,7 @@ def test_parcours_complet_de_la_creation_a_100_pour_cent(client: TestClient) -> 
     assert demarree.json()["statut"] == "en_cours"
     assert signalee.json()["statut"] == "terminee_a_valider"
     assert signalee.json()["actions_permises"] == []
-    assert validation_ouvrier.status_code == HTTPStatus.CONFLICT
+    assert validation_ouvrier.status_code == HTTPStatus.FORBIDDEN
     assert refus_sans_commentaire.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert refus.json()["statut"] == "en_cours"
     assert reprise.json()["statut"] == "terminee_a_valider"

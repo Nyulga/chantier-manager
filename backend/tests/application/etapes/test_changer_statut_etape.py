@@ -9,6 +9,7 @@ from app.etapes.domain.cycle import StatutEtape
 from app.etapes.domain.etape import HistoriqueEtape
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import (
+    AccesRefuseError,
     ConflitVersionError,
     NonTrouveError,
     TransitionInterditeError,
@@ -89,8 +90,10 @@ def test_une_seconde_action_sur_la_version_deja_modifiee_est_rejetee() -> None:
 @pytest.mark.parametrize(
     ("commande", "acteur", "erreur"),
     [
-        (ChangementStatut(ETAPE, "valider"), OUVRIER, TransitionInterditeError),
-        (ChangementStatut(ETAPE, "refuser", "Non conforme."), OUVRIER, TransitionInterditeError),
+        # L'ouvrier ne valide ni ne refuse jamais, depuis aucun statut : c'est un refus
+        # de droit (403), et non une transition impossible dans l'état actuel (409).
+        (ChangementStatut(ETAPE, "valider"), OUVRIER, AccesRefuseError),
+        (ChangementStatut(ETAPE, "refuser", "Non conforme."), OUVRIER, AccesRefuseError),
         (ChangementStatut(ETAPE, "demarrer"), CHEF, TransitionInterditeError),
         (ChangementStatut(ETAPE, "refuser"), CHEF, ValeurInvalideError),
         (ChangementStatut(ETAPE, "refuser", " "), CHEF, ValeurInvalideError),

@@ -1,5 +1,6 @@
 """Propriétés de la machine à états et du résumé des étapes, vérifiées par hypothesis."""
 
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
@@ -7,7 +8,7 @@ from app.etapes.domain.avancement import POURCENTAGE_MAX, resumer_etapes
 from app.etapes.domain.cycle import ActionEtape, StatutEtape
 from app.etapes.domain.etape import Etape
 from app.shared.domain.acteur import Acteur, Role
-from app.shared.domain.erreurs import ErreurMetierError
+from app.shared.domain.erreurs import AccesRefuseError, ErreurMetierError
 from tests.fabriques.etapes import INSTANT, une_etape
 
 Coup = tuple[ActionEtape, Role, str | None]
@@ -42,6 +43,17 @@ def test_aucune_suite_d_actions_d_ouvrier_n_atteint_validee(partie: list[Coup]) 
     jouer_partie(etape, partie)
 
     assert etape.statut is not StatutEtape.VALIDEE
+
+
+@given(st.lists(coups, max_size=30), st.sampled_from([ActionEtape.VALIDER, ActionEtape.REFUSER]))
+def test_depuis_tout_etat_atteint_valider_ou_refuser_est_un_refus_de_droit_pour_l_ouvrier(
+    partie: list[Coup], action: ActionEtape
+) -> None:
+    etape = une_etape()
+    jouer_partie(etape, partie)
+
+    with pytest.raises(AccesRefuseError):
+        etape.appliquer(action, Acteur(Role.OUVRIER), INSTANT, "Reprendre l'enduit.")
 
 
 @given(st.lists(coups, max_size=30))

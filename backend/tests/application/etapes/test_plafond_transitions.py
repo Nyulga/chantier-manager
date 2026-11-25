@@ -12,7 +12,7 @@ from app.etapes.domain.cycle import StatutEtape
 from app.etapes.domain.etape import Etape, HistoriqueEtape
 from app.shared.application.erreurs import PlafondAtteintError
 from app.shared.domain.acteur import Acteur, Role
-from app.shared.domain.erreurs import ConflitVersionError, TransitionInterditeError
+from app.shared.domain.erreurs import AccesRefuseError, ConflitVersionError
 from tests.application.etapes.contexte import Contexte
 from tests.fabriques.etapes import INSTANT, id_etape, une_etape
 
@@ -103,7 +103,7 @@ def test_au_plafond_le_chef_peut_encore_valider() -> None:
 def test_au_plafond_l_ouvrier_ne_peut_toujours_pas_valider() -> None:
     contexte = un_contexte_avec(StatutEtape.TERMINEE_A_VALIDER, LIMITE_TRANSITIONS_PAR_ETAPE)
 
-    with pytest.raises(TransitionInterditeError):
+    with pytest.raises(AccesRefuseError):
         contexte.changer_statut().executer(ChangementStatut(ETAPE, "valider"), OUVRIER)
 
     etape = contexte.uow.etapes.obtenir(ETAPE)

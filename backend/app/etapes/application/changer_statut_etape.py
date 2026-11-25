@@ -60,7 +60,7 @@ class ChangerStatutEtape:
     fait pas grossir l'historique sans limite : 21 entrées au plus. Sans cette
     exemption, une étape remplie par des refus resterait à vie « À valider », et son
     chantier ne pourrait plus atteindre 100 %. Le cycle s'applique toujours : un
-    ouvrier qui tente de valider une étape pleine reçoit `TransitionInterditeError`.
+    ouvrier qui tente de valider une étape pleine reçoit `AccesRefuseError`.
 
     Lève :
         ValeurInvalideError : l'action est inconnue, ou le commentaire est absent alors
@@ -70,6 +70,8 @@ class ChangerStatutEtape:
             transaction l'a modifiée en même temps.
         PlafondAtteintError : l'étape a déjà `LIMITE_TRANSITIONS_PAR_ETAPE` transitions,
             et l'action n'est pas la validation.
+        AccesRefuseError : ce rôle n'a droit à cette action depuis aucun statut (un
+            ouvrier qui valide ou refuse).
         TransitionInterditeError : l'action n'est pas permise à ce rôle dans l'état actuel.
     """
 

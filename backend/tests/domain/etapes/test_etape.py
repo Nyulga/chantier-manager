@@ -8,6 +8,7 @@ from app.etapes.domain.cycle import ActionEtape, StatutEtape
 from app.etapes.domain.etape import Etape, HistoriqueEtape, ordre_suivant, trier_par_signalement
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.erreurs import (
+    AccesRefuseError,
     ConflitVersionError,
     TransitionInterditeError,
     ValeurInvalideError,
@@ -146,6 +147,19 @@ def test_une_transition_interdite_ne_change_rien() -> None:
     etape = une_etape(StatutEtape.TERMINEE_A_VALIDER)
 
     with pytest.raises(TransitionInterditeError):
+        etape.appliquer(ActionEtape.DEMARRER, CHEF, INSTANT)
+
+    assert (etape.statut, etape.version, etape.historique) == (
+        StatutEtape.TERMINEE_A_VALIDER,
+        1,
+        [],
+    )
+
+
+def test_un_ouvrier_qui_tente_de_valider_recoit_un_refus_de_droit_sans_rien_changer() -> None:
+    etape = une_etape(StatutEtape.TERMINEE_A_VALIDER)
+
+    with pytest.raises(AccesRefuseError):
         etape.appliquer(ActionEtape.VALIDER, OUVRIER, INSTANT)
 
     assert (etape.statut, etape.version, etape.historique) == (

@@ -11,7 +11,7 @@ from uuid import UUID
 
 from app.chantiers.domain.adresse import Adresse
 from app.chantiers.domain.montant import Montant
-from app.shared.domain.caracteres import exiger_caracteres_sur_une_ligne
+from app.shared.domain.caracteres import exiger_caracteres_sur_une_ligne, exiger_texte_visible
 from app.shared.domain.erreurs import ValeurInvalideError
 from app.shared.domain.longueur import exiger_longueur_max
 
@@ -42,16 +42,15 @@ class FicheChantier:
         """Refuse une fiche qui viole un invariant du chantier.
 
         Lève :
-            ValeurInvalideError : le nom ou le client est vide, trop long ou contient
+            ValeurInvalideError : le nom ou le client est vide (sans aucun caractère
+                visible), trop long ou contient
                 un caractère interdit, ou l'échéance précède la date de début.
         """
-        if not self.nom.strip():
-            raise ValeurInvalideError("Le nom du chantier est obligatoire.", "nom")
+        exiger_texte_visible(self.nom, "Le nom du chantier", "nom")
         exiger_longueur_max(self.nom, LONGUEUR_NOM_MAX, "Le nom du chantier", "nom")
         exiger_caracteres_sur_une_ligne(self.nom, "Le nom du chantier", "nom")
         # Un chantier se fait toujours pour un client : sans lui, la fiche est inexploitable.
-        if not self.client.strip():
-            raise ValeurInvalideError("Le client du chantier est obligatoire.", "client")
+        exiger_texte_visible(self.client, "Le client du chantier", "client")
         exiger_longueur_max(self.client, LONGUEUR_CLIENT_MAX, "Le client du chantier", "client")
         exiger_caracteres_sur_une_ligne(self.client, "Le client du chantier", "client")
         # Une échéance le jour même du début reste possible : c'est le cas d'un

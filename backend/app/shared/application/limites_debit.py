@@ -19,5 +19,14 @@ ECRITURES_PAR_FENETRE = 20
 # déclenche plusieurs à la fois, le seuil est donc bien plus large.
 LECTURES_PAR_FENETRE = 120
 
+# Multiplicateur des seuils par adresse pour un bloc IPv6 /48 entier (issue #63). Un
+# abonné reçoit souvent un /56 ou un /48, tunnels gratuits compris : regroupé par /64
+# seulement, un robot pourrait écrire depuis 65 536 blocs /64 différents. Le seuil du
+# /48 est pourtant plus haut que celui d'une adresse, parce que plusieurs abonnés
+# peuvent partager un même /48 (chez les opérateurs mobiles notamment) : c'est un
+# compromis assumé pour une démo peu fréquentée. Il s'applique aux seuils réellement
+# en vigueur, qui sont réglables (`Parametres`) : la composition root fait le produit.
+FACTEUR_BLOC_IPV6_48 = 4
+
 # Durée pendant laquelle une adresse qui a touché un piège ne peut plus écrire.
 DUREE_BLOCAGE_PIEGE = timedelta(hours=1)

@@ -13,8 +13,10 @@ from uuid import UUID
 from app.etapes.domain.cycle import ActionEtape, StatutEtape, trouver_transition
 from app.shared.domain.acteur import Acteur, Role
 from app.shared.domain.caracteres import (
+    contient_un_caractere_visible,
     exiger_caracteres_sur_plusieurs_lignes,
     exiger_caracteres_sur_une_ligne,
+    exiger_texte_visible,
 )
 from app.shared.domain.erreurs import ConflitVersionError, ValeurInvalideError
 from app.shared.domain.longueur import exiger_longueur_max
@@ -67,12 +69,11 @@ class Etape:
         """Crée une étape « À faire », sans historique : l'historique ne trace que les transitions.
 
         Lève :
-            ValeurInvalideError : le titre est vide, ne contient que des espaces,
+            ValeurInvalideError : le titre ne contient aucun caractère visible,
                 dépasse `LONGUEUR_TITRE_MAX` caractères ou contient un caractère
                 interdit : il s'affiche sur une ligne, sans saut ni tabulation.
         """
-        if not titre.strip():
-            raise ValeurInvalideError("Le titre de l'étape est obligatoire.", "titre")
+        exiger_texte_visible(titre, "Le titre de l'étape", "titre")
         exiger_longueur_max(titre, LONGUEUR_TITRE_MAX, "Le titre de l'étape", "titre")
         exiger_caracteres_sur_une_ligne(titre, "Le titre de l'étape", "titre")
         return cls(id=id, chantier_id=chantier_id, titre=titre, ordre=ordre)
@@ -91,6 +92,7 @@ class Etape:
         reste exactement dans son état précédent.
 
         Lève :
+            AccesRefuseError : ce rôle n'a droit à cette action depuis aucun statut.
             TransitionInterditeError : l'action n'est pas permise à ce rôle depuis ce statut.
             ValeurInvalideError : la transition exige un commentaire, absent ou vide, ou
                 le commentaire dépasse `LONGUEUR_COMMENTAIRE_MAX` caractères, ou il
@@ -147,14 +149,17 @@ class Etape:
 def _exiger_commentaire_valide(commentaire: str | None, *, obligatoire: bool) -> None:
     """Vérifie le commentaire d'une transition, avant toute modification de l'étape.
 
-    Un commentaire obligatoire ne peut être ni absent, ni fait d'espaces. Tout
-    commentaire donné est borné en longueur, puis en caractères : il peut tenir sur
-    plusieurs lignes, puisqu'il explique ce qu'il faut reprendre.
+    Un commentaire obligatoire ne peut être ni absent, ni dépourvu de caractère visible :
+    fait seulement d'espaces ou de liants, il ne dirait rien de ce qu'il faut reprendre.
+    Un commentaire facultatif, lui, peut rester vide : c'est ce que l'api transmet quand
+    un client envoie un champ fait d'espaces, qu'elle retire. Tout commentaire donné est
+    borné en longueur, puis en caractères : il peut tenir sur plusieurs lignes, puisqu'il
+    explique ce qu'il faut reprendre.
 
     Lève :
         ValeurInvalideError : voir `Etape.appliquer`.
     """
-    if obligatoire and not (commentaire and commentaire.strip()):
+    if obligatoire and not contient_un_caractere_visible(commentaire or ""):
         raise ValeurInvalideError(
             "Un commentaire est obligatoire pour cette action.", "commentaire"
         )

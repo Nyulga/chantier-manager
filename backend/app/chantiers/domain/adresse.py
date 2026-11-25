@@ -2,8 +2,7 @@
 
 from dataclasses import dataclass
 
-from app.shared.domain.caracteres import exiger_caracteres_sur_une_ligne
-from app.shared.domain.erreurs import ValeurInvalideError
+from app.shared.domain.caracteres import exiger_caracteres_sur_une_ligne, exiger_texte_visible
 from app.shared.domain.longueur import exiger_longueur_max
 
 # Bornes de saisie de l'adresse. Elles sont larges pour une adresse française réelle,
@@ -31,7 +30,8 @@ class Adresse:
         """Refuse une adresse dont une partie est vide, ou plus longue que sa borne.
 
         Lève :
-            ValeurInvalideError : la voie, le code postal ou la ville est vide, dépasse
+            ValeurInvalideError : la voie, le code postal ou la ville est vide (sans aucun
+                caractère visible), dépasse
                 sa longueur maximale ou contient un caractère interdit (un saut de
                 ligne, par exemple). L'erreur désigne la partie fautive.
         """
@@ -47,8 +47,7 @@ def _exiger_partie(texte: str, partie: str, libelle: str, longueur_max: int) -> 
     d'un chantier, la seule adresse que le domaine manipule.
     """
     champ = f"adresse.{partie}"
-    if not texte.strip():
-        raise ValeurInvalideError(f"{libelle} est obligatoire.", champ)
+    exiger_texte_visible(texte, libelle, champ)
     exiger_longueur_max(texte, longueur_max, libelle, champ)
     # La longueur est contrôlée d'abord : le parcours des caractères reste ainsi borné.
     exiger_caracteres_sur_une_ligne(texte, libelle, champ)

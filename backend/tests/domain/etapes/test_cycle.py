@@ -1,4 +1,9 @@
-"""Table des transitions du cycle d'une étape : exhaustive, immuable et lue par rôle."""
+"""Table des transitions du cycle d'une étape : exhaustive, immuable et lue par rôle.
+
+Une action hors de la table est refusée de deux façons, selon le rôle : si ce rôle n'a
+jamais droit à l'action, depuis aucun statut, c'est un refus de droit ; sinon, c'est
+une transition impossible dans l'état actuel.
+"""
 
 from collections.abc import MutableMapping
 from itertools import product
@@ -15,7 +20,11 @@ from app.etapes.domain.cycle import (
     trouver_transition,
 )
 from app.shared.domain.acteur import Role
-from app.shared.domain.erreurs import TransitionInterditeError, ValeurInvalideError
+from app.shared.domain.erreurs import (
+    AccesRefuseError,
+    TransitionInterditeError,
+    ValeurInvalideError,
+)
 
 A_FAIRE = StatutEtape.A_FAIRE
 EN_COURS = StatutEtape.EN_COURS
@@ -32,7 +41,15 @@ AUTORISEES = {
     (TERMINEE, ActionEtape.VALIDER, Role.CHEF): VALIDEE,
     (TERMINEE, ActionEtape.REFUSER, Role.CHEF): EN_COURS,
 }
-INTERDITES = [cas for cas in product(StatutEtape, ActionEtape, Role) if cas not in AUTORISEES]
+# Les actions qu'un rôle ne peut faire depuis aucun statut : l'ouvrier ne valide ni ne
+# refuse jamais. Écrites ici, elles aussi, indépendamment du code testé.
+JAMAIS_PERMISES = {
+    (ActionEtape.VALIDER, Role.OUVRIER),
+    (ActionEtape.REFUSER, Role.OUVRIER),
+}
+HORS_TABLE = [cas for cas in product(StatutEtape, ActionEtape, Role) if cas not in AUTORISEES]
+REFUS_DE_DROIT = [(s, a, r) for s, a, r in HORS_TABLE if (a, r) in JAMAIS_PERMISES]
+INTERDITES = [(s, a, r) for s, a, r in HORS_TABLE if (a, r) not in JAMAIS_PERMISES]
 
 
 def test_la_table_des_transitions_ne_peut_pas_etre_modifiee() -> None:
@@ -52,6 +69,23 @@ def test_transition_autorisee(depart: StatutEtape, action: ActionEtape, role: Ro
 def test_transition_interdite(depart: StatutEtape, action: ActionEtape, role: Role) -> None:
     with pytest.raises(TransitionInterditeError):
         trouver_transition(depart, action, role)
+
+
+@pytest.mark.parametrize(("depart", "action", "role"), REFUS_DE_DROIT)
+def test_une_action_jamais_permise_au_role_est_un_refus_de_droit(
+    depart: StatutEtape, action: ActionEtape, role: Role
+) -> None:
+    with pytest.raises(AccesRefuseError) as erreur:
+        trouver_transition(depart, action, role)
+
+    assert str(erreur.value) == "Ton profil ne permet pas cette action sur une étape."
+
+
+def test_la_matrice_couvre_chaque_cas_hors_table_une_seule_fois() -> None:
+    nombre_de_cas = len(StatutEtape) * len(ActionEtape) * len(Role)
+
+    assert len(AUTORISEES) + len(INTERDITES) + len(REFUS_DE_DROIT) == nombre_de_cas
+    assert len(REFUS_DE_DROIT) == len(StatutEtape) * len(JAMAIS_PERMISES)
 
 
 @pytest.mark.parametrize(

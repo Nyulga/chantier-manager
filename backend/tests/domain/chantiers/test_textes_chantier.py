@@ -1,7 +1,8 @@
 """Textes propres du chantier : chaque champ texte refuse les caractères interdits.
 
 Tous les champs texte d'un chantier tiennent sur une ligne : nom, client et les trois
-parties de l'adresse. Un caractère interdit est refusé en désignant son champ.
+parties de l'adresse. Tous sont obligatoires : un texte sans aucun caractère visible y
+compte comme absent. Un texte refusé l'est en désignant son champ.
 """
 
 from collections.abc import Callable
@@ -11,7 +12,11 @@ import pytest
 from app.chantiers.domain.adresse import Adresse
 from app.shared.domain.erreurs import ValeurInvalideError
 from tests.fabriques.chantiers import une_fiche
-from tests.fabriques.textes import INTERDITS_SUR_UNE_LIGNE, TEXTE_ACCEPTE
+from tests.fabriques.textes import (
+    INTERDITS_SUR_UNE_LIGNE,
+    SANS_CARACTERE_VISIBLE,
+    TEXTE_ACCEPTE,
+)
 
 # Pour chaque champ, tel que l'api le nomme, la construction qui place le texte à tester
 # dans ce champ, les autres restant valides.
@@ -39,3 +44,22 @@ def test_un_caractere_interdit_est_refuse_en_designant_son_champ(
 @pytest.mark.parametrize("champ", CONSTRUCTIONS)
 def test_un_texte_accentue_avec_emoji_compose_est_accepte(champ: str) -> None:
     CONSTRUCTIONS[champ](TEXTE_ACCEPTE)
+
+
+# Message d'absence de chaque champ : il nomme le champ, jamais la saisie.
+MESSAGES_D_ABSENCE = {
+    "nom": "Le nom du chantier est obligatoire.",
+    "client": "Le client du chantier est obligatoire.",
+    "adresse.voie": "La voie est obligatoire.",
+    "adresse.code_postal": "Le code postal est obligatoire.",
+    "adresse.ville": "La ville est obligatoire.",
+}
+
+
+@pytest.mark.parametrize("texte", SANS_CARACTERE_VISIBLE)
+@pytest.mark.parametrize("champ", CONSTRUCTIONS)
+def test_un_texte_sans_caractere_visible_est_refuse_comme_absent(champ: str, texte: str) -> None:
+    with pytest.raises(ValeurInvalideError) as erreur:
+        CONSTRUCTIONS[champ](texte)
+
+    assert (str(erreur.value), erreur.value.champ) == (MESSAGES_D_ABSENCE[champ], champ)

@@ -1,4 +1,8 @@
-"""Textes propres d'une étape : le titre tient sur une ligne, le commentaire sur plusieurs."""
+"""Textes propres d'une étape : le titre tient sur une ligne, le commentaire sur plusieurs.
+
+Le titre et le commentaire d'un refus sont obligatoires : un texte sans aucun caractère
+visible y compte comme absent. Un commentaire facultatif peut rester vide.
+"""
 
 from uuid import UUID
 
@@ -12,10 +16,12 @@ from tests.fabriques.etapes import ID_CHANTIER, INSTANT, une_etape
 from tests.fabriques.textes import (
     INTERDITS_PARTOUT,
     INTERDITS_SUR_UNE_LIGNE,
+    SANS_CARACTERE_VISIBLE,
     SAUTS_ET_TABULATION,
     TEXTE_ACCEPTE,
 )
 
+CHEF = Acteur(Role.CHEF)
 OUVRIER = Acteur(Role.OUVRIER)
 
 
@@ -60,3 +66,42 @@ def test_un_commentaire_sur_plusieurs_lignes_est_accepte(caractere: str) -> None
     etape.appliquer(ActionEtape.DEMARRER, OUVRIER, INSTANT, commentaire)
 
     assert etape.historique[0].commentaire == commentaire
+
+
+@pytest.mark.parametrize("titre", SANS_CARACTERE_VISIBLE)
+def test_un_titre_sans_caractere_visible_est_refuse_comme_absent(titre: str) -> None:
+    with pytest.raises(ValeurInvalideError) as erreur:
+        Etape.creer(UUID(int=7), ID_CHANTIER, titre, ordre=1)
+
+    assert (str(erreur.value), erreur.value.champ) == (
+        "Le titre de l'étape est obligatoire.",
+        "titre",
+    )
+
+
+@pytest.mark.parametrize("commentaire", SANS_CARACTERE_VISIBLE)
+def test_un_refus_commente_sans_caractere_visible_est_refuse_sans_rien_changer(
+    commentaire: str,
+) -> None:
+    etape = une_etape(StatutEtape.TERMINEE_A_VALIDER)
+
+    with pytest.raises(ValeurInvalideError) as erreur:
+        etape.appliquer(ActionEtape.REFUSER, CHEF, INSTANT, commentaire)
+
+    assert (str(erreur.value), erreur.value.champ) == (
+        "Un commentaire est obligatoire pour cette action.",
+        "commentaire",
+    )
+    assert (etape.statut, etape.version, etape.historique) == (
+        StatutEtape.TERMINEE_A_VALIDER,
+        1,
+        [],
+    )
+
+
+def test_un_commentaire_facultatif_vide_reste_accepte() -> None:
+    etape = une_etape()
+
+    etape.appliquer(ActionEtape.DEMARRER, OUVRIER, INSTANT, "")
+
+    assert (etape.statut, etape.historique[0].commentaire) == (StatutEtape.EN_COURS, "")

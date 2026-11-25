@@ -12,7 +12,11 @@ from types import MappingProxyType
 from typing import Final
 
 from app.shared.domain.acteur import Role
-from app.shared.domain.erreurs import TransitionInterditeError, ValeurInvalideError
+from app.shared.domain.erreurs import (
+    AccesRefuseError,
+    TransitionInterditeError,
+    ValeurInvalideError,
+)
 
 
 class StatutEtape(StrEnum):
@@ -76,19 +80,40 @@ TRANSITIONS: Final[Mapping[tuple[StatutEtape, ActionEtape], Transition]] = Mappi
 def trouver_transition(statut: StatutEtape, action: ActionEtape, role: Role) -> Transition:
     """Renvoie la transition que ce rôle peut effectuer, avec cette action, depuis ce statut.
 
-    Un rôle non autorisé lève aussi `TransitionInterditeError`, et non `AccesRefuseError` :
-    l'action n'existe pas pour lui dans cet état, ce que l'api traduit en 409.
+    Le rôle est vérifié d'abord, sur toute la table : si aucune ligne ne lui permet
+    cette action, quel que soit le statut de départ, c'est un refus de droit
+    (`AccesRefuseError`, que l'api traduit en 403). C'est le cas d'un ouvrier qui tente
+    de valider ou de refuser : il n'en aura jamais le droit, et lui répondre que l'étape
+    n'est « pas dans le bon état » le tromperait (issue #69). Sinon, l'action existe pour
+    ce rôle, mais pas depuis ce statut : c'est une transition impossible dans l'état
+    actuel, par exemple un saut d'état (`TransitionInterditeError`, traduite en 409).
 
     Lève :
+        AccesRefuseError : aucune ligne de la table ne permet cette action à ce rôle.
         TransitionInterditeError : la combinaison est absente de la table, ou le rôle
-            n'y figure pas.
+            n'y figure pas pour ce statut de départ.
     """
+    if not _role_a_droit_a_l_action(action, role):
+        raise AccesRefuseError("Ton profil ne permet pas cette action sur une étape.")
     transition = TRANSITIONS.get((statut, action))
     if transition is None or role not in transition.roles:
         raise TransitionInterditeError(
             "Cette action n'est pas possible sur l'étape dans son état actuel."
         )
     return transition
+
+
+def _role_a_droit_a_l_action(action: ActionEtape, role: Role) -> bool:
+    """Dit si au moins une ligne de la table permet cette action à ce rôle.
+
+    Le droit se lit dans la table, et n'est pas écrit à part : donner un jour au rôle
+    une nouvelle transition avec cette action suffirait à changer la réponse.
+    """
+    return any(
+        role in transition.roles
+        for (_, action_de_la_ligne), transition in TRANSITIONS.items()
+        if action_de_la_ligne is action
+    )
 
 
 def actions_permises(statut: StatutEtape, role: Role) -> tuple[ActionEtape, ...]:

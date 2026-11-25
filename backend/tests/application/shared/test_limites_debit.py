@@ -9,6 +9,7 @@ from datetime import timedelta
 from app.shared.application.limites_debit import (
     DUREE_BLOCAGE_PIEGE,
     ECRITURES_PAR_FENETRE,
+    FACTEUR_BLOC_IPV6_48,
     FENETRE_DEBIT,
     LECTURES_PAR_FENETRE,
 )
@@ -24,3 +25,12 @@ def test_une_adresse_qui_touche_un_piege_est_bloquee_une_heure() -> None:
     blocage = DUREE_BLOCAGE_PIEGE
 
     assert blocage == timedelta(hours=1)
+
+
+def test_un_bloc_ipv6_48_a_droit_a_quatre_fois_les_seuils_d_une_adresse() -> None:
+    seuils_du_bloc = (
+        ECRITURES_PAR_FENETRE * FACTEUR_BLOC_IPV6_48,
+        LECTURES_PAR_FENETRE * FACTEUR_BLOC_IPV6_48,
+    )
+
+    assert (FACTEUR_BLOC_IPV6_48, seuils_du_bloc) == (4, (80, 480))
