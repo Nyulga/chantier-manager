@@ -7,13 +7,13 @@ Ce dossier contient tout ce qu'il faut pour mettre l'application en ligne avec D
 | `compose.prod.yaml` | Les services `chantier-api` et `chantier-web`, le volume `chantier-donnees` et le réseau dédié `chantier-interne`. Aucun port n'est publié sur l'hôte. Les conteneurs sont durcis (voir plus bas). |
 | `backend.Dockerfile` | Image de l'API (Python 3.13, uv, utilisateur non root, code en lecture seule). |
 | `frontend.Dockerfile`, `frontend.Caddyfile` | Image du site (construction Vite, puis fichiers statiques servis par Caddy sur le port 8080, utilisateur non root). |
-| `protections.caddy` | **Ce que le proxy applique** : compression, en-têtes de sécurité, documentation en 404, corps limité à 64 Ko, fausses adresses de robots envoyées à l'API, aiguillage `/api` et site. La copie locale l'importe. |
+| `protections.caddy` | **Ce que le proxy applique** : compression, en-têtes de sécurité, documentation en 404, corps limité à 64 Kio (`64KiB`, soit 65 536 octets, comme l'API), fausses adresses de robots envoyées à l'API (casse ignorée), erreurs du proxy au format de l'application, aiguillage `/api` et site. La copie locale l'importe. |
 | `Caddyfile.extrait` | Le bloc à mettre dans le Caddy du serveur : le nom public, plus une copie de `protections.caddy` (le serveur n'a pas accès au dépôt). |
 | `compose.local.yaml`, `Caddyfile.local` | Surcharge pour tester sur un poste de développement, sans le Caddy du serveur, avec les mêmes protections. |
 
 Le Caddy du serveur n'appartient pas à ce dépôt : on n'y met que le bloc de `Caddyfile.extrait`.
 
-**Une seule description des protections.** `protections.caddy` fait foi. Pour modifier une protection du proxy, on la change dans ce fichier, puis on recopie le changement dans `Caddyfile.extrait` : le test `backend/tests/architecture/test_caddy_deploiement.py` (lancé par `just verifier`) échoue si les deux divergent, si la liste des fausses adresses diffère de celle de l'API (`pieges.py`), ou si le site statique pose d'autres en-têtes que le proxy.
+**Une seule description des protections.** `protections.caddy` fait foi. Pour modifier une protection du proxy, on la change dans ce fichier, puis on recopie le changement dans `Caddyfile.extrait` : le test `backend/tests/architecture/test_caddy_deploiement.py` (lancé par `just verifier`) échoue si les deux divergent, si la liste des fausses adresses diffère de celle de l'API (`pieges.py`), si le site statique pose d'autres en-têtes que le proxy, si la limite de taille du proxy n'est pas celle de l'API, ou si les erreurs du proxy (`handle_errors`) n'ont pas les mêmes en-têtes et les mêmes textes que celles de l'API.
 
 ## Réseau et durcissement
 
@@ -35,6 +35,10 @@ Chaque maillon se protège sans compter sur celui de devant : le site statique (
 - le port 8000 de l'API n'est publié nulle part (aucun `ports:` dans `compose.prod.yaml`, vérifié par le test d'alignement) ;
 - le seul qui peut le joindre est le proxy, sur `chantier-interne` (fermé à Internet, trois membres) ;
 - le proxy **impose** `X-Forwarded-For` : chaque `reverse_proxy` vers l'API contient `header_up X-Forwarded-For {remote_host}` (`protections.caddy`, recopié dans `Caddyfile.extrait` ; le test d'alignement échoue s'il manque). Ainsi la valeur ne dépend pas de la configuration globale du Caddy du serveur. Par défaut, `reverse_proxy` remplace déjà cet en-tête : « For these X-Forwarded-* headers, by default, the proxy will ignore their values from incoming requests, to prevent spoofing » ([documentation de Caddy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)), mais un `trusted_proxies` global changerait ce comportement : la ligne `header_up` le rend sans effet. Il ne faut tout de même **jamais** ajouter `trusted_proxies` au bloc, sauf si un autre proxy (un CDN par exemple) se place devant le Caddy du serveur : il faudrait alors y lister ses adresses, et seulement elles.
+
+**Erreurs du proxy.** Une erreur produite par Caddy lui-même (un corps trop gros, l'API injoignable) ne passe pas par l'application : le bloc `handle_errors` de `protections.caddy` y remet les en-têtes de sécurité, retire `Server` et `Via`, et répond en `application/problem+json` (ADR 0008). Le 413 reprend le titre et le message de l'API ; tout autre statut reçoit la réponse générique de l'API pour un statut qu'elle ne nomme pas. Les erreurs de l'API, elles, traversent le proxy comme des réponses normales : `reverse_proxy` ne déclenche pas `handle_errors` (documentation de Caddy), leur corps reste celui de l'API. Les en-têtes sont écrits deux fois dans le fichier (Caddy n'a pas de bloc partagé entre le site et ses erreurs) ; le test d'alignement échoue si les deux listes diffèrent.
+
+**Taille et casse.** `max_size 64KiB` (1024 octets le Kio, alors que `KB` en compte 1000) : le test d'alignement compare cette valeur à `TAILLE_MAX_CORPS` de l'API. Le matcher `path` de Caddy ignore la casse (`/WP-ADMIN` est un piège comme `/wp-admin`) ; côté API, `est_chemin_piege` fait de même.
 
 Une adresse fixe pour le proxy n'est pas possible : c'est l'autre projet, qui héberge le Caddy du serveur, qui le rattache au réseau, et Docker lui attribue son adresse.
 
@@ -62,7 +66,7 @@ curl -si http://localhost:8080/api/health      # idem
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/docs   # 404 (aussi /api/openapi.json)
 curl -s -o /dev/null -w "%{http_code}\n" -H "X-Profil: chef" http://localhost:8080/api/chantiers/   # 404, sans redirection
 curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "X-Profil: chef" -H "Content-Type: application/json" \
-     --data-binary @un-fichier-de-70-ko.json http://localhost:8080/api/chantiers   # 413
+     --data-binary @un-fichier-de-70-ko.json http://localhost:8080/api/chantiers   # 413, corps problem+json, en-têtes de sécurité, pas de Server
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/wp-admin   # 404, et l'adresse est bloquée en écriture
 ```
 

@@ -23,6 +23,8 @@ header {
 # Fausses adresses que seuls les robots demandent. Elles vont à l'API (et non au site, qui
 # répondrait par sa page d'accueil) : elle répond 404 et bloque l'adresse en écriture.
 # Cette liste doit rester celle de `app/shared/api/pieges.py` (le même test le vérifie).
+# Le matcher `path` de Caddy compare sans tenir compte de la casse (documentation de Caddy,
+# « Path matches are exact but case-insensitive ») : `/WP-ADMIN` est donc pris comme `/wp-admin`.
 @pieges path /wp-admin /wp-admin/* /wp-login.php /wp-login.php/* /.env /.env/* /.git /.git/* /phpmyadmin /phpmyadmin/* /xmlrpc.php /xmlrpc.php/*
 handle @pieges {
 	reverse_proxy chantier-api:8000 {
@@ -41,9 +43,10 @@ handle /api/* {
 	respond @documentation 404
 
 	# Les requêtes de l'API sont de petits JSON : on refuse tout corps plus gros,
-	# avant qu'il ne soit lu en mémoire par l'application.
+	# avant qu'il ne soit lu en mémoire par l'application. `KiB` compte 1024 octets (`KB`
+	# en compte 1000) : c'est la limite exacte de l'API, `TAILLE_MAX_CORPS` (64 * 1024).
 	request_body {
-		max_size 64KB
+		max_size 64KiB
 	}
 	reverse_proxy chantier-api:8000 {
 		# Adresse réelle du visiteur, imposée ici : la limite de débit et le blocage de
@@ -56,4 +59,38 @@ handle /api/* {
 
 handle {
 	reverse_proxy chantier-web:8080
+}
+
+# Erreurs produites par le proxy lui-même (corps trop gros, API injoignable…), qui sortiraient
+# sinon sans en-têtes de sécurité, avec `Server` et sans corps. Elles prennent la forme des
+# erreurs de l'application (RFC 9457, ADR 0008). Les erreurs de l'API ne passent pas ici :
+# `reverse_proxy` les relaie comme des réponses normales, avec leur corps d'origine.
+handle_errors {
+	# Le `header` du site ne s'applique pas aux erreurs du proxy : il est répété ici, à
+	# l'identique (un test vérifie que les deux blocs restent les mêmes).
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		# Politique de contenu stricte : tout vient du site lui-même (polices auto-hébergées).
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy same-origin
+		# Ni le proxy ni les serveurs derrière lui ne doivent annoncer leur logiciel.
+		-Server
+		-Via
+	}
+	header Content-Type application/problem+json
+
+	# Mêmes titre et message que l'API (`erreurs.py`) : un test vérifie que les textes restent
+	# les mêmes. Les autres statuts reçoivent la réponse générique de l'API pour un statut
+	# qu'elle ne nomme pas.
+	@trop_volumineux expression `{err.status_code} == 413`
+	handle @trop_volumineux {
+		respond `{"type":"about:blank","title":"Requête trop volumineuse","status":413,"detail":"Le corps de la requête est trop volumineux."}` 413
+	}
+	handle {
+		respond `{"type":"about:blank","title":"Erreur","status":{err.status_code},"detail":"La requête n'a pas pu être traitée."}` {err.status_code}
+	}
 }
