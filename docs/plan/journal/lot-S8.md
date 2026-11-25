@@ -1,6 +1,6 @@
 # Journal du lot S8 – Protections de la démo, la suite
 
-**Issue** : #72 (sous-issues #49, #50, #60, #63, #64, #66, #67, #68, #69) · **Statut** : en cours · **Plage** : `44e6b46..`
+**Issue** : #72 (sous-issues #49, #50, #60, #63, #64, #66, #67, #68, #69) · **Statut** : terminé le 2026-11-25 · **Plage** : `44e6b46..` (clôture)
 
 Le lot termine le durcissement de la démo publique commencé au lot S6, à partir des constats de ses vérifications et de son test d'intrusion local.
 
@@ -63,3 +63,30 @@ Commitées ensemble : la nouvelle signature du middleware de débit casse la com
 | `securite` (Opus, élevé) | aucun risque bloquant | 4 mineurs : blocage d'un piège limité au /64, invisibles encore acceptés (étiquettes hors drapeau, sélecteurs de variante, remplissages Hangul), chemins `//wp-admin` non normalisés, quota de l'adresse consommé quand le /48 refuse. |
 
 Aucun constat important dans le code. Après accord du propriétaire (« Oui, écris-le », « Oui, modifie »), le coordinateur a écrit l'ADR 0018 et mis à jour `intent.md` §2.3, `CLAUDE.md`, `docs/plan/squelette.md`, la règle 01 et le plan du lot 05. L'ADR 0016 n'est pas modifié (un ADR est immuable) : le 0018 le complète. Les constats mineurs deviennent des issues (label `relecture` ou `securite`).
+
+Second passage de `conformite` sur `7de08bb` : **conforme**, les trois constats importants sont résolus. Trois mineurs nouveaux ; le reste du plan du lot 05 (ligne de la tâche 1) est corrigé à la clôture.
+
+## Test d'intrusion local (`pentest`, Opus, effort élevé)
+
+Copie locale (`compose.prod.yaml` + `compose.local.yaml`), de 18 h 56 à 19 h 41, environ 750 requêtes : `curl` un par un, ZAP *baseline* (48 s) puis ZAP *api-scan* (12 min 20 s, un fil, 3 s entre deux requêtes, schéma sans le champ piège), image épinglée par digest. Pas de nuclei (image non épinglée). Rapport dans `pentest-rapports/2026-11-25-local-s8/`, ignoré par Git.
+
+- **Verdict** : aucun constat bloquant ni important. ZAP : 0 échec ; un avertissement de l'*api-scan* est un faux positif, vérifié (repli de l'application web en 200 HTML).
+- **Hypothèses tenues** : 403 de l'ouvrier qui valide ou refuse (étape inchangée), 409 du saut d'état ; pièges en majuscules (404 puis écriture refusée en 403) ; pièges comptés dans le débit (429 au 21ᵉ envoi) ; 413 du proxy à 65 537 octets en `problem+json`, réponse de l'API à 65 536 ; `Allow` exact ; nom du champ dans le 422, jamais pour une clé libre ; caractères refusés et emoji composé accepté ; schéma sans « piège » ; hôte inconnu en 400.
+- **Mineur M3 (déjà connu, confirmé)** : des chemins que Caddy normalise (barres répétées, `.` et `..`) arrivent bruts à l'API, qui ne les reconnaît pas comme pièges, ni pour le blocage ni pour le débit. Vérifié par le coordinateur en lisant `est_chemin_piege` : vrai positif.
+- **Info I1** : un chemin mal encodé est refusé en 400 par le serveur HTTP du proxy, avant `handle_errors`, sans en-têtes ni `problem+json`. Ni logiciel ni version révélés.
+- **Incident** : une erreur de script de l'agent (fonction nommée comme une commande système) a envoyé 253 requêtes en 2 min 40 s, contraire à la règle 08 §2. Arrêté par l'agent lui-même ; 404 puis 429, aucune 5xx, sonde toujours à 200, rien d'écrit.
+
+La copie locale a été arrêtée (`down -v`) par le coordinateur.
+
+## Issues créées (`backlog`, Sonnet, effort faible)
+
+- `securite` : #93 (chemins pièges normalisés par le proxy, M3), #94 (invisibles encore acceptés), #95 (quota de l'adresse consommé quand le /48 refuse), #96 (400 du proxy sur un chemin mal encodé, I1).
+- `relecture` : #97 (403 précédé des contrôles de version et de plafond), #98 (retouches de code et de tests), #99 (documentation des règles 04, 06 et 00, formulation de l'ADR 0018).
+- Risques assumés dans l'ADR 0018, sans issue : blocage d'un piège limité au /64, éviction possible de la liste des blocages.
+
+## Clôture
+
+- Critères de #72 : tous prouvés par un test (tableau de la `revue`), plus le pentest local.
+- CI verte sur chaque commit du lot (`8bc22ac`, `d8f6e28`, `7ef19e1`, `7de08bb`).
+- Statut mis à jour dans `docs/plan/squelette.md`, `docs/plan/README.md` et `CLAUDE.md` ; reste du plan du lot 05 aligné sur l'ADR 0018.
+- À faire par le propriétaire : recopier le bloc `deploy/Caddyfile.extrait` sur le serveur et redéployer l'API (la migration 0003 s'applique au démarrage).
