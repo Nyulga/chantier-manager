@@ -85,7 +85,9 @@ jobs:
         run: uv sync --locked --no-dev
       # Le client TypeScript généré est versionné (ADR 0013, issue #43) : on régénère le schéma
       # OpenAPI de l'API, puis le client, et on échoue s'ils diffèrent du fichier commité.
-      # Les dépendances d'exécution de l'API suffisent pour exporter le schéma.
+      # L'environnement ne contient que les dépendances d'exécution (`--no-dev`), et la recette `client`
+      # lance l'export avec `uv run --no-dev` : `uv run` n'y ajoute donc pas le groupe `dev`, et l'étape
+      # suivante (e2e) tourne bien dans l'environnement de production.
       - name: Vérifier que le client généré est à jour
         run: just verifier-client
       - name: Installer Chromium pour Playwright

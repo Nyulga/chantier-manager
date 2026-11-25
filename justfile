@@ -137,16 +137,27 @@ e2e:
 
 # Régénère les types TypeScript de l'API à partir du schéma OpenAPI du backend. Sans argument, le client
 # versionné (src/api/schema.d.ts) est réécrit ; `verifier-client` passe un autre chemin, relatif à `frontend/`.
+# `--no-dev` : l'export du schéma n'a besoin que des dépendances d'exécution. Sans lui, `uv run` ajouterait
+# le groupe `dev` à un environnement installé par `uv sync --no-dev` (job e2e de la CI). Avec lui, `uv run`
+# n'ajoute rien et ne retire rien (il ne fait pas de synchronisation exacte) : en local, pytest, ruff et les
+# autres outils restent installés.
+# Recette à shebang (`sh`, présent avec Git pour Windows) : le chemin arrive en argument positionnel (`$1`),
+# entre guillemets, et n'est jamais recopié dans le texte du script. Une valeur contenant `;`, `'` ou `$(...)`
+# reste un simple nom de fichier, que ce soit sous Windows ou sous Linux. `quote()` ne conviendrait pas :
+# il échappe pour `sh`, pas pour PowerShell, le shell des autres recettes sous Windows.
+[positional-arguments]
 client sortie="src/api/schema.d.ts":
-    cd backend; uv run python -m tools.exporter_openapi ../frontend/openapi.json
-    cd frontend; pnpm exec openapi-typescript openapi.json -o {{sortie}}
+    #!/usr/bin/env sh
+    set -eu
+    (cd backend && uv run --no-dev python -m tools.exporter_openapi ../frontend/openapi.json)
+    cd frontend
+    exec pnpm exec openapi-typescript openapi.json -o "$1"
 
 # Le client généré est versionné (ADR 0013, issue #43) : un schéma d'API modifié sans `just client`
 # laisserait le frontend typé sur une ancienne API. La recette régénère donc le client dans un dossier
 # temporaire, hors des fichiers suivis, et le compare à la version commitée. La comparaison ignore le
 # retour chariot de fin de ligne (CRLF sous Windows, LF sous Linux) : seul le contenu compte. Recette à
 # shebang (`sh`, présent avec Git pour Windows), comme `normaliser-fins-de-ligne`.
-dossier_client_verifie := "node_modules/.cache/client-verifie"
 
 # Vérifie que le client TypeScript généré (src/api/schema.d.ts) correspond au schéma OpenAPI de l'API.
 verifier-client:
@@ -161,6 +172,9 @@ verifier-client:
         exit 1
     fi
     echo "Le client généré est à jour."
+
+# Dossier (relatif à `frontend/`) où `verifier-client` régénère le client, hors des fichiers suivis.
+dossier_client_verifie := "node_modules/.cache/client-verifie"
 
 # Hooks pre-commit du frontend. Les fichiers arrivent depuis la racine du dépôt (`frontend/src/...`) :
 # on retire le préfixe, car les outils tournent dans `frontend/`. Le retrait se fait dans le shell, argument
