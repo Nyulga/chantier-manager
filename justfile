@@ -120,15 +120,29 @@ normaliser-fins-de-ligne:
     git checkout-index --force --index -z --stdin < "$dossier/liste"
     exit "$echec"
 
+# Les arguments arrivent en positionnels (`"$@"`) et ne sont jamais recopiés dans le texte du script : un
+# argument contenant `;` ou `$(...)` reste un simple argument de pytest, il n'est pas exécuté comme une
+# commande. Cette recette est autorisée sans confirmation dans `.claude/settings.json`, d'où la précaution.
+# Recette à shebang (`sh`, présent avec Git pour Windows) : le shell PowerShell du reste du fichier n'offrirait
+# pas la même protection. `[working-directory]` s'applique aussi aux recettes à shebang.
+
 # Lance un test backend ciblé, sans seuil de couverture. Exemple : just test-back -k avancement
+[positional-arguments]
 [working-directory: 'backend']
 test-back *args:
-    uv run pytest --no-cov {{args}}
+    #!/usr/bin/env sh
+    set -eu
+    exec uv run pytest --no-cov "$@"
+
+# Même précaution que `test-back` : les arguments passent en positionnels, jamais recopiés dans le script.
 
 # Lance un test frontend ciblé, sans couverture. Exemple : just test-front useEtatApi
+[positional-arguments]
 [working-directory: 'frontend']
 test-front *args:
-    pnpm exec vitest run {{args}}
+    #!/usr/bin/env sh
+    set -eu
+    exec pnpm exec vitest run "$@"
 
 # Lance les tests de bout en bout (Playwright, Chromium) sur le site construit.
 [working-directory: 'frontend']
