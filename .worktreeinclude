@@ -1,0 +1,7 @@
+# Fichiers ignorés par Git à recopier dans chaque worktree (skill worktree, leçon MH-10).
+# Syntaxe du .gitignore. Jamais de secret ici : seulement des noms de fichiers.
+.env*
+!.env.example
+backend/.env*
+frontend/.env*
+!frontend/.env.example

@@ -75,7 +75,7 @@ Pour chaque étape du plan :
 3. **Commiter** sur `dev`, avec le message `feat(lot-$ARGUMENTS): <étape>` (par exemple `feat(lot-03): domaine utilisateur et politique de mot de passe`), puis `Refs #<issue>`. Pousser sur `origin/dev`.
 4. **Compléter le journal** du lot, `docs/plan/journal/lot-$ARGUMENTS.md` : l'étape, l'agent utilisé, les tests ajoutés, un extrait des sorties rouge et verte, et le commit.
 
-Les étapes s'enchaînent **une par une**, parce que chacune s'appuie sur la précédente. On ne parallélise que des étapes indépendantes et sans fichier commun, par exemple les lots 05 et 06 s'ils sont menés ensemble. Dans ce cas, chaque agent codeur travaille dans son propre worktree (`isolation: "worktree"`), et le coordinateur intègre les résultats.
+Les étapes s'enchaînent **une par une**, parce que chacune s'appuie sur la précédente. On ne parallélise que des étapes indépendantes et sans fichier commun, par exemple les lots 05 et 06 s'ils sont menés ensemble. Dans ce cas, le coordinateur prépare un worktree par étape avec le skill `worktree` ; chaque agent codeur y travaille sans commiter, puis le coordinateur intègre ses changements sur `dev` et range le worktree (skill `worktree`, « Intégrer sur dev »).
 
 ## 4. Vérifier
 

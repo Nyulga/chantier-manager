@@ -8,7 +8,8 @@
       "Bash(just e2e)",
       "Bash(git status)",
       "Bash(git diff *)",
-      "Bash(git log *)"
+      "Bash(git log *)",
+      "Bash(git worktree *)"
     ],
     "ask": [
       "Bash(gh pr create *)",
@@ -78,5 +79,8 @@
         ]
       }
     ]
+  },
+  "worktree": {
+    "baseRef": "head"
   }
 }
