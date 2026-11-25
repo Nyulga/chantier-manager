@@ -4,7 +4,7 @@ from http import HTTPStatus
 
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from app.shared.api.acces_http import adresse_du_client, categorie_de, est_surveillee
+from app.shared.api.acces_http import categorie_de, cle_du_client, est_surveillee
 from app.shared.api.erreurs import MESSAGE_ACTION_REFUSEE, reponse_probleme
 from app.shared.application.ports import CategorieAcces, ListeAdressesBloquees
 
@@ -35,5 +35,5 @@ class MiddlewareBlocageEcritures:
         return (
             est_surveillee(scope)
             and categorie_de(scope) is CategorieAcces.ECRITURE
-            and self._liste.est_bloquee(adresse_du_client(scope))
+            and self._liste.est_bloquee(cle_du_client(scope))
         )

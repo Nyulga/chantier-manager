@@ -138,3 +138,31 @@ def test_le_champ_piege_est_documente_comme_a_ne_pas_remplir() -> None:
     propriete = ChampPiege.model_json_schema()["properties"][NOM_CHAMP_PIEGE]
 
     assert "ne pas remplir" in propriete["description"].lower()
+
+
+@pytest.mark.parametrize("type_contenu", ["application/merge-patch+json", "application/vnd.x+json"])
+def test_un_sous_type_json_est_examine_comme_fastapi_le_lit(type_contenu: str) -> None:
+    client, liste, recus = un_client()
+
+    reponse = client.post(
+        "/formulaires",
+        content=b'{"nom": "a", "site_web": "robot"}',
+        headers={"content-type": type_contenu},
+    )
+
+    assert reponse.status_code == HTTPStatus.FORBIDDEN
+    assert liste.est_bloquee(ADRESSE)
+    assert recus == []
+
+
+def test_text_json_n_est_pas_examine() -> None:
+    client, liste, _ = un_client()
+
+    reponse = client.post(
+        "/formulaires",
+        content=b'{"nom": "a", "site_web": "robot"}',
+        headers={"content-type": "text/json"},
+    )
+
+    assert reponse.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert not liste.est_bloquee(ADRESSE)

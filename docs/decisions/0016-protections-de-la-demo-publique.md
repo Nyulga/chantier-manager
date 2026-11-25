@@ -18,7 +18,7 @@ Il fallait donc limiter ce qu'un visiteur ou un robot peut faire, sans compte et
 
   Le proxy garde les mêmes protections (`deploy/protections.caddy`), partagées par la copie locale et la production.
 - **Limite de débit et blocage par adresse, en mémoire** :
-  - 20 écritures et 120 lectures par minute et par adresse, en fenêtre glissante ;
+  - 20 écritures et 120 lectures par minute et par adresse, en fenêtre glissante ; une adresse IPv6 compte pour son bloc /64, celui d'un abonné, pour qu'un robot ne puisse pas changer d'adresse à chaque requête ;
   - une adresse qui touche une fausse adresse piège (`/wp-admin`, `/.env`, `/.git/…`) ou remplit le champ piège d'un formulaire perd le droit d'écrire pendant une heure.
 
   Ces compteurs vivent en mémoire, d'où **un seul processus API** (`--workers 1`). Les ports `LimiteurDebit` et `ListeAdressesBloquees` n'ont qu'une implémentation pendant le squelette : c'est une **dérogation écrite au principe L** de la règle 00, qui demande deux implémentations par port.

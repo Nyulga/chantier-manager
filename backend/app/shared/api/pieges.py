@@ -9,7 +9,7 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, HTTPException, Request
 
-from app.shared.api.acces_http import adresse_du_client
+from app.shared.api.acces_http import cle_du_client
 from app.shared.application.ports import ListeAdressesBloquees
 
 # Chemins que seul un robot demande. Ils sont hors de `/api` : le proxy les envoie à l'API
@@ -45,7 +45,7 @@ def creer_routeur_pieges(liste: ListeAdressesBloquees) -> APIRouter:
 
     def piege(requete: Request) -> None:
         if EN_TETE_NAVIGATEUR not in requete.headers:
-            liste.bloquer(adresse_du_client(requete.scope))
+            liste.bloquer(cle_du_client(requete.scope))
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND)
 
     for chemin in CHEMINS_PIEGES:

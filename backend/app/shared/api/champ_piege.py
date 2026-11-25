@@ -7,17 +7,18 @@ ne reçoit donc jamais ce champ.
 
 import json
 from collections.abc import Awaitable, Callable
+from email.message import Message
 from http import HTTPStatus
 
 from fastapi import Depends, HTTPException, Request, params
 from pydantic import BaseModel, Field
 
-from app.shared.api.acces_http import adresse_du_client
+from app.shared.api.acces_http import cle_du_client
 from app.shared.api.schemas import CONFIG_ENTREE
 from app.shared.application.ports import ListeAdressesBloquees
 
 NOM_CHAMP_PIEGE = "site_web"
-TYPE_JSON = "application/json"
+TYPE_PRINCIPAL_JSON = "application"
 
 
 class ChampPiege(BaseModel):
@@ -49,7 +50,7 @@ def creer_garde_champ_piege(liste: ListeAdressesBloquees) -> Callable[[Request],
 
     async def verifier(requete: Request) -> None:
         if _est_du_json(requete) and _champ_piege_rempli(await requete.body()):
-            liste.bloquer(adresse_du_client(requete.scope))
+            liste.bloquer(cle_du_client(requete.scope))
             raise HTTPException(status_code=HTTPStatus.FORBIDDEN)
 
     return verifier
@@ -65,11 +66,18 @@ def dependances_champ_piege(liste: ListeAdressesBloquees) -> list[params.Depends
 
 
 def _est_du_json(requete: Request) -> bool:
-    # Un formulaire `text/plain` envoyé par un site tiers, à l'insu du visiteur, ne doit pas
-    # le faire bloquer : seul un corps JSON, que le navigateur d'une page tierce ne peut pas
-    # envoyer sans autorisation, est examiné (ADR 0016). Les paramètres (`charset`) sont ignorés.
-    type_contenu = requete.headers.get("content-type", "").split(";")[0]
-    return type_contenu.strip().lower() == TYPE_JSON
+    # Même critère que FastAPI pour lire un corps comme du JSON : `application/json` ou tout
+    # sous-type `json` / `…+json`. Un autre critère laisserait passer un robot qui envoie
+    # `application/merge-patch+json`. Ces types exigent une pré-vérification CORS dans un
+    # navigateur : un site tiers ne peut pas les envoyer à l'insu du visiteur, donc la
+    # protection contre le blocage d'un innocent reste intacte (ADR 0016). `text/plain` et
+    # `text/json`, eux, ne sont jamais examinés.
+    message = Message()
+    message["content-type"] = requete.headers.get("content-type", "")
+    if message.get_content_maintype() != TYPE_PRINCIPAL_JSON:
+        return False
+    sous_type = message.get_content_subtype()
+    return sous_type == "json" or sous_type.endswith("+json")
 
 
 def _champ_piege_rempli(corps: bytes) -> bool:

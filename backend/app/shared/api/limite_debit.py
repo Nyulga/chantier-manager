@@ -4,7 +4,7 @@ from http import HTTPStatus
 
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from app.shared.api.acces_http import adresse_du_client, categorie_de, est_surveillee
+from app.shared.api.acces_http import categorie_de, cle_du_client, est_surveillee
 from app.shared.api.erreurs import MESSAGE_TROP_DE_DEMANDES, reponse_probleme
 from app.shared.application.ports import LimiteurDebit
 
@@ -25,7 +25,7 @@ class MiddlewareLimiteDebit:
         if scope["type"] != "http" or not est_surveillee(scope):
             await self._app(scope, receive, send)
             return
-        delai = self._limiteur.consommer(adresse_du_client(scope), categorie_de(scope))
+        delai = self._limiteur.consommer(cle_du_client(scope), categorie_de(scope))
         if delai is None:
             await self._app(scope, receive, send)
             return
