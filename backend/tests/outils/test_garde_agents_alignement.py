@@ -7,9 +7,8 @@ garde, ou un hook qui ne surveille plus les mêmes outils, fait échouer `just v
 import json
 from pathlib import Path
 
-import pytest
-
-from tools.garde.droits import AGENTS_SANS_ECRITURE, DROITS_ECRITURE
+from tools.garde.agents import AGENTS_SANS_ECRITURE, VERIFICATEURS
+from tools.garde.droits import DROITS_ECRITURE
 from tools.garde.protocole import OUTILS_SURVEILLES
 
 DEPOT = Path(__file__).resolve().parents[3]
@@ -24,19 +23,28 @@ def lire_en_tete(fiche: Path) -> dict[str, str]:
     return {cle.strip(): valeur.strip() for cle, valeur in paires}
 
 
-def test_le_depot_contient_des_fiches_dagents() -> None:
-    assert len(FICHES) >= len(DROITS_ECRITURE) + len(AGENTS_SANS_ECRITURE)
-
-
-@pytest.mark.parametrize("fiche", FICHES, ids=lambda fiche: fiche.stem)
-def test_chaque_agent_est_classe_selon_ses_outils_decriture(fiche: Path) -> None:
+def ecrit(fiche: Path) -> bool:
+    """Dit si l'agent a un outil d'écriture ; une fiche sans `tools` hérite de tous les outils."""
     en_tete = lire_en_tete(fiche)
-    outils = {outil.strip() for outil in en_tete["tools"].split(",")}
+    if "tools" not in en_tete:
+        return True
+    return bool({outil.strip() for outil in en_tete["tools"].split(",")} & OUTILS_D_ECRITURE)
 
-    ecrit = bool(outils & OUTILS_D_ECRITURE)
 
-    assert (en_tete["name"] in DROITS_ECRITURE) is ecrit
-    assert (en_tete["name"] in AGENTS_SANS_ECRITURE) is not ecrit
+def test_les_agents_qui_ecrivent_sont_ceux_de_la_table_des_droits() -> None:
+    ecrivains = {lire_en_tete(fiche)["name"] for fiche in FICHES if ecrit(fiche)}
+
+    assert ecrivains == set(DROITS_ECRITURE)
+
+
+def test_les_agents_sans_outil_decriture_sont_ceux_de_la_liste_de_la_garde() -> None:
+    lecteurs = {lire_en_tete(fiche)["name"] for fiche in FICHES if not ecrit(fiche)}
+
+    assert lecteurs == set(AGENTS_SANS_ECRITURE)
+
+
+def test_les_verificateurs_font_partie_des_agents_sans_ecriture() -> None:
+    assert set(VERIFICATEURS) <= set(AGENTS_SANS_ECRITURE)
 
 
 def test_le_hook_du_projet_surveille_les_outils_de_la_garde_et_bloque_en_cas_de_panne() -> None:

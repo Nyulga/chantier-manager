@@ -1,15 +1,16 @@
 """Garde des sous-agents : entrées illisibles, pannes, réponse et script de bout en bout."""
 
+import inspect
 import io
 import json
 import runpy
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 
 from tests.outils.appels_garde_agents import RACINE, commande, ecriture
-from tools.garde import protocole
 from tools.garde.protocole import CODE_BLOQUER, EntreeIllisibleError, decider, traiter
 
 CODE_DOCUMENTE = 2  # Le seul code que Claude Code lit comme « bloquer l'appel ».
@@ -47,12 +48,19 @@ def test_une_entree_illisible_est_bloquee_avec_une_raison(brut: bytes) -> None:
     assert "illisible" in reponse.erreur
 
 
-def test_une_erreur_inattendue_de_la_garde_bloque_lappel(monkeypatch: pytest.MonkeyPatch) -> None:
-    def en_panne(entree: object, racine: str | Path) -> str | None:
-        raise RecursionError
+@pytest.fixture
+def pile_courte() -> Iterator[None]:
+    """Limite la pile d'appels à 150 niveaux au-dessus du test, le temps du test."""
+    ancienne = sys.getrecursionlimit()
+    sys.setrecursionlimit(len(inspect.stack(0)) + 150)
+    yield
+    sys.setrecursionlimit(ancienne)
 
-    monkeypatch.setattr(protocole, "decider", en_panne)
-    brut = json.dumps(commande("dev-api", "git status")).encode()
+
+@pytest.mark.usefixtures("pile_courte")
+def test_une_erreur_inattendue_de_la_garde_bloque_lappel() -> None:
+    imbriquee = "powershell -Command " * 300 + "git status"
+    brut = json.dumps(commande("dev-api", imbriquee)).encode()
 
     reponse = traiter(brut, RACINE)
 

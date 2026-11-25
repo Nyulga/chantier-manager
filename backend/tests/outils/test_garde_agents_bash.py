@@ -3,9 +3,8 @@
 import pytest
 
 from tests.outils.appels_garde_agents import RACINE, commande
+from tools.garde.agents import VERIFICATEURS
 from tools.garde.protocole import decider
-
-VERIFICATEURS = ("revue", "conformite", "securite")
 
 
 @pytest.mark.parametrize(
@@ -100,7 +99,7 @@ def test_une_commande_git_qui_modifie_le_depot_est_refusee_aux_sous_agents(texte
         "git remote -v",
         "git -C backend status",
         "git",
-        "git -c",
+        "git --version",
         "just verifier",
         "timeout 60 just verifier",
         'grep -n "git push" docs/x.md',
@@ -178,7 +177,30 @@ def test_les_verificateurs_peuvent_lire(agent: str, texte: str) -> None:
 
 
 @pytest.mark.parametrize("agent", ["pentest", "backlog"])
-def test_pentest_et_backlog_ne_sont_limites_que_par_la_garde_git(agent: str) -> None:
-    assert decider(commande(agent, "tee rapport.md"), RACINE) is None
-    assert decider(commande(agent, "gh issue create --title x"), RACINE) is None
+@pytest.mark.parametrize("texte", ["tee rapport.md", "gh issue create --title x"])
+def test_pentest_et_backlog_peuvent_ecrire_hors_git(agent: str, texte: str) -> None:
+    assert decider(commande(agent, texte), RACINE) is None
+
+
+@pytest.mark.parametrize("agent", ["pentest", "backlog"])
+def test_pentest_et_backlog_restent_soumis_a_la_garde_git(agent: str) -> None:
     assert decider(commande(agent, "git push"), RACINE) is not None
+
+
+# Ces options font lancer une commande par git, même pour une sous-commande de lecture.
+@pytest.mark.parametrize(
+    "texte",
+    [
+        "git -c core.pager=x log",
+        "git -c core.fsmonitor=x status",
+        "git --config-env=core.pager=X log",
+        "git --config-env core.pager=X log",
+        "git grep -Ox motif",
+        "git grep --open-files-in-pager=x motif",
+    ],
+)
+def test_les_options_qui_font_lancer_une_commande_par_git_sont_refusees(texte: str) -> None:
+    raison = decider(commande("dev-api", texte), RACINE)
+
+    assert raison is not None
+    assert "coordinateur" in raison

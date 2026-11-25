@@ -14,7 +14,9 @@ from pathlib import Path
 from tools.garde.commandes import raison_commande
 from tools.garde.droits import raison_ecriture
 
+# Le seul code de sortie que Claude Code lit comme un blocage de l'appel.
 CODE_BLOQUER = 2
+# Outils examinés par la garde ; doit rester égal au `matcher` du hook (test d'alignement).
 OUTILS_SURVEILLES = frozenset({"Edit", "Write", "Bash"})
 
 

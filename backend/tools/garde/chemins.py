@@ -9,10 +9,13 @@ import posixpath
 import re
 from pathlib import Path
 
+# Chemin absolu après normalisation (casse ignorée) : `c:/…` sous Windows, `/…` sous Linux.
 _CHEMIN_ABSOLU = re.compile(r"[a-z]:/|/")
+# Racine Windows, avec sa lettre de lecteur.
 _LECTEUR = re.compile(r"[a-z]:/")
 # Git Bash écrit `C:\Users` sous la forme `/c/Users`.
 _LECTEUR_GIT_BASH = re.compile(r"/([a-z])/")
+# Lettre de lecteur au début d'un chemin, avant normalisation : le seul `:` admis.
 _PREFIXE_LECTEUR = re.compile(r"[A-Za-z]:")
 
 

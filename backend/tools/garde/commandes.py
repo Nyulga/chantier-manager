@@ -9,10 +9,8 @@ import re
 import shlex
 from collections.abc import Iterator, Mapping
 
+from tools.garde.agents import VERIFICATEURS
 from tools.garde.refus import refus
-
-# Ces agents vérifient sans rien modifier : les commandes d'écriture leur sont aussi refusées.
-VERIFICATEURS = ("revue", "conformite", "securite")
 
 GIT_LECTURE = frozenset(
     (
@@ -50,7 +48,9 @@ OPTIONS_GIT_A_VALEUR = frozenset(
 )
 # `gh pr checkout` change de branche et `gh pr merge` fusionne : deux actions du coordinateur.
 GH_INTERDIT = frozenset({("pr", "checkout"), ("pr", "merge")})
+# Commandes qui modifient des fichiers, refusées aux vérificateurs (avec `sed -i`, vu à part).
 COMMANDES_D_ECRITURE = frozenset({"rm", "mv", "cp", "tee"})
+# Shells qui exécutent le texte passé après `-c` : ce texte est analysé à son tour.
 INTERPRETEURS_POSIX = frozenset({"sh", "bash", "zsh", "dash"})
 # PowerShell et cmd prennent tout le reste de la ligne comme commande, après `-Command` ou `/c`.
 INTERPRETEURS_WINDOWS = frozenset({"powershell", "pwsh", "cmd"})
@@ -76,8 +76,8 @@ MOTS_TRANSPARENTS = frozenset(
 # Commandes qui en lancent une autre, placée après leurs propres options : `xargs -n 1 git push`.
 LANCEURS = frozenset({"xargs", "timeout", "sudo", "nice"})
 
-# Un segment est une suite de textes cités (gardés d'un bloc) et de caractères ordinaires, que
-# ne coupent ni `;`, `&`, `|`, retour à la ligne, accent grave, parenthèse ni `$(`.
+# Un segment est une suite de textes cités (gardés d'un bloc) et de caractères autres que `;`,
+# `&`, `|`, le retour à la ligne, l'accent grave, les parenthèses et `$(`.
 _SEGMENT = re.compile(r"""(?:"(?:\\.|[^"\\])*"|'[^']*'|\$(?!\()|[^;&|\n`()$"'])+""")
 # Une barre oblique inverse en fin de ligne prolonge la commande sur la ligne suivante.
 _SUITE_DE_LIGNE = re.compile(r"\\\r?\n")
@@ -86,6 +86,10 @@ _AFFECTATION = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
 _ARGUMENT_DE_LANCEUR = re.compile(r"-.*|\d+(\.\d+)?[smhd]?|\{\}")
 # Option de `sh` qui annonce un script en ligne : `-c`, ou regroupée avec d'autres (`-lc`).
 _OPTION_C = re.compile(r"-[a-z]*c[a-z]*")
+# Options qui font lancer un programme par git (pager, programme de diff, moniteur de fichiers),
+# même pour une sous-commande de lecture : aucun sous-agent n'en a besoin.
+_OPTION_GIT_QUI_LANCE = re.compile(r"-c|--config-env(=.*)?")
+_OPTION_GREP_QUI_LANCE = re.compile(r"-O.*|--open-files-in-pager(=.*)?")
 # Option de `sed` qui modifie le fichier sur place : `-i`, `-i.bak`, `-ni` ou `--in-place`.
 _OPTION_SED_SUR_PLACE = re.compile(r"-[A-Za-z]*i.*|--in-place(=.*)?")
 
@@ -144,8 +148,8 @@ def _commandes(texte: str) -> Iterator[list[str]]:
             yield from _commandes(script)
 
 
-def _sous_commande_git(arguments: list[str]) -> tuple[str, list[str]]:
-    """Sépare la sous-commande de git de ses arguments, en sautant les options globales."""
+def _sous_commande_git(arguments: list[str]) -> tuple[list[str], str, list[str]]:
+    """Sépare les options globales de git, la sous-commande et les arguments de celle-ci."""
     position = 0
     while position < len(arguments):
         argument = arguments[position]
@@ -154,13 +158,21 @@ def _sous_commande_git(arguments: list[str]) -> tuple[str, list[str]]:
         elif argument.startswith("-"):
             position += 1
         else:
-            return argument, arguments[position + 1 :]
-    return "", []
+            return arguments[:position], argument, arguments[position + 1 :]
+    return arguments, "", []
+
+
+def _git_lance_ou_ecrit(globales: list[str], sous_commande: str, arguments: list[str]) -> bool:
+    """Dit si des options font écrire un fichier ou lancer un programme à git."""
+    if any(argument.startswith("--output") for argument in arguments):
+        return True  # `git diff --output=f` et `git log --output f` écrivent un fichier.
+    if any(_OPTION_GIT_QUI_LANCE.fullmatch(option) for option in globales):
+        return True
+    return sous_commande == "grep" and any(_OPTION_GREP_QUI_LANCE.fullmatch(a) for a in arguments)
 
 
 def _git_ne_fait_que_lire(sous_commande: str, arguments: list[str]) -> bool:
-    if any(argument.startswith("--output") for argument in arguments):
-        return False  # `git diff --output=f` et `git log --output f` écrivent un fichier.
+    # `git` seul, ou avec `--version` ou `--help`, ne fait qu'afficher une aide.
     if not sous_commande or sous_commande in GIT_LECTURE:
         return True
     options_permises = GIT_LECTURE_AVEC_OPTIONS.get(sous_commande)
@@ -168,8 +180,9 @@ def _git_ne_fait_que_lire(sous_commande: str, arguments: list[str]) -> bool:
 
 
 def _raison_git(agent: str, arguments: list[str]) -> str | None:
-    sous_commande, reste = _sous_commande_git(arguments)
-    if _git_ne_fait_que_lire(sous_commande, reste):
+    globales, sous_commande, reste = _sous_commande_git(arguments)
+    lecture = _git_ne_fait_que_lire(sous_commande, reste)
+    if lecture and not _git_lance_ou_ecrit(globales, sous_commande, reste):
         return None
     return refus(agent, f"de lancer « git {sous_commande} » : seul le coordinateur modifie git")
 

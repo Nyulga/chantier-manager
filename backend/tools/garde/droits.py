@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from pathlib import Path, PurePosixPath
 
+from tools.garde.agents import AGENTS_SANS_ECRITURE
 from tools.garde.chemins import chemin_relatif, est_suspect, normaliser
 from tools.garde.refus import refus
 
@@ -41,7 +42,13 @@ DROITS_ECRITURE: Mapping[str, tuple[str, ...]] = {
         "frontend/src/api/schema.d.ts",
         "frontend/openapi.json",
     ),
-    "dev-frontend": ("frontend/**",),
+    "dev-frontend": (
+        "frontend/src/**",
+        "frontend/e2e/**",
+        "frontend/tests/**",
+        "frontend/public/**",
+        "frontend/index.html",
+    ),
     "dev-socle": (
         "deploy/**",
         ".github/**",
@@ -73,28 +80,22 @@ DROITS_ECRITURE: Mapping[str, tuple[str, ...]] = {
 }
 
 # Exceptions aux droits de `dev-frontend` : le client généré n'est jamais écrit à la main
-# (ADR 0013), et l'outillage du frontend (ESLint, TypeScript, Vite, dépendances, tests des
-# garde-fous) appartient à `dev-socle`, pour qu'un agent ne puisse pas assouplir les règles qui
-# le contrôlent.
+# (ADR 0013), et les tests des garde-fous appartiennent à `dev-socle`, comme le reste de
+# l'outillage (absent de la liste de `dev-frontend`), pour qu'un agent ne puisse pas assouplir les
+# règles qui le contrôlent.
 EXCLUSIONS_ECRITURE: Mapping[str, tuple[str, ...]] = {
-    "dev-frontend": (
-        "frontend/src/api/schema.d.ts",
-        "frontend/openapi.json",
-        *(motif for motif in DROITS_ECRITURE["dev-socle"] if motif.startswith("frontend/")),
-    ),
+    "dev-frontend": ("frontend/src/api/schema.d.ts", "frontend/tests/garde-fous/**"),
 }
 
-# Protégés pour tous les sous-agents, avant toute autre règle : un agent ne doit pas pouvoir
-# élargir ses propres droits. La configuration de Claude Code (`.claude/` et `.claude.json`, du
-# dépôt comme du dossier personnel) l'est partout, même hors du dépôt.
+# Fichiers de la garde, protégés pour tous les sous-agents avant toute autre règle : un agent ne
+# doit pas pouvoir élargir ses propres droits. `backend/tools/__init__.py` est exécuté à chaque
+# chargement de la garde. La configuration de Claude Code est protégée à part (`_est_protege`).
 FICHIERS_PROTEGES = (
+    "backend/tools/__init__.py",
     "backend/tools/garde_agents.py",
     "backend/tools/garde/**",
     "backend/tests/outils/*garde_agents*.py",
 )
-
-# Ces agents n'ont ni Edit ni Write : un appel qui arrive quand même est refusé.
-AGENTS_SANS_ECRITURE = ("revue", "conformite", "securite", "pentest", "backlog")
 
 
 def _correspond(relatif: str, motifs: tuple[str, ...]) -> bool:
@@ -102,6 +103,8 @@ def _correspond(relatif: str, motifs: tuple[str, ...]) -> bool:
 
 
 def _est_protege(chemin: str, relatif: str | None) -> bool:
+    # `.claude/` et `.claude.json` sont protégés partout, dans le dépôt comme dans le dossier
+    # personnel : c'est là que vivent les hooks et les permissions.
     composants = normaliser(chemin).split("/")
     if ".claude" in composants or composants[-1] == ".claude.json":
         return True

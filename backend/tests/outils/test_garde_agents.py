@@ -3,11 +3,11 @@
 import pytest
 
 from tests.outils.appels_garde_agents import RACINE, ecriture
+from tools.garde.agents import AGENTS_SANS_ECRITURE
 from tools.garde.chemins import chemin_relatif
 from tools.garde.protocole import decider
 
 AGENTS_ECRIVAINS = ["dev-metier", "dev-donnees", "dev-api", "dev-frontend", "dev-socle"]
-SANS_ECRITURE = ("revue", "conformite", "securite", "pentest", "backlog")
 
 
 @pytest.mark.parametrize(
@@ -35,6 +35,8 @@ SANS_ECRITURE = ("revue", "conformite", "securite", "pentest", "backlog")
         ("dev-frontend", "frontend/src/pages/x.tsx"),
         ("dev-frontend", "frontend/e2e/parcours.spec.ts"),
         ("dev-frontend", "frontend/tests/theme/x.test.ts"),
+        ("dev-frontend", "frontend/index.html"),
+        ("dev-frontend", "frontend/public/favicon.svg"),
         ("dev-socle", "deploy/compose.prod.yaml"),
         ("dev-socle", ".github/workflows/ci.yml"),
         ("dev-socle", "justfile"),
@@ -74,6 +76,12 @@ def test_un_agent_ecrit_dans_sa_couche(agent: str, relatif: str) -> None:
         ("dev-frontend", "frontend/vite.config.ts"),
         ("dev-frontend", "frontend/tsconfig.app.json"),
         ("dev-frontend", "frontend/tests/garde-fous/limites.test.ts"),
+        ("dev-frontend", "frontend/vitest.config.ts"),
+        ("dev-frontend", "frontend/.prettierrc"),
+        ("dev-frontend", "frontend/pnpm-workspace.yaml"),
+        ("dev-frontend", "frontend/.pnpmfile.cjs"),
+        ("dev-frontend", "frontend/.jscpd.json"),
+        ("dev-frontend", "frontend/node_modules/eslint/lib/api.js"),
         ("dev-socle", "backend/app/etapes/domain/etape.py"),
         ("dev-socle", "docs/plan/squelette.md"),
         ("dev-socle", "frontend/src/pages/x.tsx"),
@@ -97,6 +105,7 @@ def test_un_agent_ne_peut_pas_ecrire_hors_de_sa_couche(agent: str, relatif: str)
         f"{RACINE}/backend/tools/garde_agents.py",
         f"{RACINE}/backend/tools/garde/droits.py",
         f"{RACINE}/backend/tools/garde/__init__.py",
+        f"{RACINE}/backend/tools/__init__.py",
         f"{RACINE}/backend/tests/outils/test_garde_agents.py",
         f"{RACINE}/backend/tests/outils/test_garde_agents_bash.py",
         f"{RACINE}/backend/tests/outils/appels_garde_agents.py",
@@ -200,12 +209,17 @@ def test_chemin_relatif_accepte_une_racine_posix_et_une_racine_finie_par_un_sepa
     assert chemin_relatif("/home/x/depot/a.py", "/home/x/depot/") == "a.py"
 
 
-def test_sous_linux_un_chemin_en_slash_lettre_nest_pas_converti() -> None:
-    assert chemin_relatif("/c/depot/a.py", "/c/depot") == "a.py"
-    assert chemin_relatif("/c/x.py", "/home/x/depot") is None
+@pytest.mark.parametrize(
+    ("chemin", "racine", "attendu"),
+    [("/c/depot/a.py", "/c/depot", "a.py"), ("/c/x.py", "/home/x/depot", None)],
+)
+def test_sous_linux_un_chemin_en_slash_lettre_nest_pas_converti(
+    chemin: str, racine: str, attendu: str | None
+) -> None:
+    assert chemin_relatif(chemin, racine) == attendu
 
 
-@pytest.mark.parametrize("agent", SANS_ECRITURE)
+@pytest.mark.parametrize("agent", AGENTS_SANS_ECRITURE)
 @pytest.mark.parametrize("chemin", [f"{RACINE}/docs/x.md", "C:/Autre/x.md"])
 def test_un_agent_sans_droit_decriture_est_toujours_refuse(agent: str, chemin: str) -> None:
     entree = {"agent_type": agent, "tool_name": "Edit", "tool_input": {"file_path": chemin}}
@@ -228,11 +242,16 @@ def test_un_agent_inconnu_est_accepte_hors_du_depot() -> None:
 
 
 @pytest.mark.parametrize("agent_type", [None, ""])
-def test_la_session_principale_ecrit_et_commite_librement(agent_type: str | None) -> None:
+def test_la_session_principale_ecrit_librement(agent_type: str | None) -> None:
     ecrire = {"tool_name": "Write", "tool_input": {"file_path": f"{RACINE}/.claude/settings.json"}}
-    commiter = {"tool_name": "Bash", "tool_input": {"command": "git commit -m x"}}
 
     assert decider({"agent_type": agent_type, **ecrire}, RACINE) is None
+
+
+@pytest.mark.parametrize("agent_type", [None, ""])
+def test_la_session_principale_commite_librement(agent_type: str | None) -> None:
+    commiter = {"tool_name": "Bash", "tool_input": {"command": "git commit -m x"}}
+
     assert decider({"agent_type": agent_type, **commiter}, RACINE) is None
 
 
