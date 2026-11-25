@@ -145,3 +145,19 @@ Issues #47 à #59 (label `relecture`), créées par `backlog` (Sonnet, effort fa
 ### Client API régénéré (`dev-frontend`, Sonnet, effort élevé)
 `just client` : 429 sur les 8 routes limitées, 413 sur les 3 `POST`, descriptions des 400 et 403 ; aucun schéma de données changé, aucun autre fichier du frontend touché (`erreurApi.ts` couvrait déjà 413 et 429).
 - Vert : `just verifier` → 983 tests backend, 488 tests frontend ; `just e2e` → 44 passed, sans relance.
+
+## Second passage des vérificateurs
+
+- **conformite** : conforme ; trois renvois à l'ADR 0015 oubliés, corrigés (`6bb8163`).
+- **revue** : une étape pouvait rester bloquée à vie « À valider » au plafond de transitions. Décision du propriétaire : la validation reste toujours possible. Mineurs en issues #60 à #62.
+- **securite** : les limites se contournaient en IPv6 (issue #47, devenue importante : la démo est joignable en IPv6) ; le champ piège ignorait `application/…+json`.
+
+### Validation exemptée du plafond (`dev-metier`, Opus, effort élevé)
+`mene_a_un_statut_final(action)` dans le domaine, déduite de la table des transitions ; `ChangerStatutEtape` n'applique pas le plafond à une telle action. ADR 0016 complété (historique borné à 21 entrées). Commit `14ae3ff`.
+- Rouge : `PlafondAtteintError` levée pour `test_au_plafond_le_chef_peut_encore_valider` et `test_au_plafond_l_ouvrier_ne_peut_toujours_pas_valider` (2 failed, 7 passed).
+- Vert : `tests/domain tests/application` → 468 passed.
+
+### IPv6 par bloc /64, champ piège `+json` (`dev-api`, Sonnet, effort moyen)
+`cle_du_client` (ex-`adresse_du_client`) : IPv4 exacte, IPv6 → /64, IPv4 encapsulée → IPv4 ; champ piège examiné selon le critère JSON de FastAPI. `test_protections_par_prefixe.py` (10 tests), cas `+json` dans `test_champ_piege_api.py`. ADR 0016 complété. Commit `cf4475a`, qui ferme #47.
+- Rouge : 4 tests de préfixe (clé = adresse exacte) et 2 tests `+json` (200 au lieu de 403).
+- Vert : `just verifier-back` → 1001 passed, couverture 100 %.
