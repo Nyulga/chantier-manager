@@ -25,7 +25,7 @@ _lancer-web:
     pnpm dev
 
 # Lance toutes les vérifications du projet : c'est la porte d'entrée de la CI.
-verifier: verifier-back verifier-front doublons
+verifier: verifier-back verifier-front verifier-client doublons
 
 # Vérifications du backend : style, typage, architecture, tailles, désactivations de règles, sécurité, tests et couverture.
 [working-directory: 'backend']
@@ -135,10 +135,32 @@ test-front *args:
 e2e:
     pnpm e2e
 
-# Régénère les types TypeScript de l'API à partir du schéma OpenAPI du backend.
-client:
+# Régénère les types TypeScript de l'API à partir du schéma OpenAPI du backend. Sans argument, le client
+# versionné (src/api/schema.d.ts) est réécrit ; `verifier-client` passe un autre chemin, relatif à `frontend/`.
+client sortie="src/api/schema.d.ts":
     cd backend; uv run python -m tools.exporter_openapi ../frontend/openapi.json
-    cd frontend; pnpm exec openapi-typescript openapi.json -o src/api/schema.d.ts
+    cd frontend; pnpm exec openapi-typescript openapi.json -o {{sortie}}
+
+# Le client généré est versionné (ADR 0013, issue #43) : un schéma d'API modifié sans `just client`
+# laisserait le frontend typé sur une ancienne API. La recette régénère donc le client dans un dossier
+# temporaire, hors des fichiers suivis, et le compare à la version commitée. La comparaison ignore le
+# retour chariot de fin de ligne (CRLF sous Windows, LF sous Linux) : seul le contenu compte. Recette à
+# shebang (`sh`, présent avec Git pour Windows), comme `normaliser-fins-de-ligne`.
+dossier_client_verifie := "node_modules/.cache/client-verifie"
+
+# Vérifie que le client TypeScript généré (src/api/schema.d.ts) correspond au schéma OpenAPI de l'API.
+verifier-client:
+    #!/usr/bin/env sh
+    set -eu
+    dossier="frontend/{{dossier_client_verifie}}"
+    mkdir -p "$dossier"
+    trap 'rm -rf "$dossier"' EXIT
+    "{{just_executable()}}" client "{{dossier_client_verifie}}/schema.d.ts"
+    if ! diff --strip-trailing-cr -u frontend/src/api/schema.d.ts "$dossier/schema.d.ts"; then
+        echo "Le client généré n'est pas à jour : lance 'just client' et commite frontend/src/api/schema.d.ts." >&2
+        exit 1
+    fi
+    echo "Le client généré est à jour."
 
 # Hooks pre-commit du frontend. Les fichiers arrivent depuis la racine du dépôt (`frontend/src/...`) :
 # on retire le préfixe, car les outils tournent dans `frontend/`. Le retrait se fait dans le shell, argument
