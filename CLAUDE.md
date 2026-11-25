@@ -27,6 +27,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`docs/design-system.md`** : le design system « Balise », validé. Toute interface l'applique, et ses tokens ne passent que par le thème Tailwind ; aucune couleur ni taille en dur. Le jaune haute visibilité et les rayures sont réservés aux étapes à valider (le jaune aussi au bouton principal sur mobile et à l'élément actif de la navigation).
 - **`docs/plan/`** : le plan de développement en 9 lots verticaux (`README.md`, puis un fichier `lot-XX-*.md` par lot). Avant de travailler sur un lot, lis son fichier et respecte sa « définition de terminé ».
 
+## Outils
+
+- Utilise Context7 dès que tu as besoin de la doc d'une librairie ou d'une API.
+- Pour un service, une CLI installée et connectée passe avant un serveur MCP.
+
+## Où ranger une consigne
+
+Test d'une ligne : l'agent peut-il la deviner en lisant le code ? Si oui, elle n'a rien à faire ici.
+
+| La consigne | Sa place |
+|---|---|
+| un fait du projet : commande exacte, piège, renvoi vers un document | ce `CLAUDE.md` |
+| une procédure en plusieurs étapes | un skill (`.claude/skills/`) |
+| une règle pour une partie du code | une rule avec `paths` (`.claude/rules/`) |
+| une règle sans exception | une permission (`.claude/settings.json`) ou un hook (`.claude/hooks/`) |
+| une décision d'architecture, avec les options écartées | un ADR (`docs/decisions/`) |
+| une préférence à moi, dans ce projet | `CLAUDE.local.md` (ignoré par Git) |
+| une préférence à moi, partout | `~/.claude/CLAUDE.md` |
+| « retiens que… » | la mémoire automatique (`/memory`) |
+
+- Chaque consigne vit **à un seul endroit** : deux consignes contradictoires, et l'agent suit l'une ou l'autre.
+- Pas d'import `@` vers un document long : son contenu entier serait chargé à chaque session ; une ligne de renvoi suffit.
+- Jamais ici : l'arborescence, l'historique d'une tâche, un secret.
+
+## Compact Instructions
+
+Quand la conversation est résumée, garde : le lot en cours, son étape et ses critères, le commit de départ, les décisions prises et leurs raisons, les sorties rouge et verte déjà vues, les questions encore ouvertes. Les consignes données seulement dans la conversation peuvent disparaître : une consigne durable va dans un fichier (voir ci-dessus).
+
 ## État du projet
 
 **Phase en cours : le squelette** ([`docs/plan/squelette.md`](docs/plan/squelette.md), lots S1 à S6). Il n'y a pas d'authentification dans l'application : l'`Acteur` vient d'un sélecteur de profil.
