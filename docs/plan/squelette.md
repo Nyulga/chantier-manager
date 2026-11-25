@@ -47,7 +47,7 @@ Chaque lot suit le skill `lot` : plan validé, TDD, vérification par `revue`, `
 - [~] J'ajoute (✅), je modifie, je réordonne et je supprime (reportés) des étapes sur un chantier.
 - [x] En profil ouvrier, je fais passer une étape de `À faire` à `En cours`, puis à `Terminée (à valider)`. Je ne peux ni valider ni refuser.
 - [x] En profil chef, je valide une étape, ou je la refuse avec un commentaire obligatoire, ce qui la renvoie en `En cours`.
-- [x] Toute transition non autorisée est refusée par l'API (409).
+- [x] Toute transition non autorisée est refusée par l'API : 403 pour une action que le profil n'a jamais le droit de faire, 409 pour un saut d'état (ADR 0018, lot S8).
 - [x] L'avancement est égal au nombre d'étapes validées divisé par le nombre total, et vaut 0 % s'il n'y a aucune étape.
 - [~] L'historique de chaque étape indique qui (le profil), quoi et quand (✅ enregistré ; l'affichage est reporté).
 - [x] Le budget n'est affiché qu'en profil chef.

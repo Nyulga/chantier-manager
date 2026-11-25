@@ -109,7 +109,7 @@ Sous Windows, uv et just viennent de winget : si le shell ne les trouve pas, raf
 
 - Cycle d'une étape : `À faire` → `En cours` → `Terminée (à valider)` (ouvrier) → `Validée` (chef du chantier uniquement).
   - Un refus, réservé au chef et accompagné d'un commentaire obligatoire, renvoie l'étape en `En cours`.
-  - Toute autre transition lève `TransitionInterdite`.
+  - Une action que le rôle n'a jamais le droit de faire (un ouvrier qui valide ou refuse) lève `AccesRefuse` (403) ; toute autre transition absente de la table lève `TransitionInterdite` (409). ADR 0018.
   - Chaque transition écrit une entrée d'historique, dans la même transaction.
 - Avancement = étapes validées / nombre total d'étapes, et 0 % s'il n'y a aucune étape. Il est toujours calculé, jamais stocké.
 - Cloisonnement : un utilisateur, **chef comme ouvrier**, n'accède qu'aux chantiers auxquels il est rattaché. Pour un chantier hors de son périmètre, l'API répond 404. Le budget n'est visible que par les chefs du chantier.

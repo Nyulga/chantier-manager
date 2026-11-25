@@ -21,3 +21,4 @@ Chaque décision structurante est consignée ici : son contexte, la décision pr
 | [0015](0015-deploiement-du-squelette-derriere-caddy.md) | Déploiement du squelette : deux conteneurs derrière le Caddy existant | Accepté (squelette) |
 | [0016](0016-protections-de-la-demo-publique.md) | Protections de la démo publique : limites, pièges et plafonds | Accepté (squelette) |
 | [0017](0017-garde-fous-des-sous-agents.md) | Garde-fous des sous-agents : chacun dans sa couche, git en lecture seule | Accepté |
+| [0018](0018-protections-de-la-demo-la-suite.md) | Protections de la démo, la suite : bloc /48, pièges, caractères et refus de droit | Accepté (squelette) |

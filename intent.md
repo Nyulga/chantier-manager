@@ -82,7 +82,7 @@ Chaque module est organisé en 4 parties :
 
 ### 2.3 Domaine
 - **`Chantier`** (agrégat) : nom, `Adresse` (objet valeur), client, date de début, échéance, budget (objet valeur `Montant`, en `Decimal`, jamais en `float`), statut actif ou archivé, chefs affectés, ouvriers affectés.
-- **`Etape`** : une **machine à états explicite**, avec une table des transitions autorisées par rôle. Toute autre transition lève `TransitionInterdite`. Chaque transition ajoute une entrée `HistoriqueEtape` (qui, quoi, quand, commentaire).
+- **`Etape`** : une **machine à états explicite**, avec une table des transitions autorisées par rôle. Une action que le rôle n'a jamais le droit de faire lève `AccesRefuse` (403) ; toute autre transition absente de la table lève `TransitionInterdite` (409). Chaque transition ajoute une entrée `HistoriqueEtape` (qui, quoi, quand, commentaire).
 - **Avancement** : toujours **calculé** (étapes validées / total, et 0 % si aucune étape), jamais stocké.
 - **Politiques d'accès** : fonctions pures du domaine (`peut_voir`, `peut_modifier`, `peut_valider`…), appelées par **chaque** service.
 - **Erreurs métier typées** (`TransitionInterdite`, `AccesRefuse`, `NonTrouve`…), traduites en codes HTTP uniquement dans la partie `api`.

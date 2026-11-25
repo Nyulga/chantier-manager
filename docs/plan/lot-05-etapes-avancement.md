@@ -30,7 +30,7 @@ Le cœur métier : des étapes qui suivent un cycle de validation contrôlé, av
 | Un chef ajoute, modifie, réordonne et supprime des étapes | Tests des cas d'usage, tests des routes | Service, API |
 | Un ouvrier affecté fait passer une étape de `À faire` à `En cours`, puis à `Terminée (à valider)` | `test_transitions.py` (table exhaustive), e2e | Domaine, e2e |
 | Seul un chef du chantier valide ou refuse ; un refus exige un commentaire et renvoie l'étape en `En cours` | `test_transitions.py`, `test_refuser_etape.py` (commentaire vide refusé) | Domaine, service |
-| Toute transition non autorisée est rejetée (409) : un ouvrier qui valide, un saut d'état | Table exhaustive paramétrée (toutes les combinaisons statut × action × rôle), `tests/integration/etapes/test_transitions_interdites.py` | Domaine, API |
+| Toute transition non autorisée est rejetée : 403 pour un ouvrier qui valide (ADR 0018), 409 pour un saut d'état | Table exhaustive paramétrée (toutes les combinaisons statut × action × rôle), `tests/integration/etapes/test_transitions_interdites.py` | Domaine, API |
 | **Propriétés** : aucune suite d'actions n'atteint `Validée` sans l'action d'un chef ; l'avancement reste entre 0 et 100 % ; chaque transition produit exactement une entrée d'historique | `test_proprietes_machine_a_etats.py` (hypothesis, machine à états avec état) | Domaine |
 | Avancement = validées / total, 0 % sans étape | `test_avancement.py` (cas limites et propriétés) | Domaine |
 | La liste des chantiers affiche l'avancement réel | `tests/integration/chantiers/test_avancement_reel.py`, e2e | Données, API, e2e |
